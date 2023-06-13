@@ -1,0 +1,7 @@
+name: mplv2
+version: 1.0.0
+source: contracts
+packages:
+  - path: contracts/MapleToken.sol
+    contractName: MapleToken
+customDescription: Maple V2 Token Artifacts and ABIs
