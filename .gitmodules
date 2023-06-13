@@ -1,0 +1,6 @@
+[submodule "modules/non-transparent-proxy"]
+	path = modules/non-transparent-proxy
+	url = https://github.com/maple-labs/non-transparent-proxy
+[submodule "modules/globals"]
+	path = modules/globals
+	url = https://github.com/maple-labs/globals-v2-private
