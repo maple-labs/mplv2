@@ -3,25 +3,48 @@ name: Forge Tests (PR)
 on: [pull_request]
 
 jobs:
-  e2e_tests:
+  run-ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
+      # Specify version when it becomes possible to do so.
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
 
       - name: Checkout submodules
-        env:
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-
-        shell: bash
         run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
 
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make e2e profile=production
+      - name: Run tests
+        run: forge test
+
+  # coverage_report:
+  #   name: Generate coverage report
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v2
+
+  #   - name: Install Foundry
+  #     uses: onbjerg/foundry-toolchain@v1
+  #     with:
+  #       version: nightly
+
+  #   - name: Install submodules
+  #     run: |
+  #       git config --global url."https://github.com/".insteadOf "git@github.com:"
+  #       git submodule update --init --recursive
+  #   - name: Generate coverage report
+  #     run: |
+  #       forge coverage --report lcov
+  #   - name: Report code coverage
+  #     uses: zgosalvez/github-actions-report-lcov@v1
+  #     with:
+  #       coverage-files: lcov.info
+  #       minimum-coverage: 95
+  #       artifact-name: code-coverage-report
+  #       github-token: ${{ secrets.GITHUB_TOKEN }}
+  #       working-directory: ./
