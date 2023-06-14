@@ -16,12 +16,10 @@ jobs:
 
       # Add additional SSH keys if needed.
       - name: Checkout submodules
+        run: ./scripts/setup.sh
+        shell: bash
         env:
           SSH_KEY_GLOBALS: ${{secrets.SSH_KEY_GLOBALS}}
-        shell: bash
-        run: |
-          chmod +x ./setup.sh
-          ./setup.sh
 
       - name: Run tests
         run: forge test
