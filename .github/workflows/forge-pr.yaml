@@ -3,25 +3,20 @@ name: Forge Tests (PR)
 on: [pull_request]
 
 jobs:
-  e2e_tests:
+  run-ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
+      # Specify version when it becomes possible to do so.
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: onbjerg/foundry-toolchain@v1
+        with:
+          version: nightly
 
-      - name: Checkout submodules
-        env:
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
+      # Add SSH keys where needed.
+      - name: Install submodules
+        run: forge install
 
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make e2e profile=production
+      - name: Run forge tests
+        run: forge test

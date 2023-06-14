@@ -2,199 +2,26 @@ name: Forge Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  e2e_tests:
+  run-ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
+      # Specify version when it becomes possible to do so.
       - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Checkout submodules
-        env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make e2e profile=production
-
-  integration_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Checkout submodules
-        env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make integration profile=production
-
-  fuzz_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Checkout submodules
-        env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: ./test.sh -p deep -t Fuzz
-
-  invariant_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - name: Checkout submodules
-        env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make invariant profile=deep
-
-  scenario_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-
-      - uses: actions/setup-node@v3
-
-      - name: Checkout submodules
-        env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make scenario
-
-  upgrade_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: "Cache RPC Responses"
-        uses: "actions/cache@v3"
+        uses: onbjerg/foundry-toolchain@v1
         with:
-          path: "~/.foundry/cache/rpc/mainnet/16990500"
-          key: "${{ runner.os }}-mainnet-16990500"
+          version: nightly
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      # Add SSH keys where needed.
+      - name: Install submodules
+        run: forge install
 
-      - name: Checkout submodules
+      - name: Run forge tests
+        run: forge test
         env:
-          SSH_KEY_ADDRESS_REGISTRY: ${{secrets.SSH_KEY_ADDRESS_REGISTRY}}
-          SSH_KEY_GLOBALS_V2: ${{secrets.SSH_KEY_GLOBALS_V2}}
-          SSH_KEY_LIQUIDATIONS: ${{secrets.SSH_KEY_LIQUIDATIONS}}
-          SSH_KEY_FIXED_TERM_LOAN: ${{secrets.SSH_KEY_FIXED_TERM_LOAN}}
-          SSH_KEY_FIXED_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_FIXED_TERM_LOAN_MANAGER}}
-          SSH_KEY_MIGRATION_HELPERS: ${{secrets.SSH_KEY_MIGRATION_HELPERS}}
-          SSH_KEY_NTP: ${{secrets.SSH_KEY_NTP}}
-          SSH_KEY_OPEN_TERM_LOAN: ${{secrets.SSH_KEY_OPEN_TERM_LOAN}}
-          SSH_KEY_OPEN_TERM_LOAN_MANAGER: ${{secrets.SSH_KEY_OPEN_TERM_LOAN_MANAGER}}
-          SSH_KEY_POOL_V2: ${{secrets.SSH_KEY_POOL_V2}}
-          SSH_KEY_WITHDRAWAL_MANAGER: ${{secrets.SSH_KEY_WITHDRAWAL_MANAGER}}
-        shell: bash
-        run: |
-          chmod +x ./setup-ci.sh
-          ./setup-ci.sh
-
-      - name: Run Forge tests
-        env:
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-        run: make upgrade profile=production
+          FOUNDRY_PROFILE: production
