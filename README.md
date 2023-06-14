@@ -1,5 +1,7 @@
 # Maple V2 Core
 
+TODO: Update CI workflows!
+
 ![Foundry CI](https://github.com/maple-labs/mplv2/actions/workflows/forge.yaml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/maple-for-developers/protocol-overview)
 [![Foundry][foundry-badge]][foundry]
