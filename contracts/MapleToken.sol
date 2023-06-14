@@ -2,11 +2,8 @@
 pragma solidity 0.8.18;
 
 import { ERC20 }                 from "../modules/erc20/contracts/ERC20.sol";
-import { NonTransparentProxied } from "../modules/non-transparent-proxy/contracts/NonTransparentProxied.sol";
+import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
-contract MapleToken is IMapleToken, ERC20, NonTransparentProxied {
+import { IMapleToken } from "./interfaces/IMapleToken.sol";
 
-    // TODO: Is this needed?
-    address public override globals;
-
-}
+abstract contract MapleToken is IMapleToken, ERC20, NonTransparentProxied { }
