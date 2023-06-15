@@ -15,8 +15,9 @@ jobs:
           version: nightly
 
       - name: Checkout submodules
-        run: forge install
-          
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
 
       - name: Run tests
         run: forge test
