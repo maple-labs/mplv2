@@ -7,3 +7,6 @@
 [submodule "modules/forge-std"]
 	path = modules/forge-std
 	url = git@github.com:foundry-rs/forge-std.git
+[submodule "modules/globals"]
+	path = modules/globals
+	url = git@github.com:maple-labs/globals-v2.git
