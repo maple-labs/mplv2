@@ -14,12 +14,10 @@ jobs:
         with:
           version: nightly
 
-      # Add additional SSH keys if needed.
       - name: Checkout submodules
-        run: ./scripts/setup.sh
-        shell: bash
-        env:
-          SSH_KEY_GLOBALS: ${{secrets.SSH_KEY_GLOBALS}}
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
 
       - name: Run tests
         run: forge test

@@ -19,7 +19,9 @@ jobs:
 
       # Add SSH keys where needed.
       - name: Install submodules
-        run: forge install
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git submodule update --init --recursive
 
       - name: Run forge tests
         run: forge test
