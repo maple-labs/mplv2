@@ -59,7 +59,6 @@ contract SetImplementationTests is MapleTokenTestsBase {
         globals.__expectCall();
         globals.unscheduleCall(
             governor,
-            address(token),
             bytes32("MTP:SET_IMPLEMENTATION"),
             abi.encodeWithSelector(MapleTokenProxy(tokenAddress).setImplementation.selector, newImplementation)
         );
@@ -97,7 +96,6 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         globals.__expectCall();
         globals.unscheduleCall(
             governor,
-            address(token),
             bytes32("MT:ADD_MODULE"),
             abi.encodeWithSelector(token.addModule.selector, address(0x1), true, false)
         );
@@ -129,7 +127,6 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         globals.__expectCall();
         globals.unscheduleCall(
             governor,
-            address(token),
             bytes32("MT:REMOVE_MODULE"),
             abi.encodeWithSelector(token.removeModule.selector, address(0x1))
         );

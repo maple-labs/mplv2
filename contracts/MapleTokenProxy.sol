@@ -39,7 +39,7 @@ contract MapleTokenProxy is NonTransparentProxy {
         require(msg.sender == _admin(), "MTP:SI:NOT_ADMIN");
         require(isScheduledCall_,       "MTP:SI:NOT_SCHEDULED");
 
-        globals_.unscheduleCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+        globals_.unscheduleCall(msg.sender, "MTP:SET_IMPLEMENTATION", msg.data);
 
         _setAddress(IMPLEMENTATION_SLOT, newImplementation_);
     }

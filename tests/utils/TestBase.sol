@@ -16,4 +16,9 @@ contract TestBase is Test {
     bytes internal constant memOverflowError    = abi.encodeWithSignature("Panic(uint256)", 0x41);
     bytes internal constant zeroVarError        = abi.encodeWithSignature("Panic(uint256)", 0x51);
 
+    function deployGlobals() internal returns (address globals) {
+        return deployCode("MapleGlobals.sol");
+    }
+
 }
+
