@@ -6,4 +6,7 @@ import { TestBase } from "./utils/TestBase.sol";
 // TODO: Potentially split up into multiple test files.
 contract MapleTokenTests is TestBase {
 
+    function test_sanityCheck() external {
+        assertTrue(true);
+    }
 }
