@@ -21,7 +21,7 @@ jobs:
       - name: Install submodules
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init --recursive
+          forge install
 
       - name: Run forge tests
         run: forge test
