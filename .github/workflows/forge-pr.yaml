@@ -42,7 +42,7 @@ jobs:
         forge coverage --report lcov
 
     - name: Install lcov
-      run: apt-get install lcov
+      run: sudo apt-get install lcov
 
     - name: Remove Tets from coverage
       run:  lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
