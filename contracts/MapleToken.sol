@@ -1,14 +1,41 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { ERC20Proxied }             from "../modules/erc20/contracts/ERC20Proxied.sol";
+import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
 import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
+import { IGlobalsLike }        from "./interfaces/Interfaces.sol";
 import { IMapleToken, IERC20 } from "./interfaces/IMapleToken.sol";
 
 contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
+
+    struct Module {
+        bool minter;
+        bool burner;
+    }
+
+    mapping(address => Module) public modules;
+
+    modifier onlyGovernor {
+        require(msg.sender == IGlobalsLike(globals()).governor(), "MT:NOT_GOVERNOR");
+        _;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** External Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
+   
+    function burn(address from_, uint256 amount_) external {
+        require(modules[msg.sender].burner, "MT:M:NOT_BURNER");
+        _burn(from_, amount_);
+    }
+
+    function mint(uint256 amount_) external  {
+        require(modules[msg.sender].minter, "MT:M:NOT_MINTER");
+        _mint(IGlobalsLike(globals()).mapleTreasury(), amount_);
+    }
 
     /**************************************************************************************************************************************/
     /*** Pure Functions                                                                                                                 ***/
