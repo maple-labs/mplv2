@@ -1,19 +1,30 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { BaseERC20 }             from "../modules/erc20/contracts/BaseERC20.sol";
+import { ERC20Proxied }             from "../modules/erc20/contracts/ERC20Proxied.sol";
 import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
 import { IMapleToken, IERC20 } from "./interfaces/IMapleToken.sol";
 
-contract MapleToken is IMapleToken, BaseERC20, NonTransparentProxied {
+contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
 
-    uint8  public override(BaseERC20, IERC20) decimals = 18;
+    /**************************************************************************************************************************************/
+    /*** Pure Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
 
-    string public override(BaseERC20, IERC20) name   = "MPL";
-    string public override(BaseERC20, IERC20) symbol = "MPL";
+    function decimals() public pure override(ERC20Proxied, IERC20) returns (uint8 decimals_) {
+        decimals_ = 18;
+    }
+
+    function name() public pure override(ERC20Proxied, IERC20) returns (string memory name_) {
+        name_ = "MPL";
+    }
+
+    function symbol() public pure override(ERC20Proxied, IERC20) returns (string memory symbol_) {
+        symbol_ = "MPL";
+    }
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
