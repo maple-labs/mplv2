@@ -21,7 +21,7 @@ contract MapleTokenTestsBase is TestBase {
         globals = new MockGlobals();
         globals.__setGovernor(governor);
 
-        implementation = address(new MapleToken("MPL", "MPL", 18));
+        implementation = address(new MapleToken());
         token          = address(new MapleTokenProxy(governor, (implementation), address(globals)));
     }
 
@@ -36,7 +36,9 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token_.globals(),        address(globals));
         assertEq(token_.admin(),          governor);
 
-        // TODO test symbol, name and decimals once constructor issue is fixed
+        assertEq(token_.name(),     "MPL");
+        assertEq(token_.symbol(),   "MPL");
+        assertEq(token_.decimals(), 18);
     }
     
 }
@@ -49,7 +51,7 @@ contract SetImplementationTests is MapleTokenTestsBase {
     }
 
     function test_setImplementation_success() external {
-        address newImplementation = address(new MapleToken("MPL", "MPL", 18));
+        address newImplementation = address(new MapleToken());
 
         vm.prank(governor);
         MapleTokenProxy(token).setImplementation(newImplementation);
