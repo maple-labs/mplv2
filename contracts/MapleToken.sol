@@ -11,12 +11,8 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
 
-    struct Module {
-        bool minter;
-        bool burner;
-    }
-
-    mapping(address => Module) public modules;
+    mapping(address => bool) public isBurner;
+    mapping(address => bool) public isMinter;
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals()).governor(), "MT:NOT_GOVERNOR");
@@ -27,13 +23,27 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
    
+   // Note: technically, a module can be removed with this function, but that's alright, since it's more restrictive than removeModule()
+    function addModule(address module, bool burner, bool minter) external onlyGovernor {
+        require(burner || minter, "MT:AM:INVALID_MODULE");
+        // TODO: add scheduling
+        
+        isBurner[module] = burner;
+        isMinter[module] = minter;
+    }
+
+    function removeModule(address module) external onlyGovernor {
+        delete isBurner[module];
+        delete isMinter[module];
+    }
+
     function burn(address from_, uint256 amount_) external {
-        require(modules[msg.sender].burner, "MT:M:NOT_BURNER");
+        require(isBurner[msg.sender], "MT:B:NOT_BURNER");
         _burn(from_, amount_);
     }
 
     function mint(uint256 amount_) external  {
-        require(modules[msg.sender].minter, "MT:M:NOT_MINTER");
+        require(isMinter[msg.sender], "MT:M:NOT_MINTER");
         _mint(IGlobalsLike(globals()).mapleTreasury(), amount_);
     }
 
