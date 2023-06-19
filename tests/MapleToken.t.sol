@@ -22,7 +22,7 @@ contract MapleTokenTestsBase is TestBase {
         globals.__setGovernor(governor);
 
         implementation = address(new MapleToken());
-        token          = address(new MapleTokenProxy(governor, (implementation), address(globals)));
+        token          = address(new MapleTokenProxy(governor, implementation, address(globals)));
     }
 
 }
@@ -36,7 +36,7 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token_.globals(),        address(globals));
         assertEq(token_.admin(),          governor);
 
-        assertEq(token_.name(),     "MPL");
+        assertEq(token_.name(),     "Maple Finance");
         assertEq(token_.symbol(),   "MPL");
         assertEq(token_.decimals(), 18);
     }

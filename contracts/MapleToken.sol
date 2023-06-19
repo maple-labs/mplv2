@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { ERC20Proxied }             from "../modules/erc20/contracts/ERC20Proxied.sol";
+import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
 import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
 import { IMapleToken, IERC20 } from "./interfaces/IMapleToken.sol";
@@ -19,7 +19,7 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     }
 
     function name() public pure override(ERC20Proxied, IERC20) returns (string memory name_) {
-        name_ = "MPL";
+        name_ = "Maple Finance";
     }
 
     function symbol() public pure override(ERC20Proxied, IERC20) returns (string memory symbol_) {
