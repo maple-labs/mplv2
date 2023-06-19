@@ -21,8 +21,10 @@ contract MapleTokenTestsBase is TestBase {
 
     function setUp() public virtual {
         globals = new MockGlobals();
+
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
+        globals.__setIsValidScheduledCall(true);
 
         implementation = address(new MapleToken());
         tokenAddress   = address(new MapleTokenProxy(governor, (implementation), address(globals)));
@@ -43,11 +45,11 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
     }
-    
+
 }
 
 contract SetImplementationTests is MapleTokenTestsBase {
-    
+
     function test_setImplementation_notAdmin() external {
         vm.expectRevert("NTP:SI:NOT_ADMIN");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
@@ -65,9 +67,17 @@ contract SetImplementationTests is MapleTokenTestsBase {
 }
 
 contract AddAndRemoveModuleTests is MapleTokenTestsBase {
-    
+
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
+        token.addModule(address(0x1), true, false);
+    }
+
+    function test_addModule_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.prank(governor);
+        vm.expectRevert("MT:NOT_SCHEDULED");
         token.addModule(address(0x1), true, false);
     }
 
@@ -87,6 +97,13 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 
     function test_removeModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
+        token.removeModule(address(0x1));
+    }
+
+    function test_removeModule_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.expectRevert("MT:NOT_SCHEDULED");
         token.removeModule(address(0x1));
     }
 
@@ -118,7 +135,7 @@ contract BurnTests is MapleTokenTestsBase {
         vm.prank(burner);
         token.mint(treasury, 100);
     }
-    
+
     function test_burn_notBurner() external {
         vm.prank(notBurner);
         vm.expectRevert("MT:B:NOT_BURNER");
@@ -132,7 +149,7 @@ contract BurnTests is MapleTokenTestsBase {
 
         vm.prank(burner);
         token.burn(treasury, 100);
-    }        
+    }
 
     function test_burn_success() external {
         vm.prank(burner);
@@ -140,7 +157,7 @@ contract BurnTests is MapleTokenTestsBase {
 
         assertEq(token.balanceOf(treasury), 99);
     }
-    
+
 }
 
 contract MintTests is MapleTokenTestsBase {

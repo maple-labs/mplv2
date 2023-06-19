@@ -16,23 +16,34 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals()).governor(), "MT:NOT_GOVERNOR");
+
+        _;
+    }
+
+    modifier onlyScheduled(bytes32 functionId_) {
+        IGlobalsLike globals_ = IGlobalsLike(globals());
+        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
+
+        require(isScheduledCall_, "MT:NOT_SCHEDULED");
+
+        globals_.unscheduleCall(msg.sender, address(this), functionId_, msg.data);
+
         _;
     }
 
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
-   
+
    // Note: technically, a module can be removed with this function, but that's alright, since it's more restrictive than removeModule()
-    function addModule(address module, bool burner, bool minter) external onlyGovernor {
+    function addModule(address module, bool burner, bool minter) external onlyGovernor onlyScheduled("MT:ADD_MODULE") {
         require(burner || minter, "MT:AM:INVALID_MODULE");
-        // TODO: add scheduling
-        
+
         isBurner[module] = burner;
         isMinter[module] = minter;
     }
 
-    function removeModule(address module) external onlyGovernor {
+    function removeModule(address module) external onlyGovernor onlyScheduled("MT:REMOVE_MODULE") {
         delete isBurner[module];
         delete isMinter[module];
     }
