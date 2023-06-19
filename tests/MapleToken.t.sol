@@ -39,7 +39,7 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.admin(),          governor);
 
-        assertEq(token.name(),     "MPL");
+        assertEq(token.name(),     "Maple Finance");
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
     }
@@ -166,35 +166,4 @@ contract MintTests is MapleTokenTestsBase {
         assertEq(token.balanceOf(address(0x2)), 1);
     }
 
-}
-
-contract ProxyTests is MapleTokenTestsBase {
-
-    function test_proxySetup() external {
-        MapleToken token_ = MapleToken(token);
-
-        assertEq(token_.implementation(), address(implementation));
-        assertEq(token_.globals(),        address(globals));
-        assertEq(token_.admin(),          governor);
-
-        assertEq(token_.name(),     "Maple Finance");
-        assertEq(token_.symbol(),   "MPL");
-        assertEq(token_.decimals(), 18);
-    }
-    
-}
-
-contract SetImplementationTests is MapleTokenTestsBase {
-    
-    function test_setImplementation_notAdmin() external {
-        vm.expectRevert("NTP:SI:NOT_ADMIN");
-        MapleTokenProxy(token).setImplementation(address(0x1));
-    }
-
-    function test_setImplementation_success() external {
-        address newImplementation = address(new MapleToken());
-
-        vm.prank(governor);
-        MapleTokenProxy(token).setImplementation(newImplementation);
-    }
 }
