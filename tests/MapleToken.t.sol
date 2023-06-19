@@ -17,6 +17,7 @@ contract MapleTokenTestsBase is TestBase {
     address tokenAddress;
 
     MockGlobals globals;
+    MapleToken  token;
 
     function setUp() public virtual {
         globals = new MockGlobals();
@@ -25,6 +26,8 @@ contract MapleTokenTestsBase is TestBase {
 
         implementation = address(new MapleToken());
         tokenAddress   = address(new MapleTokenProxy(governor, (implementation), address(globals)));
+
+        token = MapleToken(tokenAddress);
     }
 
 }
@@ -32,8 +35,6 @@ contract MapleTokenTestsBase is TestBase {
 contract ProxyTests is MapleTokenTestsBase {
 
     function test_proxySetup() external {
-        MapleToken token = MapleToken(tokenAddress);
-
         assertEq(token.implementation(), address(implementation));
         assertEq(token.globals(),        address(globals));
         assertEq(token.admin(),          governor);
@@ -58,20 +59,12 @@ contract SetImplementationTests is MapleTokenTestsBase {
         vm.prank(governor);
         MapleTokenProxy(tokenAddress).setImplementation(newImplementation);
 
-        assert(MapleToken(tokenAddress).implementation() == newImplementation);
+        assertEq(MapleToken(tokenAddress).implementation(), newImplementation);
     }
 
 }
 
 contract AddAndRemoveModuleTests is MapleTokenTestsBase {
-
-    MapleToken token;
-
-    function setUp() public override {
-        super.setUp();
-        
-        token = MapleToken(tokenAddress);
-    }
     
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
@@ -115,12 +108,8 @@ contract BurnTests is MapleTokenTestsBase {
     address burner    = makeAddr("burner");
     address notBurner = makeAddr("notBurner");
 
-    MapleToken token;
-
     function setUp() public override {
         super.setUp();
-
-        token = MapleToken(tokenAddress);
 
         vm.prank(governor);
         token.addModule(address(burner), true, true);
@@ -158,12 +147,8 @@ contract MintTests is MapleTokenTestsBase {
 
     address minter =  makeAddr("minter");
 
-    MapleToken token;
-
     function setUp() public override {
         super.setUp();
-
-        token = MapleToken(tokenAddress);
 
         vm.prank(governor);
         token.addModule(address(minter), false, true);
