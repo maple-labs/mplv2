@@ -42,9 +42,9 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
         _burn(from_, amount_);
     }
 
-    function mint(uint256 amount_) external  {
+    function mint(address to_, uint256 amount_) external  {
         require(isMinter[msg.sender], "MT:M:NOT_MINTER");
-        _mint(IGlobalsLike(globals()).mapleTreasury(), amount_);
+        _mint(to_, amount_);
     }
 
     /**************************************************************************************************************************************/

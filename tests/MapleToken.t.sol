@@ -127,7 +127,7 @@ contract BurnTests is MapleTokenTestsBase {
 
         // Mint 100 tokens to treasury
         vm.prank(burner);
-        token.mint(100);
+        token.mint(treasury, 100);
     }
     
     function test_burn_notBurner() external {
@@ -171,14 +171,14 @@ contract MintTests is MapleTokenTestsBase {
 
      function test_mint_notMinter() external {
         vm.expectRevert("MT:M:NOT_MINTER");
-        token.mint(1);
+        token.mint(address(0x2), 1);
     }
 
     function test_burn_success() external {
         vm.prank(minter);
-        token.mint(1);
+        token.mint(address(0x2), 1);
 
-        assertEq(token.balanceOf(treasury), 1);
+        assertEq(token.balanceOf(address(0x2)), 1);
     }
 
 }
