@@ -41,7 +41,7 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.admin(),          governor);
 
-        assertEq(token.name(),     "MPL");
+        assertEq(token.name(),     "Maple Finance");
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
     }
@@ -103,6 +103,7 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
     function test_removeModule_notScheduled() external {
         globals.__setIsValidScheduledCall(false);
 
+        vm.prank(governor);
         vm.expectRevert("MT:NOT_SCHEDULED");
         token.removeModule(address(0x1));
     }

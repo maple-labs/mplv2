@@ -67,7 +67,7 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     }
 
     function name() public pure override(ERC20Proxied, IERC20) returns (string memory name_) {
-        name_ = "MPL";
+        name_ = "Maple Finance";
     }
 
     function symbol() public pure override(ERC20Proxied, IERC20) returns (string memory symbol_) {
