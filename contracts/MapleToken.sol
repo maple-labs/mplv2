@@ -1,9 +1,37 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { ERC20 }                 from "../modules/erc20/contracts/ERC20.sol";
+import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
 import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
-import { IMapleToken } from "./interfaces/IMapleToken.sol";
+import { IMapleToken, IERC20 } from "./interfaces/IMapleToken.sol";
 
-abstract contract MapleToken is IMapleToken, ERC20, NonTransparentProxied { }
+contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
+
+    bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
+
+    /**************************************************************************************************************************************/
+    /*** Pure Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
+
+    function decimals() public pure override(ERC20Proxied, IERC20) returns (uint8 decimals_) {
+        decimals_ = 18;
+    }
+
+    function name() public pure override(ERC20Proxied, IERC20) returns (string memory name_) {
+        name_ = "Maple Finance";
+    }
+
+    function symbol() public pure override(ERC20Proxied, IERC20) returns (string memory symbol_) {
+        symbol_ = "MPL";
+    }
+
+    /**************************************************************************************************************************************/
+    /*** View Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
+
+    function globals() public view override returns (address globals_) {
+        globals_ = _getAddress(GLOBALS_SLOT);
+    }
+
+}
