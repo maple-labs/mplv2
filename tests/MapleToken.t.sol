@@ -66,6 +66,14 @@ contract SetImplementationTests is MapleTokenTestsBase {
     function test_setImplementation_success() external {
         address newImplementation = address(new MapleToken());
 
+        globals.__expectCall();
+        globals.unscheduleCall(
+            governor,
+            address(token),
+            bytes32("MTP:SET_IMPLEMENTATION"),
+            abi.encodeWithSelector(MapleTokenProxy(tokenAddress).setImplementation.selector, newImplementation)
+        );
+
         vm.prank(governor);
         MapleTokenProxy(tokenAddress).setImplementation(newImplementation);
 
