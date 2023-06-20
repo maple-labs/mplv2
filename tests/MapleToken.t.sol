@@ -51,7 +51,15 @@ contract ProxyTests is MapleTokenTestsBase {
 contract SetImplementationTests is MapleTokenTestsBase {
 
     function test_setImplementation_notAdmin() external {
-        vm.expectRevert("NTP:SI:NOT_ADMIN");
+        vm.expectRevert("MTP:SI:NOT_ADMIN");
+        MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
+    }
+
+    function test_setImplementation_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.prank(governor);
+        vm.expectRevert("MTP:SI:NOT_SCHEDULED");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
     }
 
