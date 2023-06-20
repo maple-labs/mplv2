@@ -1,7 +1,38 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-contract MockGlobals {
+import { Test } from "../../modules/forge-std/src/Test.sol";
+
+contract Spied is Test {
+
+    bool internal assertCalls;
+    bool internal captureCall;
+
+    uint256 callCount;
+
+    bytes[] internal calls;
+
+    modifier spied() {
+        if (captureCall) {
+            calls.push(msg.data);
+            captureCall = false;
+        } else {
+            if (assertCalls) {
+                assertEq(msg.data, calls[callCount++], "Unexpected call spied");
+            }
+
+            _;
+        }
+    }
+
+    function __expectCall() public {
+        assertCalls = true;
+        captureCall = true;
+    }
+
+}
+
+contract MockGlobals is Spied {
 
     address public governor;
     address public mapleTreasury;
@@ -24,6 +55,6 @@ contract MockGlobals {
         isValidScheduledCall_ = isScheduled;
     }
 
-    function unscheduleCall(address, address, bytes32, bytes calldata) external { }
+    function unscheduleCall(address, address, bytes32, bytes calldata) external spied { }
 
 }
