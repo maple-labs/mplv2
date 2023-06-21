@@ -3,8 +3,9 @@ pragma solidity 0.8.18;
 
 import { TestBase } from "./utils/TestBase.sol";
 
-import { MapleTokenProxy } from "../contracts/MapleTokenProxy.sol";
-import { MapleToken }      from "../contracts/MapleToken.sol";
+import { MapleToken }            from "../contracts/MapleToken.sol";
+import { MapleTokenInitializer } from "../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }       from "../contracts/MapleTokenProxy.sol";
 
 import { MockGlobals } from "./utils/Mocks.sol";
 
@@ -13,6 +14,7 @@ contract MapleTokenTestsBase is TestBase {
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
 
+    address initializer;
     address implementation;
     address tokenAddress;
 
@@ -21,11 +23,13 @@ contract MapleTokenTestsBase is TestBase {
 
     function setUp() public virtual {
         globals = new MockGlobals();
+
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
 
         implementation = address(new MapleToken());
-        tokenAddress   = address(new MapleTokenProxy(governor, (implementation), address(globals)));
+        initializer    = address(new MapleTokenInitializer());
+        tokenAddress   = address(new MapleTokenProxy(governor, implementation, initializer, address(globals)));
 
         token = MapleToken(tokenAddress);
     }
@@ -39,15 +43,18 @@ contract ProxyTests is MapleTokenTestsBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.admin(),          governor);
 
-        assertEq(token.name(),     "Maple Finance");
-        assertEq(token.symbol(),   "MPL");
-        assertEq(token.decimals(), 18);
+        assertEq(token.name(),        "Maple Finance");
+        assertEq(token.symbol(),      "MPL");
+        assertEq(token.decimals(),    18);
+        assertEq(token.totalSupply(), 1_000_000e18);
+
+        assertEq(token.balanceOf(globals.mapleTreasury()), 1_000_000e18);
     }
-    
+
 }
 
 contract SetImplementationTests is MapleTokenTestsBase {
-    
+
     function test_setImplementation_notAdmin() external {
         vm.expectRevert("NTP:SI:NOT_ADMIN");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
@@ -65,7 +72,7 @@ contract SetImplementationTests is MapleTokenTestsBase {
 }
 
 contract AddAndRemoveModuleTests is MapleTokenTestsBase {
-    
+
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
         token.addModule(address(0x1), true, false);
@@ -113,12 +120,8 @@ contract BurnTests is MapleTokenTestsBase {
 
         vm.prank(governor);
         token.addModule(address(burner), true, true);
-
-        // Mint 100 tokens to treasury
-        vm.prank(burner);
-        token.mint(treasury, 100);
     }
-    
+
     function test_burn_notBurner() external {
         vm.prank(notBurner);
         vm.expectRevert("MT:B:NOT_BURNER");
@@ -128,19 +131,21 @@ contract BurnTests is MapleTokenTestsBase {
     function test_burn_noBalance() external {
         vm.prank(burner);
         vm.expectRevert(arithmeticError);
-        token.burn(treasury, 101);
+        token.burn(treasury, type(uint256).max);
 
         vm.prank(burner);
         token.burn(treasury, 100);
-    }        
+
+        assertEq(token.balanceOf(treasury), 1_000_000e18 - 100);
+    }
 
     function test_burn_success() external {
         vm.prank(burner);
         token.burn(treasury, 1);
 
-        assertEq(token.balanceOf(treasury), 99);
+        assertEq(token.balanceOf(treasury), 1_000_000e18 - 1);
     }
-    
+
 }
 
 contract MintTests is MapleTokenTestsBase {

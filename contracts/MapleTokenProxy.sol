@@ -7,8 +7,19 @@ contract MapleTokenProxy is NonTransparentProxy {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
 
-    constructor(address admin_, address implementation_, address globals_) NonTransparentProxy(admin_, implementation_) {
+    constructor(
+        address admin_,
+        address implementation_,
+        address initializer_,
+        address globals_
+    )
+        NonTransparentProxy(admin_, implementation_)
+    {
         _setAddress(GLOBALS_SLOT, globals_);
+
+        ( bool success_, ) = initializer_.delegatecall("");
+
+        require(success_, "MTP:INIT_FAILED");
     }
 
     /**************************************************************************************************************************************/

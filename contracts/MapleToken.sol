@@ -23,12 +23,12 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
-   
+
    // Note: technically, a module can be removed with this function, but that's alright, since it's more restrictive than removeModule()
     function addModule(address module, bool burner, bool minter) external onlyGovernor {
         require(burner || minter, "MT:AM:INVALID_MODULE");
         // TODO: add scheduling
-        
+
         isBurner[module] = burner;
         isMinter[module] = minter;
     }
@@ -46,22 +46,6 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     function mint(address to_, uint256 amount_) external  {
         require(isMinter[msg.sender], "MT:M:NOT_MINTER");
         _mint(to_, amount_);
-    }
-
-    /**************************************************************************************************************************************/
-    /*** Pure Functions                                                                                                                 ***/
-    /**************************************************************************************************************************************/
-
-    function decimals() public pure override(ERC20Proxied, IERC20) returns (uint8 decimals_) {
-        decimals_ = 18;
-    }
-
-    function name() public pure override(ERC20Proxied, IERC20) returns (string memory name_) {
-        name_ = "Maple Finance";
-    }
-
-    function symbol() public pure override(ERC20Proxied, IERC20) returns (string memory symbol_) {
-        symbol_ = "MPL";
     }
 
     /**************************************************************************************************************************************/
