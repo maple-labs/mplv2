@@ -13,7 +13,6 @@ contract InflationModule {
     address public immutable token;
 
     uint256 supply;
-    uint256 expectedPeriodSupply; // Saves the expected supply at the end of the period.
     uint128 rate; // Yearly rate, in basis points. 1e6 = 100%
     uint40  periodStart;
     uint40  lastUpdated;
@@ -28,7 +27,8 @@ contract InflationModule {
     function setRate(uint128 rate_) external {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:SR:NOT_GOVERNOR");
 
-        // 
+        // do a withdraw, then save the new rate.
+        withdraw();
 
         rate = rate_;
     }
@@ -38,12 +38,10 @@ contract InflationModule {
         lastUpdated  = uint40(block.timestamp);
 
         supply = 11_000_000e18; // Starts with 11M tokens 
-
-        expectedPeriodSupply = _getAccruedAmount(PERIOD, supply, rate);
     }
 
     // Withdraw tokens from inflation rate
-    function withdraw() external {
+    function withdraw() public {
         require(periodStart != 0, "IM:W:NOT_STARTED");
 
         uint256 periodEnd_   = periodStart + PERIOD;
@@ -58,8 +56,8 @@ contract InflationModule {
             amount       = _getAccruedAmount(periodEnd_ - lastUpdated_, supply_, rate_);
             lastUpdated_ = uint40(periodEnd_);
 
-            // Compound the previous period supply for next period calculation. NOTE: What if rate changes mid period?
-            supply_ += expectedPeriodSupply;
+            // Do a snapshot of the current supply and add what will be minted for the period.
+            supply_ = IERC20Like(token).totalSupply() + amount;
 
             uint256 fullPeriods_ = (block.timestamp - lastUpdated_) / PERIOD;
             uint256 period_      = fullPeriods_; 
@@ -75,9 +73,8 @@ contract InflationModule {
             
             lastUpdated_ = uint40(periodEnd_ + (fullPeriods_ * PERIOD)); 
 
-            periodStart          = uint40(periodStart + (fullPeriods_ * PERIOD));
-            supply               = supply_;
-            expectedPeriodSupply = _getAccruedAmount(PERIOD, supply_, rate_);
+            periodStart = uint40(periodStart + (fullPeriods_ * PERIOD));
+            supply      = supply_;
         }
         
         // Accrue the amount for the current period
