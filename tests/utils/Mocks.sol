@@ -49,12 +49,19 @@ contract MockGlobals {
 
 contract MockToken is Spied {
 
-    function mint(address to, uint256 amount) external spied {
+    uint256 public totalSupply;
+
+    function mint(address , uint256 amount) external spied {
+        // Just increase the supply
+        totalSupply += amount;
+    }
+
+    function burn(address , uint256 ) external spied {
         // do nothing
     }
 
-    function burn(address from, uint256 amount) external spied {
-        // do nothing
+    function __setTotalSupply(uint256 totalSupply_) external {
+        totalSupply = totalSupply_;
     }
 
 }
