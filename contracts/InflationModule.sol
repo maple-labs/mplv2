@@ -14,10 +14,10 @@ contract InflationModule {
     address public immutable globals;
     address public immutable token;
 
-    uint256 supply;
-    uint128 rate; // Yearly rate, in basis points. 1e6 = 100%
-    uint40  periodStart;
-    uint40  lastUpdated;
+    uint256 public supply;
+    uint128 public rate; // Yearly rate, in basis points. 1e6 = 100%
+    uint40  public periodStart;
+    uint40  public lastUpdated;
 
     constructor(address _token, address _globals, uint128 rate_) {
         token   = _token;
@@ -30,8 +30,8 @@ contract InflationModule {
         // Timelock?
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:SR:NOT_GOVERNOR");
 
-        // do a withdraw, then save the new rate.
-        claim();
+        // If the period is ongoing, do a claim before changing the rate
+        if (periodStart != 0) claim();
 
         rate = rate_;
     }
@@ -44,11 +44,10 @@ contract InflationModule {
         supply      = IERC20Like(token).totalSupply();
     }
 
-    // Withdraw tokens from inflation rate
     function claim() public {
         require(periodStart != 0, "IM:C:NOT_STARTED");
 
-        (uint256 amount, uint256 newSupply, uint256 newPeriodStart) = _dueTokensAt(block.timestamp);
+        ( uint256 amount, uint256 newSupply, uint256 newPeriodStart ) = _dueTokensAt(block.timestamp);
 
         lastUpdated = uint40(block.timestamp);
         periodStart = uint40(newPeriodStart);

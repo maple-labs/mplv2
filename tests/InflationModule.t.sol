@@ -14,6 +14,8 @@ contract InflationModuleTestBase is TestBase {
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
 
+    uint256 start;
+
     MockGlobals            globals;
     MockToken              token;
     InflationModuleHarness inflationModule;
@@ -53,9 +55,7 @@ contract GetAccruedAmountTests is InflationModuleTestBase {
 
 contract DueTokensAtTests is InflationModuleTestBase {
 
-    uint256 year = 365 days;
-
-    uint256 start;
+    uint256 year          = 365 days;
     uint256 currentSupply = 10_000_000e18;
 
     function setUp() public override {
@@ -109,4 +109,126 @@ contract DueTokensAtTests is InflationModuleTestBase {
         assertEq(periodStart, expectedPeriodStart);
     }
     
+}
+
+contract InflationModulesTests is InflationModuleTestBase {
+
+    uint256 currentSupply = 10_000_000e18;
+    
+    function test_start_notGovernor() external {
+        vm.expectRevert("IM:S:NOT_GOVERNOR");
+        inflationModule.start();
+    }
+
+    function test_start_success() external {
+        token.__setTotalSupply(currentSupply);
+
+        vm.prank(governor);
+        inflationModule.start();
+
+        assertEq(inflationModule.periodStart(), block.timestamp);
+        assertEq(inflationModule.lastUpdated(), block.timestamp); 
+        assertEq(inflationModule.supply(),      currentSupply);
+    }
+
+    function test_setRate_notGovernor() external {
+        vm.expectRevert("IM:SR:NOT_GOVERNOR");
+        inflationModule.setRate(0.09e6);
+    }
+
+    function test_serRate_beforeStart() external {
+        vm.prank(governor);
+        inflationModule.setRate(0.09e6);
+
+        assertEq(inflationModule.rate(), 0.09e6);
+
+        // Should not have updated periodStart
+        assertEq(inflationModule.periodStart(), 0);
+        assertEq(inflationModule.lastUpdated(), 0); 
+    }
+
+    function test_setRate_afterStart() external {
+        token.__setTotalSupply(currentSupply);
+
+        vm.prank(governor);
+        inflationModule.start();
+        start = block.timestamp;
+
+        vm.warp(start + (365 days / 2));
+
+        token.__expectCall();
+        token.mint(treasury, 250_000e18);
+
+        vm.prank(governor);
+        inflationModule.setRate(0.09e6);
+
+        assertEq(inflationModule.rate(),        0.09e6);
+        assertEq(inflationModule.periodStart(), start);
+        assertEq(inflationModule.lastUpdated(), block.timestamp); 
+    }
+
+    function test_claim_notStarted() external {
+        vm.expectRevert("IM:C:NOT_STARTED");
+        inflationModule.claim();
+    }
+
+    function test_claim_withinPeriod() external {
+        token.__setTotalSupply(currentSupply);
+
+        vm.prank(governor);
+        inflationModule.start();
+        start = block.timestamp;
+
+        vm.warp(start + (365 days / 2));
+
+        token.__expectCall();
+        token.mint(treasury, 250_000e18);
+
+        inflationModule.claim();
+
+        assertEq(inflationModule.periodStart(), start);
+        assertEq(inflationModule.lastUpdated(), block.timestamp); 
+        assertEq(inflationModule.supply(),      currentSupply);
+    }
+
+    function test_claim_periodCrossover_noSupplyChange() external {
+        token.__setTotalSupply(currentSupply);
+
+        vm.prank(governor);
+        inflationModule.start();
+        start = block.timestamp;
+
+        vm.warp(start + 365 days + (365 days / 10));
+
+        token.__expectCall();
+        token.mint(treasury, 500_000e18 + 52_500e18);
+
+        inflationModule.claim();
+
+        assertEq(inflationModule.periodStart(), start + 365 days);
+        assertEq(inflationModule.lastUpdated(), block.timestamp); 
+        assertEq(inflationModule.supply(),      currentSupply + 500_000e18);
+    }
+
+    function test_claim_periodCrossover_withSupplyChange() external {
+        token.__setTotalSupply(currentSupply);
+
+        vm.prank(governor);
+        inflationModule.start();
+        start = block.timestamp;
+
+        vm.warp(start + 365 days + (365 days / 10));
+ 
+        token.__setTotalSupply(4_500_000e18);
+
+        token.__expectCall();
+        token.mint(treasury, 500_000e18 + 25_000e18);
+
+        inflationModule.claim();
+
+        assertEq(inflationModule.periodStart(), start + 365 days);
+        assertEq(inflationModule.lastUpdated(), block.timestamp); 
+        assertEq(inflationModule.supply(),      5_000_000e18);
+
+    }
 }
