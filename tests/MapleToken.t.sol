@@ -190,7 +190,6 @@ contract BurnTests is MapleTokenTestsBase {
 
         assertEq(token.balanceOf(treasury), 99);
     }
-
 }
 
 contract MintTests is MapleTokenTestsBase {

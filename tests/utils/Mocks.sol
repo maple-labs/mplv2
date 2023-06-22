@@ -58,3 +58,15 @@ contract MockGlobals is Spied {
     function unscheduleCall(address, address, bytes32, bytes calldata) external spied { }
 
 }
+
+contract MockToken is Spied {
+
+    function mint(address to, uint256 amount) external spied {
+        // do nothing
+    }
+
+    function burn(address from, uint256 amount) external spied {
+        // do nothing
+    }
+
+}
