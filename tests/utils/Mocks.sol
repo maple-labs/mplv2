@@ -68,7 +68,7 @@ contract MockToken is Spied {
         totalSupply += amount;
     }
 
-    function burn(address , uint256 ) external spied {
+    function burn(address, uint256) external spied {
         // do nothing
     }
 

@@ -7,7 +7,7 @@ interface IERC20Like {
 
     function burn(address from, uint256 value) external;
 
-    function totalSupply() external view returns (uint256 supply);
+    function totalSupply() external view returns (uint256 totalSupply);
 
 }
 

@@ -1,27 +1,24 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { console2 as console } from "../modules/forge-std/src/Test.sol";
-
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
 contract InflationModule {
 
     uint256 constant public HUNDRED_PERCENT = 1e6;
-    uint256 constant public SCALE           = 1e18;
     uint256 constant public PERIOD          = 365 days; 
 
     address public immutable globals;
     address public immutable token;
 
-    uint256 public supply;
-    uint128 public rate; // Yearly rate, in basis points. 1e6 = 100%
+    uint128 public rate;         // Yearly rate, in basis points. 1e6 = 100%
     uint40  public periodStart;
     uint40  public lastUpdated;
+    uint256 public supply;
 
-    constructor(address _token, address _globals, uint128 rate_) {
-        token   = _token;
-        globals = _globals;
+    constructor(address token_, address globals_, uint128 rate_) {
+        token   = token_;
+        globals = globals_;
 
         rate = rate_;
     }
@@ -56,6 +53,11 @@ contract InflationModule {
         // Mint
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount);
     }
+
+
+    /**************************************************************************************************************************************/
+    /*** Internal Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
 
     function _dueTokensAt(uint256 timestamp) internal view returns (uint256 amount_, uint256 newSupply_, uint256 newPeriodStart_) {
         // Save variables to stack
@@ -107,7 +109,7 @@ contract InflationModule {
     }
 
     function _interestFor(uint256 interval_, uint256 supply_, uint256 rate_) internal pure returns (uint256 amount) {
-        amount = (supply_ * rate_ * interval_ * SCALE) / (PERIOD * SCALE * HUNDRED_PERCENT);
+        amount = (supply_ * rate_ * interval_ ) / (PERIOD * HUNDRED_PERCENT);
     }
 
 }
