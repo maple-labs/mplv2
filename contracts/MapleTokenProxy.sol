@@ -33,9 +33,23 @@ contract MapleTokenProxy is NonTransparentProxy {
     /**************************************************************************************************************************************/
 
     function setImplementation(address newImplementation_) override external {
-        // TODO: Check globals for scheduled call
-        require(msg.sender == _admin(), "NTP:SI:NOT_ADMIN");
+        IGlobalsLike globals_ = IGlobalsLike(globals());
+        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+
+        require(msg.sender == _admin(), "MTP:SI:NOT_ADMIN");
+        require(isScheduledCall_,       "MTP:SI:NOT_SCHEDULED");
+
+        globals_.unscheduleCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+
         _setAddress(IMPLEMENTATION_SLOT, newImplementation_);
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Utility Functions                                                                                                              ***/
+    /**************************************************************************************************************************************/
+
+    function globals() private view returns (address globals_) {
+        globals_ = _getAddress(GLOBALS_SLOT);
     }
 
 }

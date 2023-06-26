@@ -27,6 +27,7 @@ contract MapleTokenTestsBase is TestBase {
 
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
+        globals.__setIsValidScheduledCall(true);
 
         implementation = address(new MapleToken());
         initializer    = address(new MapleTokenInitializer());
@@ -40,12 +41,28 @@ contract MapleTokenTestsBase is TestBase {
 contract SetImplementationTests is MapleTokenTestsBase {
 
     function test_setImplementation_notAdmin() external {
-        vm.expectRevert("NTP:SI:NOT_ADMIN");
+        vm.expectRevert("MTP:SI:NOT_ADMIN");
+        MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
+    }
+
+    function test_setImplementation_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.prank(governor);
+        vm.expectRevert("MTP:SI:NOT_SCHEDULED");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
     }
 
     function test_setImplementation_success() external {
         address newImplementation = address(new MapleToken());
+
+        globals.__expectCall();
+        globals.unscheduleCall(
+            governor,
+            address(token),
+            bytes32("MTP:SET_IMPLEMENTATION"),
+            abi.encodeWithSelector(MapleTokenProxy(tokenAddress).setImplementation.selector, newImplementation)
+        );
 
         vm.prank(governor);
         MapleTokenProxy(tokenAddress).setImplementation(newImplementation);
@@ -62,6 +79,14 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         token.addModule(address(0x1), true, false);
     }
 
+    function test_addModule_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.prank(governor);
+        vm.expectRevert("MT:NOT_SCHEDULED");
+        token.addModule(address(0x1), true, false);
+    }
+
     function test_addModule_invalidModule() external {
         vm.prank(governor);
         vm.expectRevert("MT:AM:INVALID_MODULE");
@@ -69,6 +94,14 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
     }
 
     function test_addModule_success() external {
+        globals.__expectCall();
+        globals.unscheduleCall(
+            governor,
+            address(token),
+            bytes32("MT:ADD_MODULE"),
+            abi.encodeWithSelector(token.addModule.selector, address(0x1), true, false)
+        );
+
         vm.prank(governor);
         token.addModule(address(0x1), true, false);
 
@@ -81,9 +114,25 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         token.removeModule(address(0x1));
     }
 
+    function test_removeModule_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.prank(governor);
+        vm.expectRevert("MT:NOT_SCHEDULED");
+        token.removeModule(address(0x1));
+    }
+
     function test_removeModule_success() external {
         vm.prank(governor);
         token.addModule(address(0x1), true, true);
+
+        globals.__expectCall();
+        globals.unscheduleCall(
+            governor,
+            address(token),
+            bytes32("MT:REMOVE_MODULE"),
+            abi.encodeWithSelector(token.removeModule.selector, address(0x1))
+        );
 
         vm.prank(governor);
         token.removeModule(address(0x1));
