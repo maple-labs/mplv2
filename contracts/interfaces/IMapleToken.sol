@@ -7,19 +7,19 @@ import { INonTransparentProxied } from "../../modules/ntp/contracts/interfaces/I
 interface IMapleToken is IERC20, INonTransparentProxied {
 
     /**
-     *  @dev    Adds a new module to the MapleToken.
-     *  @param module The address the module to add.
-     *  @param burner Whether or not the module can burn tokens.
-     *  @param minter Whether or not the module can mint tokens.
+     *  @dev   Adds a new module to the MapleToken.
+     *  @param module  The address the module to add.
+     *  @param canBurn Whether or not the module can burn tokens.
+     *  @param canMint Whether or not the module can mint tokens.
      */    
-    function addModule(address module, bool burner, bool minter) external;
+    function addModule(address module, bool canBurn, bool canMint) external;
 
     /**
-     *  @dev    Burns a specified amount of tokens from the an account.
-     *  @param from_ The address to burn tokens from.
-     *  @param amount_ The amount of tokens to burn.
+     *  @dev   Burns a specified amount of tokens from the an account.
+     *  @param from   The address to burn tokens from.
+     *  @param amount The amount of tokens to burn.
      */
-    function burn(address from_, uint256 amount_) external;
+    function burn(address from, uint256 amount) external;
 
     /**
      *  @dev    Returns the address of the Maple Globals contract.
@@ -43,10 +43,10 @@ interface IMapleToken is IERC20, INonTransparentProxied {
 
     /**
      *  @dev   Mints a specified amount of tokens to an account.
-     *  @param to_ The address to mint tokens to.
-     *  @param amount_ The amount of tokens to mint.
+     *  @param to     The address to mint tokens to.
+     *  @param amount The amount of tokens to mint.
      */
-    function mint(address to_, uint256 amount_) external;
+    function mint(address to, uint256 amount) external;
 
     /**
      *  @dev   Removes a module from the MapleToken.
