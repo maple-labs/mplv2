@@ -8,3 +8,9 @@ interface IGlobalsLike {
     function mapleTreasury() external view returns (address mapleTreasury);
 
 }
+
+interface IMapleTokenInitializerLike {
+
+    function initialize(address migrator, address treasury) external;
+
+}

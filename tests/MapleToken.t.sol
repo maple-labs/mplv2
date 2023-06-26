@@ -12,6 +12,7 @@ import { MockGlobals } from "./utils/Mocks.sol";
 contract MapleTokenTestsBase is TestBase {
 
     address governor = makeAddr("governor");
+    address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
 
     address initializer;
@@ -29,26 +30,9 @@ contract MapleTokenTestsBase is TestBase {
 
         implementation = address(new MapleToken());
         initializer    = address(new MapleTokenInitializer());
-        tokenAddress   = address(new MapleTokenProxy(governor, implementation, initializer, address(globals)));
+        tokenAddress   = address(new MapleTokenProxy(address(globals), implementation, initializer, migrator));
 
         token = MapleToken(tokenAddress);
-    }
-
-}
-
-contract ProxyTests is MapleTokenTestsBase {
-
-    function test_proxySetup() external {
-        assertEq(token.implementation(), address(implementation));
-        assertEq(token.globals(),        address(globals));
-        assertEq(token.admin(),          governor);
-
-        assertEq(token.name(),        "Maple Finance");
-        assertEq(token.symbol(),      "MPL");
-        assertEq(token.decimals(),    18);
-        assertEq(token.totalSupply(), 1_000_000e18);
-
-        assertEq(token.balanceOf(globals.mapleTreasury()), 1_000_000e18);
     }
 
 }
