@@ -25,3 +25,9 @@ interface IGlobalsLike {
     function unscheduleCall(address caller, address target, bytes32 functionId, bytes calldata callData) external;
 
 }
+
+interface IMapleTokenInitializerLike {
+
+    function initialize(address migrator, address treasury) external;
+
+}
