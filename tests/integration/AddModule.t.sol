@@ -15,6 +15,7 @@ contract AddModuleIntegrationTests is TestBase {
 
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
+    address migrator = makeAddr("migrator"); 
     address module   = makeAddr("module");
 
     uint256 start;
@@ -24,7 +25,7 @@ contract AddModuleIntegrationTests is TestBase {
 
     function setUp() public virtual {
         globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
-        token   = IMapleToken(address(new MapleTokenProxy(governor, address(new MapleToken()), address(new MapleTokenInitializer()), address(globals))));
+        token   = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
 
         vm.prank(governor);
         globals.setTimelockWindow(address(token), "MT:ADD_MODULE", 7 days, 2 days);
