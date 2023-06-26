@@ -55,7 +55,7 @@ contract MockGlobals is Spied {
         isValidScheduledCall_ = isScheduled;
     }
 
-    function unscheduleCall(address, address, bytes32, bytes calldata) external spied { }
+    function unscheduleCall(address, bytes32, bytes calldata) external spied { }
 
 }
 

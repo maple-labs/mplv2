@@ -24,7 +24,7 @@ interface IGlobalsLike {
 
     function mapleTreasury() external view returns (address mapleTreasury);
 
-    function unscheduleCall(address caller, address target, bytes32 functionId, bytes calldata callData) external;
+    function unscheduleCall(address caller, bytes32 functionId, bytes calldata callData) external;
 
 }
 

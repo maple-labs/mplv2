@@ -26,7 +26,7 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
         require(isScheduledCall_, "MT:NOT_SCHEDULED");
 
-        globals_.unscheduleCall(msg.sender, address(this), functionId_, msg.data);
+        globals_.unscheduleCall(msg.sender, functionId_, msg.data);
 
         _;
     }
