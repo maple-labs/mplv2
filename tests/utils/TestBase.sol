@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { Test } from "../../modules/forge-std/src/Test.sol";
+import { console2 as console, Test } from "../../modules/forge-std/src/Test.sol";
 
 // TODO: Check if this can be removed and `Test` inherited directly.
 contract TestBase is Test {
