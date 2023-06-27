@@ -6,23 +6,20 @@ import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 contract IssuanceModule {
 
     struct Schedule {
-        uint256 issuanceRate;
-        uint256 startingTime;
+        uint256 issuanceRate;    // Defines the rate at which tokens will be issued (can be zero to stop issuance).
+        uint256 nextScheduleId;  // Issuance takes effect from the starting time of the schedule up until the next one (if it exists).
+        uint256 startingTime;    // Defines when token issuance begins and at which rate tokens will be issued.
     }
 
-    // Precision of the issuance rate.
-    uint256 constant PRECISION = 1e30;
+    uint256 constant PRECISION = 1e30;  // Precision of the issuance rate.
 
-    address globals;
-    address token;
+    address globals;  // Address of the MapleGlobals contract.
+    address token;    // Address of the MapleToken contract.
 
-    // Indicates the first schedule to process during the next issuance.
-    uint256 lastIssued;
+    uint256 lastIssued;      // Stores the timestamp when tokens were last issued.
+    uint256 lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
 
-    // Defines when issuance schedules begin and at which rate tokens will be issued during the schedule.
-    // Issuance rates take effect from the start of the schedule up until the next one (or indefinitely if it's the last schedule).
-    // TODO: Should be an implementation of a linked list to allow for updates of any pending schedule (not only the last one).
-    Schedule[] schedules;
+    mapping(uint256 => Schedule) schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -33,30 +30,47 @@ contract IssuanceModule {
     constructor(address globals_, address token_) {
         globals = globals_;
         token   = token_;
-
-        // Specifies that no tokens should be issued.
-        schedules.push(Schedule(0, 0));
     }
 
-    // Schedules issuance of tokens after a specific timestamp is reached.
-    // Issuance can only be scheduled from the current timestamp or some time in the future (can't issue tokens retroactively).
-    // Can be used to delete the schedule by setting the issuance rate to zero.
-    // This could be called on a yearly basis to "compound" the issuance rate or update it through some governance process.
+    /**************************************************************************************************************************************/
+    /*** External Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
+
+    // Issuance can only be scheduled from the current time or some time in the future (can't issue tokens retroactively).
+    // This could be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
+    // Can also be used to delete the schedule by setting the issuance rate to zero.
     function schedule(uint256 startingTime_, uint256 issuanceRate_) external onlyGovernor {
-        require(startingTime_ >= block.timestamp, "IM:S:OUTDATED");
+        require(block.timestamp <= startingTime_, "IM:S:OUTDATED");
 
         // TODO: Find the point in the linked list when the schedule should be inserted.
         // TODO: Update the issuance rate if the schedule already exists, or delete it if the issuance rate is zero.
     }
 
-    function issue() external {
-        uint256 tokensToIssue_ = 0;
+    // Issues tokens from the time of the last issuance up until the current time.
+    // The tokens are issued separately for each schedule according to their issuance rates.
+    function issue() external returns (uint256 tokensIssued_) {
+        uint256 currentScheduleId_ = lastScheduleId;
+        uint256 lastIssued_        = lastIssued;
 
-        // TODO: Start from the timestamp of the last issuance and calculate how many tokens to mint up until the current timestamp.
+        while (true) {
+            Schedule memory currentSchedule_ = schedules[currentScheduleId_];
+            Schedule memory nextSchedule_    = schedules[currentSchedule_.nextScheduleId];
 
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), tokensToIssue_);
+            bool isScheduleActive = currentSchedule_.nextScheduleId == 0 ? true : block.timestamp < nextSchedule_.startingTime;
+            uint256 issuanceInterval_ = (isScheduleActive ? block.timestamp : nextSchedule_.startingTime) - lastIssued_;
 
-        lastIssued = block.timestamp;
+            tokensIssued_ += currentSchedule_.issuanceRate * issuanceInterval_ / PRECISION;
+
+            if (isScheduleActive) break;
+
+            currentScheduleId_ = currentSchedule_.nextScheduleId;
+            lastIssued_        = nextSchedule_.startingTime;
+        }
+
+        lastScheduleId = currentScheduleId_;
+        lastIssued     = block.timestamp;
+
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), tokensIssued_);
     }
 
 }
