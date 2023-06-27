@@ -6,7 +6,7 @@ import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 contract InflationModule {
 
     uint256 constant public HUNDRED_PERCENT = 1e6;
-    uint256 constant public PERIOD          = 365 days;
+    uint256 constant public PERIOD          = 365 days; 
 
     address public immutable globals;
     address public immutable token;
@@ -65,7 +65,7 @@ contract InflationModule {
         newPeriodStart_ = periodStart;
 
         if (timestamp < lastUpdated) return (amount_, newSupply_, newPeriodStart_);
-
+        
         uint256 rate_        = rate;
         uint256 periodEnd_   = periodStart + PERIOD;
         uint256 lastUpdated_ = lastUpdated;
@@ -76,15 +76,15 @@ contract InflationModule {
             amount_      = _interestFor(periodEnd_ - lastUpdated_, newSupply_, rate_);
             lastUpdated_ = periodEnd_;
 
-            // Since at least full period has passed, the new supply is snapshotted and compounded.
-            // Won't be precisely at the end of period, so there will be some amount of time where the supply is not updated, but that's fine.
+            // Since at least full period has passed, the new supply is snapshotted and compounded. 
+            // Won't be precisely at the end of period, so there will be some amount of time where the supply is not updated, but that's fine. 
             //  Adding `amount_` because tokens haven't been minted yet.
             newSupply_ = IERC20Like(token).totalSupply() + amount_;
 
             // Get the amounts of full periods that have passed. On most situations, this will be 0.
             // There's no way to snapshot the supply at the end of each period, so the last known supply is used.
             uint256 fullPeriods_ = (timestamp - lastUpdated_) / PERIOD;
-            uint256 period_      = fullPeriods_;
+            uint256 period_      = fullPeriods_; 
 
             // There is a more optimized version of this, using the compound interest formula, but realistically this code should never
             // run, therefore a simpler version is used, to avoid using a scaled exponentiation function.
@@ -103,7 +103,7 @@ contract InflationModule {
             lastUpdated_    = newPeriodStart_;
         }
 
-        // This will handle both the case where the lastUpdates is within the same period and that the interval from
+        // This will handle both the case where the lastUpdates is within the same period and that the interval from 
         // the new periodStart to the timestamp.
         amount_ += _interestFor(timestamp - lastUpdated_, newSupply_, rate_);
     }
