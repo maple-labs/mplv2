@@ -1,27 +1,24 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { console2 as console } from "../modules/forge-std/src/Test.sol";
-
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
 contract InflationModule {
 
     uint256 constant public HUNDRED_PERCENT = 1e6;
-    uint256 constant public SCALE           = 1e18;
-    uint256 constant public PERIOD          = 365 days; 
+    uint256 constant public PERIOD          = 365 days;
 
     address public immutable globals;
     address public immutable token;
 
-    uint256 public supply;
-    uint128 public rate; // Yearly rate, in basis points. 1e6 = 100%
+    uint128 public rate;         // Yearly rate, in basis points. 1e6 = 100%
     uint40  public periodStart;
     uint40  public lastUpdated;
+    uint256 public supply;
 
-    constructor(address _token, address _globals, uint128 rate_) {
-        token   = _token;
-        globals = _globals;
+    constructor(address token_, address globals_, uint128 rate_) {
+        token   = token_;
+        globals = globals_;
 
         rate = rate_;
     }
@@ -57,13 +54,18 @@ contract InflationModule {
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount);
     }
 
+
+    /**************************************************************************************************************************************/
+    /*** Internal Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
+
     function _dueTokensAt(uint256 timestamp) internal view returns (uint256 amount_, uint256 newSupply_, uint256 newPeriodStart_) {
         // Save variables to stack
         newSupply_      = supply;
         newPeriodStart_ = periodStart;
 
         if (timestamp < lastUpdated) return (amount_, newSupply_, newPeriodStart_);
-        
+
         uint256 rate_        = rate;
         uint256 periodEnd_   = periodStart + PERIOD;
         uint256 lastUpdated_ = lastUpdated;
@@ -74,15 +76,15 @@ contract InflationModule {
             amount_      = _interestFor(periodEnd_ - lastUpdated_, newSupply_, rate_);
             lastUpdated_ = periodEnd_;
 
-            // Since at least full period has passed, the new supply is snapshotted and compounded. 
-            // Won't be precisely at the end of period, so there will be some amount of time where the supply is not updated, but that's fine. 
+            // Since at least full period has passed, the new supply is snapshotted and compounded.
+            // Won't be precisely at the end of period, so there will be some amount of time where the supply is not updated, but that's fine.
             //  Adding `amount_` because tokens haven't been minted yet.
             newSupply_ = IERC20Like(token).totalSupply() + amount_;
 
             // Get the amounts of full periods that have passed. On most situations, this will be 0.
             // There's no way to snapshot the supply at the end of each period, so the last known supply is used.
             uint256 fullPeriods_ = (timestamp - lastUpdated_) / PERIOD;
-            uint256 period_      = fullPeriods_; 
+            uint256 period_      = fullPeriods_;
 
             // There is a more optimized version of this, using the compound interest formula, but realistically this code should never
             // run, therefore a simpler version is used, to avoid using a scaled exponentiation function.
@@ -101,13 +103,13 @@ contract InflationModule {
             lastUpdated_    = newPeriodStart_;
         }
 
-        // This will handle both the case where the lastUpdates is within the same period and that the interval from 
+        // This will handle both the case where the lastUpdates is within the same period and that the interval from
         // the new periodStart to the timestamp.
         amount_ += _interestFor(timestamp - lastUpdated_, newSupply_, rate_);
     }
 
     function _interestFor(uint256 interval_, uint256 supply_, uint256 rate_) internal pure returns (uint256 amount) {
-        amount = (supply_ * rate_ * interval_ * SCALE) / (PERIOD * SCALE * HUNDRED_PERCENT);
+        amount = (supply_ * rate_ * interval_ ) / (PERIOD * HUNDRED_PERCENT);
     }
 
 }
