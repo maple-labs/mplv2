@@ -10,3 +10,6 @@
 [submodule "modules/forge-std"]
 	path = modules/forge-std
 	url = git@github.com:foundry-rs/forge-std.git
+[submodule "modules/migrator"]
+	path = modules/migrator
+	url = git@github.com:maple-labs/mpl-migration.git
