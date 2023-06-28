@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { TestBase } from "./utils/TestBase.sol";
 
-import { InflationModule } from "../contracts/InflationModule.sol";
+import { InflationModule } from "../contracts/InflationModuleV2.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 
