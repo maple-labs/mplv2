@@ -12,6 +12,7 @@ contract InflationModule {
 
     // TODO: Add struct optimization?
     // TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
+    // TODO: Could also include the schedule id (redundantly) since everything except the issuance rate can fit into one slot.
     struct Schedule {
         uint256 startingTime;    // Defines when token issuance begins and at which rate tokens will be issued.
         uint256 nextScheduleId;  // Issuance takes effect from the starting time of the schedule up until the next one (if it exists).
@@ -27,7 +28,7 @@ contract InflationModule {
     uint256 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
     uint256 public scheduleCount;   // Stores the number of schedules created so far.
 
-    // TODO: Look into if linked list optimizations are needed: not adding schedules if issuance rate is same, removing duplicates, etc.
+    // TODO: If needed, optimize linked list operations: merging schedules with same issuance rates.
     mapping(uint256 => Schedule) public schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
@@ -82,6 +83,7 @@ contract InflationModule {
     // Issues tokens from the time of the last issuance up until the current time.
     // The tokens are issued separately for each schedule according to their issuance rates.
     // TODO: Should this function be publicly available or permissioned?
+    // TODO: Should we pass in a timestamp parameter so only tokens up to that point are issued?
     function issue() external returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
         ( tokensIssued_, lastScheduleId_ ) = issuableAt(block.timestamp);
 
@@ -97,39 +99,42 @@ contract InflationModule {
     // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows.
     // TODO: Should setting the issuance rate delete the schedule entirely?
     // TODO: Should we automatically call `issue()` whenever we add a new schedule?
+    // TODO: Should scheduling the same issuance rate as the previous one cause the schedules to be merged instead?
     function schedule(uint256 startingTime_, uint256 issuanceRate_) external onlyGovernor {
         require(startingTime_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
-        bool updateSchedule_;
-        bool createSchedule_;
+        ( uint256 scheduleId_, Schedule memory schedule_ ) = _findInsertionPoint(startingTime_);
 
-        uint256 scheduleId_;
-
-        Schedule memory schedule_;
-
-        while (!updateSchedule_ && !createSchedule_) {
-            scheduleId_ = schedule_.nextScheduleId;
-            schedule_   = schedules[scheduleId_];
-
-            updateSchedule_ = startingTime_ == schedule_.startingTime;
-            createSchedule_ = schedule_.nextScheduleId == 0 || startingTime_ < schedules[schedule_.nextScheduleId].startingTime;
-        }
-
-        // Just update the issuance rate if the schedule already exists.
-        if (updateSchedule_) {
+        // If the schedule already exists then replace it.
+        if (startingTime_ == schedule_.startingTime) {
             schedules[scheduleId_].issuanceRate = issuanceRate_;
         }
 
-        // If there is no next schedule or the new one begins before the next one, add a new schedule.
+        // Otherwise create a new schedule and insert it afterwards.
         else {
-            uint256 newScheduleId_ = scheduleCount++;
+            uint256 newScheduleId_ = schedules[scheduleId_].nextScheduleId = scheduleCount++;
+            schedules[newScheduleId_] = Schedule(startingTime_, schedule_.nextScheduleId, issuanceRate_);
+        }
+    }
 
-            schedules[scheduleId_].nextScheduleId = newScheduleId_;
-            schedules[newScheduleId_] = Schedule({
-                startingTime:   startingTime_,
-                issuanceRate:   issuanceRate_,
-                nextScheduleId: schedule_.nextScheduleId == 0 ? 0 : schedule_.nextScheduleId
-            });
+    /**************************************************************************************************************************************/
+    /*** Internal Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
+
+    // Searches schedules from start to end to find where the new schedule should be inserted.
+    function _findInsertionPoint(uint256 startingTime_) internal view returns (uint256 scheduleId_, Schedule memory schedule_) {
+        schedule_ = schedules[scheduleId_];
+
+        while (true) {
+            Schedule memory nextSchedule_ = schedules[schedule_.nextScheduleId];
+
+            bool foundExistingSchedule  = schedule_.startingTime == startingTime_;
+            bool foundPrecedingSchedule = schedule_.nextScheduleId == 0 || startingTime_ < nextSchedule_.startingTime;
+
+            if (foundExistingSchedule || foundPrecedingSchedule) break;
+
+            scheduleId_ = schedule_.nextScheduleId;
+            schedule_   = nextSchedule_;
         }
     }
 

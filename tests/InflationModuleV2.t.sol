@@ -134,7 +134,7 @@ contract ScheduleTests is InflationModuleTestBase {
         module.schedule(start + 10 days, 1e30);
     }
 
-    function test_schedule_firstSchedule_success() external {
+    function test_schedule_firstSchedule() external {
         module.schedule(start, 1e30);
 
         assertSchedule(0, 0,     1, 0);
@@ -143,13 +143,24 @@ contract ScheduleTests is InflationModuleTestBase {
         assertEq(module.scheduleCount(), 2);
     }
 
-    function test_schedule_twoSchedules_success() external {
+    function test_schedule_twoSchedules_ascending() external {
         module.schedule(start + 10 days,  1e30);
         module.schedule(start + 175 days, 1.1e30);
 
         assertSchedule(0, 0,                1, 0);
         assertSchedule(1, start + 10 days,  2, 1e30);
         assertSchedule(2, start + 175 days, 0, 1.1e30);
+
+        assertEq(module.scheduleCount(), 3);
+    }
+
+    function test_schedule_twoSchedules_descending() external {
+        module.schedule(start + 65 days, 1.1e30);
+        module.schedule(start + 15 days, 1e30);
+
+        assertSchedule(0, 0,               2, 0);
+        assertSchedule(1, start + 65 days, 0, 1.1e30);
+        assertSchedule(2, start + 15 days, 1, 1e30);
 
         assertEq(module.scheduleCount(), 3);
     }
