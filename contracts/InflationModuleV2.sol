@@ -19,10 +19,11 @@ contract InflationModule {
         uint256 issuanceRate;    // Defines the rate at which tokens will be issued (can be zero to stop issuance).
     }
 
+    // TODO: Consider enforcing the issuance rate to always be a multiplier of the smallest unit of MPL to prevent all rounding errors.
     uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
 
-    address public globals;  // Address of the MapleGlobals contract.
-    address public token;    // Address of the MapleToken contract.
+    address public immutable globals;  // Address of the MapleGlobals contract.
+    address public immutable token;    // Address of the MapleToken contract.
 
     uint256 public lastIssued;      // Stores the timestamp when tokens were last issued.
     uint256 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
@@ -42,10 +43,8 @@ contract InflationModule {
         globals = globals_;
         token   = token_;
 
-        // The first schedule is the one at index 0, and all of it's values are zero.
-        // TODO: Should the starting time of the first schedule be `0` or `block.timestamp`?
         // TODO: Should the schedules the first schedule have an index of `0` or `1`?
-        scheduleCount = 1;
+        // TODO: Should we explicitly create the first default non-issuing schedule? And would it be from `0` or `block.timestamp`?
     }
 
     /**************************************************************************************************************************************/
@@ -53,6 +52,7 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
+    // TODO: Should the function parameters be `from` and `to` timestamps instead?
     function issuableAt(uint256 timestamp_) public view returns (uint256 issuableAmount_, uint256 lastScheduleId_) {
         uint256 lastIssued_ = lastIssued;
         lastScheduleId_     = lastScheduleId;
@@ -84,7 +84,7 @@ contract InflationModule {
     // The tokens are issued separately for each schedule according to their issuance rates.
     // TODO: Should this function be publicly available or permissioned?
     // TODO: Should we pass in a timestamp parameter so only tokens up to that point are issued?
-    function issue() external returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
+    function issue() external onlyGovernor returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
         ( tokensIssued_, lastScheduleId_ ) = issuableAt(block.timestamp);
 
         lastIssued     = block.timestamp;
@@ -97,9 +97,8 @@ contract InflationModule {
     // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
     // Can also be used to delete the schedule by setting the issuance rate to zero.
     // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows.
-    // TODO: Should setting the issuance rate delete the schedule entirely?
     // TODO: Should we automatically call `issue()` whenever we add a new schedule?
-    // TODO: Should scheduling the same issuance rate as the previous one cause the schedules to be merged instead?
+    // TODO: Should scheduling the same issuance rate as all adjacent schedules cause all of the schedules to be merged into one?
     function schedule(uint256 startingTime_, uint256 issuanceRate_) external onlyGovernor {
         require(startingTime_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
@@ -112,7 +111,7 @@ contract InflationModule {
 
         // Otherwise create a new schedule and insert it afterwards.
         else {
-            uint256 newScheduleId_ = schedules[scheduleId_].nextScheduleId = scheduleCount++;
+            uint256 newScheduleId_ = schedules[scheduleId_].nextScheduleId = ++scheduleCount;
             schedules[newScheduleId_] = Schedule(startingTime_, schedule_.nextScheduleId, issuanceRate_);
         }
     }
