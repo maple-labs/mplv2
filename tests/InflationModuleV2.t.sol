@@ -14,7 +14,7 @@ contract InflationModuleTestBase is TestBase {
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
 
-    uint256 start = block.timestamp;
+    uint32 start = uint32(block.timestamp);
 
     MockGlobals     globals;
     MockToken       token;
@@ -33,11 +33,17 @@ contract InflationModuleTestBase is TestBase {
         vm.warp(start);
     }
 
-    function assertSchedule(uint256 scheduleId, uint256 startingTime, uint256 nextScheduleId, uint256 issuanceRate) internal {
-        ( uint256 startingTime_, uint256 nextScheduleId_, uint256 issuanceRate_ ) = module.schedules(scheduleId);
+    function assertSchedule(uint16 scheduleId, uint16 nextScheduleId, uint32 issuanceStart, uint256 issuanceRate) internal {
+        (
+            uint16 scheduleId_,
+            uint16 nextScheduleId_,
+            uint32 issuanceStart_,
+            uint256 issuanceRate_
+        ) = module.schedules(scheduleId);
 
-        assertEq(startingTime_,   startingTime,   "startingTime");
+        assertEq(scheduleId_,     scheduleId,     "scheduleId");
         assertEq(nextScheduleId_, nextScheduleId, "nextScheduleId");
+        assertEq(issuanceStart_,  issuanceStart,  "startingTime");
         assertEq(issuanceRate_,   issuanceRate,   "issuanceRate");
     }
 
@@ -53,7 +59,7 @@ contract ConstructorTests is InflationModuleTestBase {
 
         assertEq(module.lastIssued(),     0);
         assertEq(module.lastScheduleId(), 0);
-        assertEq(module.scheduleCount(),  0);
+        assertEq(module.scheduleCount(),  1);
 
         assertSchedule(0, 0, 0, 0);
     }
@@ -116,7 +122,7 @@ contract IssueTests is InflationModuleTestBase {
 
         assertEq(module.lastIssued(),     start);
         assertEq(module.lastScheduleId(), 0);
-        assertEq(module.scheduleCount(),  0);
+        assertEq(module.scheduleCount(),  1);
     }
 
     function test_issue_afterInitialization() external {
@@ -125,7 +131,7 @@ contract IssueTests is InflationModuleTestBase {
 
         assertEq(module.lastIssued(),     start + 150 seconds);
         assertEq(module.lastScheduleId(), 0);
-        assertEq(module.scheduleCount(),  0);
+        assertEq(module.scheduleCount(),  1);
     }
 
     function test_issue_beforeSchedule() external {
@@ -136,10 +142,10 @@ contract IssueTests is InflationModuleTestBase {
 
         assertEq(module.lastIssued(),     start + 80 days);
         assertEq(module.lastScheduleId(), 0);
-        assertEq(module.scheduleCount(),  1);
+        assertEq(module.scheduleCount(),  2);
 
-        assertSchedule(0, 0,                1, 0);
-        assertSchedule(1, start + 100 days, 0, 1e30);
+        assertSchedule(0, 1, 0,                0);
+        assertSchedule(1, 0, start + 100 days, 1e30);
     }
 
 }
@@ -172,32 +178,32 @@ contract ScheduleTests is InflationModuleTestBase {
     function test_schedule_firstSchedule() external {
         module.schedule(start, 1e30);
 
-        assertEq(module.scheduleCount(), 1);
+        assertEq(module.scheduleCount(), 2);
 
-        assertSchedule(0, 0,     1, 0);
-        assertSchedule(1, start, 0, 1e30);
+        assertSchedule(0, 1, 0,     0);
+        assertSchedule(1, 0, start, 1e30);
     }
 
     function test_schedule_twoSchedules_ascending() external {
         module.schedule(start + 10 days,  1e30);
         module.schedule(start + 175 days, 1.1e30);
 
-        assertEq(module.scheduleCount(), 2);
+        assertEq(module.scheduleCount(), 3);
 
-        assertSchedule(0, 0,                1, 0);
-        assertSchedule(1, start + 10 days,  2, 1e30);
-        assertSchedule(2, start + 175 days, 0, 1.1e30);
+        assertSchedule(0, 1, 0,                0);
+        assertSchedule(1, 2, start + 10 days,  1e30);
+        assertSchedule(2, 0, start + 175 days, 1.1e30);
     }
 
     function test_schedule_twoSchedules_descending() external {
         module.schedule(start + 65 days, 1.1e30);
         module.schedule(start + 15 days, 1e30);
 
-        assertEq(module.scheduleCount(), 2);
+        assertEq(module.scheduleCount(), 3);
 
-        assertSchedule(0, 0,               2, 0);
-        assertSchedule(1, start + 65 days, 0, 1.1e30);
-        assertSchedule(2, start + 15 days, 1, 1e30);
+        assertSchedule(0, 2, 0,               0);
+        assertSchedule(1, 0, start + 65 days, 1.1e30);
+        assertSchedule(2, 1, start + 15 days, 1e30);
     }
 
     function test_schedule_threeSchedules_withInsert() external {
@@ -205,26 +211,25 @@ contract ScheduleTests is InflationModuleTestBase {
         module.schedule(start + 100 days, 1.1e30);
         module.schedule(start + 75 days,  1.05e30);
 
-        assertEq(module.scheduleCount(), 3);
+        assertEq(module.scheduleCount(), 4);
 
-        assertSchedule(0, 0,                1, 0);
-        assertSchedule(1, start + 50 days,  3, 1e30);
-        assertSchedule(2, start + 100 days, 0, 1.1e30);
-        assertSchedule(3, start + 75 days,  2, 1.05e30);
+        assertSchedule(0, 1, 0,                0);
+        assertSchedule(1, 3, start + 50 days,  1e30);
+        assertSchedule(2, 0, start + 100 days, 1.1e30);
+        assertSchedule(3, 2, start + 75 days,  1.05e30);
     }
 
     function test_schedule_threeSchedules_withInsertAndUpdate() external {
-        module.schedule(start + 50 days,  1e30);
+        module.schedule(start + 50 days,  1.05e30);
         module.schedule(start + 100 days, 1.1e30);
-        module.schedule(start + 75 days,  1.05e30);
-        module.schedule(start + 50 days,  0.98e30);
+        module.schedule(start + 45 days,  1e30);
 
-        assertEq(module.scheduleCount(), 3);
+        assertEq(module.scheduleCount(), 4);
 
-        assertSchedule(0, 0,                1, 0);
-        assertSchedule(1, start + 50 days,  3, 0.98e30);
-        assertSchedule(2, start + 100 days, 0, 1.1e30);
-        assertSchedule(3, start + 75 days,  2, 1.05e30);
+        assertSchedule(0, 3, 0,                0);
+        assertSchedule(1, 2, start + 50 days,  1.05e30);
+        assertSchedule(2, 0, start + 100 days, 1.1e30);
+        assertSchedule(3, 1, start + 45 days,  1e30);
     }
 
 }

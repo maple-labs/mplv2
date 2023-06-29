@@ -11,11 +11,11 @@ import { console } from "../modules/forge-std/src/console.sol";
 contract InflationModule {
 
     // TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
-    // TODO: Could also include the schedule id (redundantly) since everything except the issuance rate can fit into one slot.
     struct Schedule {
-        uint256 startingTime;    // Defines when token issuance begins and at which rate tokens will be issued.
-        uint256 nextScheduleId;  // Issuance takes effect from the starting time of the schedule up until the next one (if it exists).
-        uint256 issuanceRate;    // Defines the rate at which tokens will be issued (can be zero to stop issuance).
+        uint16  scheduleId;      // Identifier of the schedule (stored redundantly for convenience).
+        uint16  nextScheduleId;  // Identifier of the schedule that takes effect after this one (zero if there is none).
+        uint32  issuanceStart;   // Timestamp that defines when the schedule will start. It lasts until the start of the next schedule.
+        uint256 issuanceRate;    // Defines the rate at which tokens will be issued (zero indicates no issuance).
     }
 
     uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
@@ -23,11 +23,12 @@ contract InflationModule {
     address public immutable globals;  // Address of the MapleGlobals contract.
     address public immutable token;    // Address of the MapleToken contract.
 
-    uint256 public lastIssued;      // Stores the timestamp when tokens were last issued.
-    uint256 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
-    uint256 public scheduleCount;   // Stores the number of schedules created so far.
+    uint16 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
+    uint16 public scheduleCount;   // Stores the number of schedules created so far.
 
-    mapping(uint256 => Schedule) public schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
+    uint32 public lastIssued;  // Stores the timestamp when tokens were last issued.
+
+    mapping(uint16 => Schedule) public schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -40,8 +41,7 @@ contract InflationModule {
         globals = globals_;
         token   = token_;
 
-        // TODO: Should the schedules the first schedule have an index of `0` or `1`?
-        // TODO: Should we explicitly create the first default non-issuing schedule? And would it be from `0` or `block.timestamp`?
+        scheduleCount = 1;
     }
 
     /**************************************************************************************************************************************/
@@ -49,21 +49,21 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
-    function issuableAt(uint256 timestamp_) public view returns (uint256 issuableAmount_, uint256 lastScheduleId_) {
-        uint256 lastIssued_ = lastIssued;
-        lastScheduleId_     = lastScheduleId;
+    function issuableAt(uint32 issuanceTime_) public view returns (uint256 issuableAmount_, uint16 lastScheduleId_) {
+        uint32 lastIssued_ = lastIssued;
+        lastScheduleId_    = lastScheduleId;
 
-        require(timestamp_ >= lastIssued_, "IM:IA:OUT_OF_DATE");
+        require(issuanceTime_ >= lastIssued_, "IM:IA:OUT_OF_DATE");
 
         while (true) {
             Schedule memory currentSchedule_ = schedules[lastScheduleId_];
             Schedule memory nextSchedule_    = schedules[currentSchedule_.nextScheduleId];
 
             // Check if the current schedule is still active.
-            bool isScheduleActive = currentSchedule_.nextScheduleId == 0 ? true : timestamp_ < nextSchedule_.startingTime;
+            bool isScheduleActive = currentSchedule_.nextScheduleId == 0 ? true : issuanceTime_ < nextSchedule_.issuanceStart;
 
             // If it's still active vest up to the current time, otherwise vest only up to the start of the next schedule.
-            uint256 issuanceInterval_ = (isScheduleActive ? timestamp_ : nextSchedule_.startingTime) - lastIssued_;
+            uint256 issuanceInterval_ = (isScheduleActive ? issuanceTime_ : nextSchedule_.issuanceStart) - lastIssued_;
 
             issuableAmount_ += currentSchedule_.issuanceRate * issuanceInterval_ / PRECISION;
 
@@ -71,17 +71,17 @@ contract InflationModule {
             if (isScheduleActive) break;
 
             // Otherwise repeat the entire process for the next schedule.
-            lastIssued_     = nextSchedule_.startingTime;
+            lastIssued_     = nextSchedule_.issuanceStart;
             lastScheduleId_ = currentSchedule_.nextScheduleId;
         }
     }
 
     // Issues tokens from the time of the last issuance up until the current time.
     // The tokens are issued separately for each schedule according to their issuance rates.
-    function issue() external returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
-        ( tokensIssued_, lastScheduleId_ ) = issuableAt(block.timestamp);
+    function issue() external returns (uint256 tokensIssued_, uint16 lastScheduleId_) {
+        ( tokensIssued_, lastScheduleId_ ) = issuableAt(uint32(block.timestamp));
 
-        lastIssued     = block.timestamp;
+        lastIssued     = uint32(block.timestamp);
         lastScheduleId = lastScheduleId_;
 
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), tokensIssued_);
@@ -91,20 +91,20 @@ contract InflationModule {
     // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
     // Can also be used to delete the schedule by setting the issuance rate to zero.
     // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows. ACL `issue()` or max IR?
-    function schedule(uint256 startingTime_, uint256 issuanceRate_) external onlyGovernor {
-        require(startingTime_ >= block.timestamp, "IM:S:OUT_OF_DATE");
+    function schedule(uint32 issuanceStart_, uint256 issuanceRate_) external onlyGovernor {
+        require(issuanceStart_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
-        ( uint256 scheduleId_, Schedule memory schedule_ ) = _findInsertionPoint(startingTime_);
+        ( Schedule memory schedule_ ) = _findInsertionPoint(issuanceStart_);
 
         // If the schedule already exists then replace it.
-        if (startingTime_ == schedule_.startingTime) {
-            schedules[scheduleId_].issuanceRate = issuanceRate_;
+        if (issuanceStart_ == schedule_.issuanceStart) {
+            schedules[schedule_.scheduleId].issuanceRate = issuanceRate_;
         }
 
-        // Otherwise create a new schedule and insert it afterwards.
+        // Otherwise create a new schedule and insert it.
         else {
-            uint256 newScheduleId_ = schedules[scheduleId_].nextScheduleId = ++scheduleCount;
-            schedules[newScheduleId_] = Schedule(startingTime_, schedule_.nextScheduleId, issuanceRate_);
+            uint16 newScheduleId_ = schedules[schedule_.scheduleId].nextScheduleId = scheduleCount++;
+            schedules[newScheduleId_] = Schedule(newScheduleId_, schedule_.nextScheduleId, issuanceStart_, issuanceRate_);
         }
     }
 
@@ -113,19 +113,15 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // Searches schedules from start to end to find where the new schedule should be inserted.
-    function _findInsertionPoint(uint256 startingTime_) internal view returns (uint256 scheduleId_, Schedule memory schedule_) {
-        schedule_ = schedules[scheduleId_];
+    function _findInsertionPoint(uint256 issuanceStart_) internal view returns (Schedule memory schedule_) {
+        schedule_ = schedules[0];
 
         while (true) {
             Schedule memory nextSchedule_ = schedules[schedule_.nextScheduleId];
 
-            bool foundExistingSchedule  = schedule_.startingTime == startingTime_;
-            bool foundPrecedingSchedule = schedule_.nextScheduleId == 0 || startingTime_ < nextSchedule_.startingTime;
+            if (schedule_.nextScheduleId == 0 || issuanceStart_ <= nextSchedule_.issuanceStart) break;
 
-            if (foundExistingSchedule || foundPrecedingSchedule) break;
-
-            scheduleId_ = schedule_.nextScheduleId;
-            schedule_   = nextSchedule_;
+            schedule_ = nextSchedule_;
         }
     }
 
