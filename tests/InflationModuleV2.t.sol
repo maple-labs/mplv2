@@ -104,11 +104,12 @@ contract IssuableAtTests is InflationModuleTestBase {
 
 contract IssueTests is InflationModuleTestBase {
 
-    function test_issue_notGovernor() external {
-        vm.stopPrank();
-        vm.expectRevert("IM:NOT_GOVERNOR");
-        module.issue();
-    }
+    // TODO: Decide if function should be permissioned.
+    // function test_issue_notGovernor() external {
+    //     vm.stopPrank();
+    //     vm.expectRevert("IM:NOT_GOVERNOR");
+    //     module.issue();
+    // }
 
     function test_issue_duringInitialization() external {
         module.issue();

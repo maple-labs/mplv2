@@ -10,7 +10,6 @@ import { console } from "../modules/forge-std/src/console.sol";
 
 contract InflationModule {
 
-    // TODO: Add struct optimization?
     // TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
     // TODO: Could also include the schedule id (redundantly) since everything except the issuance rate can fit into one slot.
     struct Schedule {
@@ -19,7 +18,6 @@ contract InflationModule {
         uint256 issuanceRate;    // Defines the rate at which tokens will be issued (can be zero to stop issuance).
     }
 
-    // TODO: Consider enforcing the issuance rate to always be a multiplier of the smallest unit of MPL to prevent all rounding errors.
     uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
 
     address public immutable globals;  // Address of the MapleGlobals contract.
@@ -29,7 +27,6 @@ contract InflationModule {
     uint256 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
     uint256 public scheduleCount;   // Stores the number of schedules created so far.
 
-    // TODO: If needed, optimize linked list operations: merging schedules with same issuance rates.
     mapping(uint256 => Schedule) public schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
@@ -52,7 +49,6 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
-    // TODO: Should the function parameters be `from` and `to` timestamps instead?
     function issuableAt(uint256 timestamp_) public view returns (uint256 issuableAmount_, uint256 lastScheduleId_) {
         uint256 lastIssued_ = lastIssued;
         lastScheduleId_     = lastScheduleId;
@@ -82,9 +78,7 @@ contract InflationModule {
 
     // Issues tokens from the time of the last issuance up until the current time.
     // The tokens are issued separately for each schedule according to their issuance rates.
-    // TODO: Should this function be publicly available or permissioned?
-    // TODO: Should we pass in a timestamp parameter so only tokens up to that point are issued?
-    function issue() external onlyGovernor returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
+    function issue() external returns (uint256 tokensIssued_, uint256 lastScheduleId_) {
         ( tokensIssued_, lastScheduleId_ ) = issuableAt(block.timestamp);
 
         lastIssued     = block.timestamp;
@@ -96,9 +90,7 @@ contract InflationModule {
     // Sets a new schedule some time in the future (can't schedule retroactively).
     // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
     // Can also be used to delete the schedule by setting the issuance rate to zero.
-    // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows.
-    // TODO: Should we automatically call `issue()` whenever we add a new schedule?
-    // TODO: Should scheduling the same issuance rate as all adjacent schedules cause all of the schedules to be merged into one?
+    // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows. ACL `issue()` or max IR?
     function schedule(uint256 startingTime_, uint256 issuanceRate_) external onlyGovernor {
         require(startingTime_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
