@@ -166,5 +166,4 @@ contract MigratorIntegrationTest is TestBase {
         assertEq(token.balanceOf(address(migrator)), OLD_SUPPLY - amount_);
     }
 
-
 }
