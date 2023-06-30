@@ -4,8 +4,9 @@ pragma solidity 0.8.18;
 import { NonTransparentProxy } from "../modules/ntp/contracts/NonTransparentProxy.sol";
 
 import { IMapleTokenInitializerLike, IGlobalsLike } from "./interfaces/Interfaces.sol";
+import { IMapleTokenProxy, INonTransparentProxy }   from "./interfaces/IMapleTokenProxy.sol";
 
-contract MapleTokenProxy is NonTransparentProxy {
+contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
 
@@ -32,7 +33,7 @@ contract MapleTokenProxy is NonTransparentProxy {
     /*** Overridden Functions                                                                                                           ***/
     /**************************************************************************************************************************************/
 
-    function setImplementation(address newImplementation_) override external {
+    function setImplementation(address newImplementation_) override(IMapleTokenProxy, NonTransparentProxy) external {
         IGlobalsLike globals_ = IGlobalsLike(globals());
         bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
 
@@ -42,6 +43,8 @@ contract MapleTokenProxy is NonTransparentProxy {
         globals_.unscheduleCall(msg.sender, "MTP:SET_IMPLEMENTATION", msg.data);
 
         _setAddress(IMPLEMENTATION_SLOT, newImplementation_);
+
+        emit ImplementationSet(newImplementation_);
     }
 
     /**************************************************************************************************************************************/

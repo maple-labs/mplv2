@@ -6,6 +6,28 @@ import { INonTransparentProxied } from "../../modules/ntp/contracts/interfaces/I
 
 interface IMapleToken is IERC20, INonTransparentProxied {
 
+    /**************************************************************************************************************************************/
+    /*** Events                                                                                                                         ***/
+    /**************************************************************************************************************************************/
+
+    /**
+     *  @dev   A new was added to the MapleToken.
+     *  @param module  The address the module added.
+     *  @param canBurn Whether or not the module can burn tokens.
+     *  @param canMint Whether or not the module can mint tokens.
+     */ 
+    event ModuleAdded(address indexed module, bool canBurn, bool canMint);
+
+    /**
+     *  @dev   A module was removed from the MapleToken.
+     *  @param module  The address the module removed.
+     */
+    event ModuleRemoved(address indexed module);
+
+    /**************************************************************************************************************************************/
+    /*** Functions                                                                                                                      ***/
+    /**************************************************************************************************************************************/
+
     /**
      *  @dev   Adds a new module to the MapleToken.
      *  @param module  The address the module to add.
