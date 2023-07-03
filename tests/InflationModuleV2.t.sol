@@ -14,6 +14,10 @@ contract InflationModuleTestBase is TestBase {
 
     uint32 start = uint32(block.timestamp);
 
+    uint32[] windowStarts;
+
+    uint208[] issuanceRates;
+
     MockGlobals globals;
     MockToken   token;
 
@@ -45,6 +49,7 @@ contract InflationModuleTestBase is TestBase {
     }
 
 }
+
 contract ConstructorTests is InflationModuleTestBase {
 
     function test_inflationModule_constructor() external {
@@ -62,146 +67,164 @@ contract ConstructorTests is InflationModuleTestBase {
     }
 }
 
-// contract IssuableAtTests is InflationModuleTestBase {
-//     function test_issuableAt_outOfDate() external {
-//         // TODO
-//     }
-//     function test_issuableAt_nothingIssued() external {
-//         // TODO
-//     }
-//     function test_issuableAt_oneSchedule_fromStart_oneDayAhead() external {
-//         // TODO
-//     }
-//     function test_issuableAt_oneSchedule_fromStart_toCurrentTime() external {
-//         // TODO
-//     }
-//     function test_issuableAt_oneSchedule_afterIssuance_oneDayHead() external {
-//         // TODO
-//     }
-//     function test_issuableAt_oneSchedule_afterIssuance_toCurrentTime() external {
-//         // TODO
-//     }
-//     function test_issuableAt_twoSchedules_fromStart_beforeFirstSchedule() external {
-//         // TODO
-//     }
-//     function test_issuableAt_twoSchedules_fromStart_beforeSecondSchedule() external {
-//         // TODO
-//     }
-//     function test_issuableAt_twoSchedules_fromStart_afterSecondSchedule() external {
-//         // TODO
-//     }
-// }
-// contract IssueTests is InflationModuleTestBase {
-//     // TODO: Decide if function should be permissioned.
-//     // function test_issue_notGovernor() external {
-//     //     vm.stopPrank();
-//     //     vm.expectRevert("IM:NOT_GOVERNOR");
-//     //     module.issue();
-//     // }
-//     function test_issue_duringInitialization() external {
-//         module.issue();
+contract ClaimTests is InflationModuleTestBase {
 
-//         assertEq(module.lastIssued(),     start);
-//         assertEq(module.lastScheduleId(), 0);
-//         assertEq(module.scheduleCount(),  1);
-//     }
+    // TODO
 
-//     function test_issue_afterInitialization() external {
-//         vm.warp(start + 150 seconds);
-//         module.issue();
+}
 
-//         assertEq(module.lastIssued(),     start + 150 seconds);
-//         assertEq(module.lastScheduleId(), 0);
-//         assertEq(module.scheduleCount(),  1);
-//     }
+contract Claimable is InflationModuleTestBase {
 
-//     function test_issue_beforeSchedule() external {
-//         module.schedule(start + 100 days, 1e30);
-//         vm.warp(start + 80 days);
-//         module.issue();
+    // TODO
 
-//         assertEq(module.lastIssued(),     start + 80 days);
-//         assertEq(module.lastScheduleId(), 0);
-//         assertEq(module.scheduleCount(),  2);
+}
 
-//         assertSchedule(0, 1, 0,                0);
-//         assertSchedule(1, 0, start + 100 days, 1e30);
-//     }
+contract ScheduleTests is InflationModuleTestBase {
 
-// }
-// contract ScheduleTests is InflationModuleTestBase {
-//     function test_schedule_notGovernor() external {
-//         vm.stopPrank();
-//         vm.expectRevert("IM:NOT_GOVERNOR");
-//         module.schedule(start, 1e30);
-//     }
-//     function test_schedule_firstSchedule_outOfDate() external {
-//         vm.expectRevert("IM:S:OUT_OF_DATE");
-//         module.schedule(start - 1 seconds, 1e30);
-//         module.schedule(start, 1e30);
-//     }
-//     function test_schedule_secondSchedule_outOfDate() external {
-//         module.schedule(start, 1e30);
-//         vm.warp(start + 10 days);
-//         vm.expectRevert("IM:S:OUT_OF_DATE");
-//         module.schedule(start + 10 days - 1 seconds, 1e30);
-//         module.schedule(start + 10 days, 1e30);
-//     }
-//     function test_schedule_firstSchedule() external {
-//         module.schedule(start, 1e30);
+    function test_schedule_notGovernor() external {
+        vm.stopPrank();
+        vm.expectRevert("IM:NOT_GOVERNOR");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//         assertEq(module.scheduleCount(), 2);
+    function test_schedule_noArrays() external {
+        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//         assertSchedule(0, 1, 0,     0);
-//         assertSchedule(1, 0, start, 1e30);
-//     }
+    function test_schedule_noWindowStarts() external {
+        issuanceRates.push(1e30);
 
-//     function test_schedule_twoSchedules_ascending() external {
-//         module.schedule(start + 10 days,  1e30);
-//         module.schedule(start + 175 days, 1.1e30);
+        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//         assertEq(module.scheduleCount(), 3);
+    function test_schedule_noIssuanceRates() external {
+        windowStarts.push(start);
 
-//         assertSchedule(0, 1, 0,                0);
-//         assertSchedule(1, 2, start + 10 days,  1e30);
-//         assertSchedule(2, 0, start + 175 days, 1.1e30);
-//     }
+        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//     function test_schedule_twoSchedules_descending() external {
-//         module.schedule(start + 65 days, 1.1e30);
-//         module.schedule(start + 15 days, 1e30);
+    function test_schedule_lengthMismatch() external {
+        windowStarts.push(start);
+        windowStarts.push(start + 10 days);
 
-//         assertEq(module.scheduleCount(), 3);
+        issuanceRates.push(1e30);
 
-//         assertSchedule(0, 2, 0,               0);
-//         assertSchedule(1, 0, start + 65 days, 1.1e30);
-//         assertSchedule(2, 1, start + 15 days, 1e30);
-//     }
+        vm.expectRevert("IM:VW:LENGTH_MISMATCH");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//     function test_schedule_threeSchedules_withInsert() external {
-//         module.schedule(start + 50 days,  1e30);
-//         module.schedule(start + 100 days, 1.1e30);
-//         module.schedule(start + 75 days,  1.05e30);
+    function test_schedule_outOfDate() external {
+        windowStarts.push(start - 1 seconds);
+        issuanceRates.push(1e30);
 
-//         assertEq(module.scheduleCount(), 4);
+        vm.expectRevert("IM:VW:OUT_OF_DATE");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//         assertSchedule(0, 1, 0,                0);
-//         assertSchedule(1, 3, start + 50 days,  1e30);
-//         assertSchedule(2, 0, start + 100 days, 1.1e30);
-//         assertSchedule(3, 2, start + 75 days,  1.05e30);
-//     }
+    function test_schedule_outOfOrder() external {
+        windowStarts.push(start + 100 days);
+        windowStarts.push(start + 10 days);
 
-//     function test_schedule_threeSchedules_withInsertAndUpdate() external {
-//         module.schedule(start + 50 days,  1.05e30);
-//         module.schedule(start + 100 days, 1.1e30);
-//         module.schedule(start + 45 days,  1e30);
+        issuanceRates.push(1e30);
+        issuanceRates.push(0.9e30);
 
-//         assertEq(module.scheduleCount(), 4);
+        vm.expectRevert("IM:VW:OUT_OF_ORDER");
+        module.schedule(windowStarts, issuanceRates);
+    }
 
-//         assertSchedule(0, 3, 0,                0);
-//         assertSchedule(1, 2, start + 50 days,  1.05e30);
-//         assertSchedule(2, 0, start + 100 days, 1.1e30);
-//         assertSchedule(3, 1, start + 45 days,  1e30);
-//     }
+    function test_schedule_outOfBounds() external {
+        windowStarts.push(start + 10 days);
+        issuanceRates.push(1e30 + 1);
 
-// }
+        vm.expectRevert("IM:VW:OUT_OF_BOUNDS");
+        module.schedule(windowStarts, issuanceRates);
+    }
+
+    function test_schedule_basic() external {
+        windowStarts.push(start + 10 days);
+        issuanceRates.push(0.9e30);
+
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 2);
+
+        assertWindow(0, 1, 0,               0);
+        assertWindow(1, 0, start + 10 days, 0.9e30);
+    }
+
+    function test_schedule_simultaneously() external {
+        windowStarts.push(start + 10 days);
+        windowStarts.push(start + 100 days);
+
+        issuanceRates.push(0.9e30);
+        issuanceRates.push(0.95e30);
+
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 3);
+
+        assertWindow(0, 1, 0,                0);
+        assertWindow(1, 2, start + 10 days,  0.9e30);
+        assertWindow(2, 0, start + 100 days, 0.95e30);
+    }
+
+    function test_schedule_sequentially() external {
+        windowStarts.push(start + 10 days);
+        issuanceRates.push(0.9e30);
+
+        module.schedule(windowStarts, issuanceRates);
+
+        windowStarts[0] = start + 100 days;
+        issuanceRates[0] = 0.95e30;
+
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 3);
+
+        assertWindow(0, 1, 0,                0);
+        assertWindow(1, 2, start + 10 days,  0.9e30);
+        assertWindow(2, 0, start + 100 days, 0.95e30);
+    }
+
+    function test_schedule_sequentiallyWithWarp() external {
+        windowStarts.push(start + 10 days);
+        issuanceRates.push(0.9e30);
+
+        vm.warp(start + 5 days);
+        module.schedule(windowStarts, issuanceRates);
+
+        windowStarts[0] = start + 100 days;
+        issuanceRates[0] = 0.95e30;
+
+        vm.warp(start + 95 days);
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 3);
+
+        assertWindow(0, 1, 0,                0);
+        assertWindow(1, 2, start + 10 days,  0.9e30);
+        assertWindow(2, 0, start + 100 days, 0.95e30);
+    }
+
+    function test_schedule_replacement() external {
+        // TODO
+    }
+
+    function test_schedule_insertion() external {
+        // TODO
+    }
+
+    function test_schedule_all() external {
+        // TODO
+    }
+
+}
+
+contract SetMaximumIssuanceRateTests is InflationModuleTestBase {
+
+    // TODO
+
+}

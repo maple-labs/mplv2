@@ -39,7 +39,7 @@ contract InflationModule {
         token   = token_;
 
         windowCounter = 1;
-        maximumIssuanceRate = 1e30;
+        maximumIssuanceRate = PRECISION;
     }
 
     /**************************************************************************************************************************************/
@@ -90,14 +90,15 @@ contract InflationModule {
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor {
         _validateWindows(windowStarts_, issuanceRates_);
 
-        // Find the point at which to insert the new windows.
+        // Find at which point in the linked list to insert the new windows.
         uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
-        uint16 newWindowId_       = insertionWindowId_ + 1;
-        uint16 newWindowCount_    = uint16(windowStarts_.length);
+        uint16 newWindowId_       = windowCounter;
 
         windows[insertionWindowId_].nextWindowId = newWindowId_;
 
         // Create all the new windows and link them up to each other.
+        uint16 newWindowCount_ = uint16(windowStarts_.length);
+
         for (uint16 index_; index_ < newWindowCount_; index_++) {
             windows[newWindowId_ + index_] = Window({
                 nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + index_ + 1 : 0,
