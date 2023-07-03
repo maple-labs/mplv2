@@ -21,7 +21,7 @@ contract TestBase is Test {
     }
 
     function deployMockERC20() internal returns (address mockERC20) {
-        return deployCode("MockERC20.sol", abi.encode("MOCK","MOCK",18));
+        return deployCode("MockERC20.sol", abi.encode("MOCK", "MOCK", 18));
     }
 
 }

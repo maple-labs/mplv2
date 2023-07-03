@@ -10,8 +10,8 @@ import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { TestBase }      from "../utils/TestBase.sol";
 import { IGlobalsLike }  from "../utils/Interfaces.sol";
+import { TestBase }      from "../utils/TestBase.sol";
 
 contract MigratorIntegrationTest is TestBase {
 
@@ -40,7 +40,7 @@ contract MigratorIntegrationTest is TestBase {
     }
 
     function deployMigrator(address oldToken_, address newToken_) internal returns (address migratorAddress_) {
-        address deployedAddress =  deployCode("Migrator.sol", abi.encode(oldToken_, newToken_));
+        address deployedAddress = deployCode("Migrator.sol", abi.encode(oldToken_, newToken_));
         migratorAddress_ = migratorAddress;
 
         // Using etch to always get a deterministic address for the migrator
@@ -55,7 +55,7 @@ contract MigratorIntegrationTest is TestBase {
     }
 
     function test_migration_success() external {
-        oldToken.mint(address(this), 10_000_000e18); // Simulate the full supply
+        oldToken.mint(address(this), OLD_SUPPLY); // Simulate the full supply
         oldToken.approve(address(migrator), OLD_SUPPLY - 1);
 
         vm.expectRevert("M:M:TRANSFER_FROM_FAILED");
@@ -82,19 +82,19 @@ contract MigratorIntegrationTest is TestBase {
 
         assertEq(oldToken.allowance(address(this), address(migrator)), amount_);
 
-        assertEq(oldToken.balanceOf(address(this)),      amount_);
+        assertEq(oldToken.balanceOf(address(this)),     amount_);
         assertEq(oldToken.balanceOf(address(migrator)), 0);
-        assertEq(token.balanceOf(address(this)),      0);
-        assertEq(token.balanceOf(address(migrator)), OLD_SUPPLY);
+        assertEq(token.balanceOf(address(this)),        0);
+        assertEq(token.balanceOf(address(migrator)),    OLD_SUPPLY);
 
         migrator.migrate(amount_);
 
         assertEq(oldToken.allowance(address(this), address(migrator)), 0);
 
-        assertEq(oldToken.balanceOf(address(this)),      0);
+        assertEq(oldToken.balanceOf(address(this)),     0);
         assertEq(oldToken.balanceOf(address(migrator)), amount_);
-        assertEq(token.balanceOf(address(this)),      amount_);
-        assertEq(token.balanceOf(address(migrator)), OLD_SUPPLY - amount_);
+        assertEq(token.balanceOf(address(this)),        amount_);
+        assertEq(token.balanceOf(address(migrator)),    OLD_SUPPLY - amount_);
     }
 
     function testFuzz_migration_specifiedOwner(uint256 amount_) external {
@@ -147,10 +147,10 @@ contract MigratorIntegrationTest is TestBase {
 
         assertEq(oldToken.allowance(address(this), address(migrator)), 0);
 
-        assertEq(oldToken.balanceOf(address(this)),      amount_ - partialAmount_);
-        assertEq(oldToken.balanceOf(address(migrator)),  partialAmount_);
-        assertEq(token.balanceOf(address(this)),         partialAmount_);
-        assertEq(token.balanceOf(address(migrator)),     OLD_SUPPLY - partialAmount_);
+        assertEq(oldToken.balanceOf(address(this)),     amount_ - partialAmount_);
+        assertEq(oldToken.balanceOf(address(migrator)), partialAmount_);
+        assertEq(token.balanceOf(address(this)),        partialAmount_);
+        assertEq(token.balanceOf(address(migrator)),    OLD_SUPPLY - partialAmount_);
 
         uint256 remaining = amount_ - partialAmount_;
 
@@ -160,10 +160,10 @@ contract MigratorIntegrationTest is TestBase {
 
         assertEq(oldToken.allowance(address(this), address(migrator)), 0);
 
-        assertEq(oldToken.balanceOf(address(this)),      0);
+        assertEq(oldToken.balanceOf(address(this)),     0);
         assertEq(oldToken.balanceOf(address(migrator)), amount_);
-        assertEq(token.balanceOf(address(this)),      amount_);
-        assertEq(token.balanceOf(address(migrator)), OLD_SUPPLY - amount_);
+        assertEq(token.balanceOf(address(this)),        amount_);
+        assertEq(token.balanceOf(address(migrator)),    OLD_SUPPLY - amount_);
     }
 
 }
