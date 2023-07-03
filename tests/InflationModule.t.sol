@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { TestBase } from "./utils/TestBase.sol";
 
-import { InflationModule } from "../contracts/InflationModuleV2.sol";
+import { InflationModule } from "../contracts/InflationModule.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 
@@ -212,7 +212,7 @@ contract ClaimTests is InflationModuleTestBase {
     }
 
     function test_claim_afterReschedule() external {
-
+        // TODO
     }
 
 }

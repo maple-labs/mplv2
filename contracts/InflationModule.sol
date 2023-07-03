@@ -3,8 +3,6 @@ pragma solidity 0.8.18;
 
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
-import { console } from "../modules/forge-std/src/console.sol";
-
 // TODO: Add interface (with struct), events, NatSpec.
 // TODO: Add invariant for all windows being in strictly increasing order.
 
