@@ -16,9 +16,11 @@ contract InflationModuleTestBase is TestBase {
 
     uint32 start = uint32(block.timestamp);
 
-    MockGlobals     globals;
-    MockToken       token;
-    InflationModule module;
+    MockGlobals globals;
+    MockToken   token;
+
+    InflationModule          module;
+    InflationModule.Window[] schedule;
 
     function setUp() public virtual {
         globals = new MockGlobals();
@@ -58,7 +60,11 @@ contract ConstructorTests is InflationModuleTestBase {
 
 }
 
-contract MintableTests is InflationModuleTestBase { }
+contract MintableTests is InflationModuleTestBase {
+
+    // TODO
+
+}
 
 contract MintTests is InflationModuleTestBase {
 
@@ -96,31 +102,74 @@ contract MintTests is InflationModuleTestBase {
 contract ScheduleTests is InflationModuleTestBase {
 
     function test_schedule_notGovernor() external {
-        // TODO
+        vm.stopPrank();
+        vm.expectRevert("IM:NOT_GOVERNOR");
+        module.schedule(schedule);
     }
 
     function test_schedule_noWindows() external {
-        // TODO
+        vm.expectRevert("IM:VW:NO_WINDOWS");
+        module.schedule(schedule);
     }
 
     function test_schedule_outOfDate() external {
-        // TODO
+        schedule.push(InflationModule.Window(start - 1 seconds, 1e30));
+
+        vm.expectRevert("IM:VW:OUT_OF_DATE");
+        module.schedule(schedule);
+
+        schedule[0] = InflationModule.Window(start, 1e30);
+
+        module.schedule(schedule);
     }
 
     function test_schedule_outOfOrder() external {
-        // TODO
+        schedule.push(InflationModule.Window(start, 1e30));
+        schedule.push(InflationModule.Window(start, 1.1e30));
+
+        vm.expectRevert("IM:VW:OUT_OF_ORDER");
+        module.schedule(schedule);
+
+        schedule[1] = InflationModule.Window(start + 1 seconds, 1e30);
+
+        module.schedule(schedule);
     }
 
     function test_schedule_basic() external {
-        // TODO
+        schedule.push(InflationModule.Window(start + 10 days, 1e30));
+
+        module.schedule(schedule);
+
+        assertEq(module.windowCount(), 1);
+
+        assertWindow(0, start + 10 days, 1e30);
     }
 
     function test_schedule_simultaneously() external {
-        // TODO
+        schedule.push(InflationModule.Window(start + 10 days, 1e30));
+        schedule.push(InflationModule.Window(start + 90 days, 1.1e30));
+
+        module.schedule(schedule);
+
+        assertEq(module.windowCount(), 2);
+
+        assertWindow(0, start + 10 days, 1e30);
+        assertWindow(1, start + 90 days, 1.1e30);
     }
 
     function test_schedule_sequentially() external {
-        // TODO
+        schedule.push(InflationModule.Window(start + 10 days, 1e30));
+
+        module.schedule(schedule);
+
+        schedule[0] = InflationModule.Window(start + 90 days, 1.1e30);
+
+        module.schedule(schedule);
+
+        assertEq(module.windowCount(), 2);
+
+        assertWindow(0, start + 10 days, 1e30);
+        assertWindow(1, start + 90 days, 1.1e30);
     }
 
     function test_schedule_sequentially_withWarp() external {

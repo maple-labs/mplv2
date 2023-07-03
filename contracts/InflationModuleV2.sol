@@ -27,7 +27,7 @@ contract InflationModule {
 
     uint32 public lastMinted;  // Timestamp of the last time tokens were issued.
 
-    Window[] public windows;  // Windows that define the inflation schedule.
+    Window[] public windows;  // Windows of time and their associated issuance rates that define the inflation schedule.
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -44,6 +44,7 @@ contract InflationModule {
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
+    // Calculates how many tokens have been or will be minted between the given timestamps.
     function mintable(uint32 from_, uint32 to_) public view returns (uint256 amount_) {
         uint256 windowsLength_ = windows.length;
 
@@ -94,9 +95,6 @@ contract InflationModule {
         overlap_ = _max(0, _min(windowEnd_, to_) - _max(windowStart_, from_));
     }
 
-    // 0 - 1 - A - 3 - 4 - B - 6 - 7 - 8
-    // 0 - 1 - 2 - 3 - C - 5 - D - 7 - 8
-
     function _findWindow(uint32 issuanceStart_, uint256 windowsLength_) internal view returns (uint256 windowId_) {
         for (; windowId_ < windowsLength_; windowId_++)
             if (issuanceStart_ <= windows[windowId_].start) break;
@@ -111,12 +109,17 @@ contract InflationModule {
     }
 
     function _updateSchedule(uint256 startingWindowId_, uint256 oldWindowsLength_, Window[] memory newWindows_) internal {
-        for (uint256 offset_; offset_ < newWindows_.length; offset_++)
-            windows[startingWindowId_ + offset_] = newWindows_[offset_];
-
         uint256 newWindowsLength_ = startingWindowId_ + newWindows_.length;
 
-        if (newWindowsLength_ > oldWindowsLength_) return;
+        for (uint256 offset_; offset_ < newWindows_.length; offset_++) {
+            uint256 windowId_     = startingWindowId_ + offset_;
+            Window memory window_ = newWindows_[offset_];
+
+            if (windowId_ >= oldWindowsLength_) windows.push(window_);
+            else windows[windowId_] = window_;
+        }
+
+        if (newWindowsLength_ >= oldWindowsLength_) return;
 
         for (uint256 windowsToPop_ = oldWindowsLength_ - newWindowsLength_; windowsToPop_ > 0; windowsToPop_--)
             windows.pop();
@@ -127,7 +130,7 @@ contract InflationModule {
         require(windows_[0].start >= block.timestamp, "IM:VW:OUT_OF_DATE");
 
         for (uint256 index_ = 1; index_ < windows_.length; index_++)
-            require(windows[index_].start > windows[index_ - 1].start, "IM:VW:OUT_OF_ORDER");
+            require(windows_[index_].start > windows_[index_ - 1].start, "IM:VW:OUT_OF_ORDER");
     }
 
     function _vestTokens(uint256 rate_, uint256 interval_) internal pure returns (uint256 amount_) {
