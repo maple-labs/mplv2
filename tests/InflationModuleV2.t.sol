@@ -77,7 +77,7 @@ contract ClaimTests is InflationModuleTestBase {
 
 }
 
-contract Claimable is InflationModuleTestBase {
+contract ClaimableTests is InflationModuleTestBase {
 
     // TODO
 
@@ -281,14 +281,30 @@ contract ScheduleTests is InflationModuleTestBase {
         assertWindow(4, 0, start + 120 days, 0.99e18);
     }
 
-    function test_schedule_all() external {
-        // TODO
-    }
-
 }
 
 contract SetMaximumIssuanceRateTests is InflationModuleTestBase {
 
-    // TODO
+    function test_setMaximumIssuanceRate_notGovernor() external {
+        vm.stopPrank();
+        vm.expectRevert("IM:NOT_GOVERNOR");
+        module.setMaximumIssuanceRate(0.5e18);
+    }
+
+    function test_setMaximumIssuanceRate_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.expectRevert("IM:NOT_SCHEDULED");
+        module.setMaximumIssuanceRate(0.5e18);
+    }
+
+    function test_setMaximumIssuanceRate_success() external {
+        globals.__expectCall();
+        globals.unscheduleCall(governor, "IM:SMIR", abi.encodeWithSelector(module.setMaximumIssuanceRate.selector, 0.5e18));
+
+        module.setMaximumIssuanceRate(0.5e18);
+
+        assertEq(module.maximumIssuanceRate(), 0.5e18);
+    }
 
 }

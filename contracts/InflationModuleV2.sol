@@ -120,7 +120,7 @@ contract InflationModule {
     }
 
     // Sets a new limit to the maximum issuance rate allowed for any window.
-    function setMaximumIssuanceRate(uint192 maximumIssuanceRate_) external onlyGovernor {
+    function setMaximumIssuanceRate(uint192 maximumIssuanceRate_) external onlyGovernor onlyScheduled("IM:SMIR") {
         maximumIssuanceRate = maximumIssuanceRate_;
     }
 
