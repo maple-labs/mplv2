@@ -80,7 +80,7 @@ contract InflationModule {
             // End the minting here if the current window is still active.
             if (isWindowActive_) break;
 
-            // Otherwise repeat the entire process for the next window.
+            // Repeat the entire process for the next window.
             currentWindowId_ = currentWindow_.nextWindowId;
             lastClaimed_     = nextWindow_.windowStart;
         }
@@ -90,22 +90,23 @@ contract InflationModule {
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor {
         _validateWindows(windowStarts_, issuanceRates_);
 
-        // Link up the insertion window to the first new window.
-        uint16 windowId_    = _findInsertionPoint(windowStarts_[0]);
-        uint16 newWindowId_ = windowCounter;
+        // Find the point at which to insert the new windows.
+        uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
+        uint16 newWindowId_       = insertionWindowId_ + 1;
+        uint16 newWindowCount_    = uint16(windowStarts_.length);
 
-        windows[windowId_].nextWindowId = newWindowId_;
+        windows[insertionWindowId_].nextWindowId = newWindowId_;
 
         // Create all the new windows and link them up to each other.
-        for (uint16 index_; index_ < windowStarts_.length; index_++) {
+        for (uint16 index_; index_ < newWindowCount_; index_++) {
             windows[newWindowId_ + index_] = Window({
-                nextWindowId: index_ < windowStarts_.length - 1 ? newWindowId_ + index_ + 1 : 0,
+                nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + index_ + 1 : 0,
                 windowStart:  windowStarts_[index_],
                 issuanceRate: issuanceRates_[index_]
             });
         }
 
-        windowCounter += uint16(windowStarts_.length);
+        windowCounter += newWindowCount_;
     }
 
     // Sets a new limit to the maximum issuance rate allowed for any window.
@@ -119,17 +120,15 @@ contract InflationModule {
 
     // Search windows from start to end to find where the new window should be inserted.
     function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
-        Window memory window_ = windows[0];
+        Window memory currentWindow_ = windows[windowId_];
 
         while (true) {
-            if (window_.nextWindowId == 0) break;
+            Window memory nextWindow_ = windows[currentWindow_.nextWindowId];
 
-            Window memory nextWindow_ = windows[window_.nextWindowId];
+            if (currentWindow_.nextWindowId == 0 || windowStart_ <= currentWindow_.windowStart) break;
 
-            if (windowStart_ <= window_.windowStart) break;
-
-            windowId_ = window_.nextWindowId;
-            window_   = nextWindow_;
+            windowId_      = currentWindow_.nextWindowId;
+            currentWindow_ = nextWindow_;
         }
     }
 
