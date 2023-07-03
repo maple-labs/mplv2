@@ -135,7 +135,7 @@ contract InflationModule {
         while (true) {
             Window memory nextWindow_ = windows[currentWindow_.nextWindowId];
 
-            if (currentWindow_.nextWindowId == 0 || windowStart_ <= currentWindow_.windowStart) break;
+            if (currentWindow_.nextWindowId == 0 || windowStart_ <= nextWindow_.windowStart) break;
 
             windowId_      = currentWindow_.nextWindowId;
             currentWindow_ = nextWindow_;

@@ -255,7 +255,30 @@ contract ScheduleTests is InflationModuleTestBase {
     }
 
     function test_schedule_insert() external {
-        // TODO
+        windowStarts.push(start + 10 days);
+        windowStarts.push(start + 100 days);
+
+        issuanceRates.push(0.9e18);
+        issuanceRates.push(0.95e18);
+
+        expectUnscheduleCall();
+        module.schedule(windowStarts, issuanceRates);
+
+        windowStarts[0] = start + 50 days;
+        windowStarts[1] = start + 120 days;
+
+        issuanceRates[0] = 0.96e18;
+        issuanceRates[1] = 0.99e18;
+
+        expectUnscheduleCall();
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 5);
+
+        assertWindow(0, 1, 0,                0);
+        assertWindow(1, 3, start + 10 days,  0.9e18);
+        assertWindow(3, 4, start + 50 days,  0.96e18);
+        assertWindow(4, 0, start + 120 days, 0.99e18);
     }
 
     function test_schedule_all() external {
