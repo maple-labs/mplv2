@@ -1,6 +1,4 @@
-# Maple V2 Core
-
-TODO: Update CI workflows!
+# Maple V2 Token
 
 ![Foundry CI](https://github.com/maple-labs/mplv2/actions/workflows/forge.yaml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/maple-for-developers/protocol-overview)
@@ -12,7 +10,7 @@ TODO: Update CI workflows!
 
 ## Overview
 
-This repository brings together the core smart contracts of the MPL V2 and its modules.
+This repository contains the contracts and modules of the Maple V2 token.
 
 ## Submodules
 

@@ -3,113 +3,167 @@ pragma solidity 0.8.18;
 
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
+// TODO: Add interface (with struct), events, NatSpec.
+// TODO: Add invariant for all windows being in strictly increasing order.
+
 contract InflationModule {
 
-    uint256 constant public HUNDRED_PERCENT = 1e6;
-    uint256 constant public PERIOD          = 365 days; 
+    struct Window {
+        uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
+        uint32  windowStart;   // Timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
+        uint208 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
+    }
 
-    address public immutable globals;
-    address public immutable token;
+    address public immutable globals;  // Address of the `MapleGlobals` contract.
+    address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint128 public rate;         // Yearly rate, in basis points. 1e6 = 100%
-    uint40  public periodStart;
-    uint40  public lastUpdated;
-    uint256 public supply;
+    uint16 public windowCounter;  // Total number of new windows created so far.
 
-    constructor(address token_, address globals_, uint128 rate_) {
-        token   = token_;
+    uint32 public lastClaimed;  // Iimestamp of the last time tokens were claimed.
+
+    uint208 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
+
+    mapping(uint16 => Window) public windows;  // Maps identifiers to windows (effectively an implementation of a linked list).
+
+    modifier onlyGovernor {
+        require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
+
+        _;
+    }
+
+    modifier onlyScheduled(bytes32 functionId_) {
+        IGlobalsLike globals_ = IGlobalsLike(globals);
+        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
+
+        require(isScheduledCall_, "IM:NOT_SCHEDULED");
+
+        globals_.unscheduleCall(msg.sender, functionId_, msg.data);
+
+        _;
+    }
+
+    constructor(address globals_, address token_) {
         globals = globals_;
+        token   = token_;
 
-        rate = rate_;
+        windowCounter = 1;
+        maximumIssuanceRate = 1e18;
     }
 
-    function setRate(uint128 rate_) external {
-        // Timelock?
-        require(msg.sender == IGlobalsLike(globals).governor(), "IM:SR:NOT_GOVERNOR");
+    /**************************************************************************************************************************************/
+    /*** External Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
 
-        // If the period is ongoing, do a claim before changing the rate
-        if (periodStart != 0) claim();
+    // Claims tokens from the time of the last claim up until the current time.
+    function claim() external returns (uint256 mintableAmount_) {
+        ( mintableAmount_ ) = claimable(lastClaimed, uint32(block.timestamp));
 
-        rate = rate_;
+        lastClaimed = uint32(block.timestamp);
+
+        require(mintableAmount_ > 0, "IM:C:ZERO_MINT");
+
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), mintableAmount_);
     }
 
-    function start() external {
-        require(msg.sender == IGlobalsLike(globals).governor(), "IM:S:NOT_GOVERNOR");
+    // Calculates how many tokens can be claimed from the time of the last claim up until the specified time.
+    function claimable(uint32 from_, uint32 to_) public view returns (uint256 mintableAmount_) {
+        Window memory currentWindow_ = windows[0];
+        Window memory nextWindow_;
 
-        periodStart = uint40(block.timestamp);
-        lastUpdated = uint40(block.timestamp);
-        supply      = IERC20Like(token).totalSupply();
+        while (from_ < to_) {
+            bool isLastWindow_ = currentWindow_.nextWindowId == 0;
+
+            if (!isLastWindow_) {
+                nextWindow_ = windows[currentWindow_.nextWindowId];
+            }
+
+            uint32 windowEnd_ = !isLastWindow_ ? nextWindow_.windowStart : type(uint32).max;
+            uint32 interval_  = _overlapOf(currentWindow_.windowStart, windowEnd_, from_, to_);
+
+            mintableAmount_ += currentWindow_.issuanceRate * interval_;
+
+            if (isLastWindow_) break;
+
+            currentWindow_ = nextWindow_;
+        }
     }
 
-    function claim() public {
-        require(periodStart != 0, "IM:C:NOT_STARTED");
+    // Schedules new windows that define when tokens will be issued.
+    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
+        _validateWindows(windowStarts_, issuanceRates_);
 
-        ( uint256 amount, uint256 newSupply, uint256 newPeriodStart ) = _dueTokensAt(block.timestamp);
+        // Find at which point in the linked list to insert the new windows.
+        uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
+        uint16 newWindowId_       = windowCounter;
 
-        lastUpdated = uint40(block.timestamp);
-        periodStart = uint40(newPeriodStart);
-        supply      = newSupply;
+        windows[insertionWindowId_].nextWindowId = newWindowId_;
 
-        // Mint
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount);
+        // Create all the new windows and link them up to each other.
+        uint16 newWindowCount_ = uint16(windowStarts_.length);
+
+        for (uint16 index_; index_ < newWindowCount_; index_++) {
+            windows[newWindowId_ + index_] = Window({
+                nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + index_ + 1 : 0,
+                windowStart:  windowStarts_[index_],
+                issuanceRate: issuanceRates_[index_]
+            });
+        }
+
+        windowCounter += newWindowCount_;
     }
 
+    // Sets a new limit to the maximum issuance rate allowed for any window.
+    function setMaximumIssuanceRate(uint192 maximumIssuanceRate_) external onlyGovernor onlyScheduled("IM:SMIR") {
+        maximumIssuanceRate = maximumIssuanceRate_;
+    }
 
     /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function _dueTokensAt(uint256 timestamp) internal view returns (uint256 amount_, uint256 newSupply_, uint256 newPeriodStart_) {
-        // Save variables to stack
-        newSupply_      = supply;
-        newPeriodStart_ = periodStart;
+    // Search windows from start to end to find where the new window should be inserted.
+    function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
+        Window memory currentWindow_ = windows[windowId_];
 
-        if (timestamp < lastUpdated) return (amount_, newSupply_, newPeriodStart_);
-        
-        uint256 rate_        = rate;
-        uint256 periodEnd_   = periodStart + PERIOD;
-        uint256 lastUpdated_ = lastUpdated;
+        while (true) {
+            Window memory nextWindow_ = windows[currentWindow_.nextWindowId];
 
-        // If it's past the period end, there's a need to compound the supply
-        if (timestamp > periodEnd_) {
-            // First, get the amount from lastUpdated to when the period ended.
-            amount_      = _interestFor(periodEnd_ - lastUpdated_, newSupply_, rate_);
-            lastUpdated_ = periodEnd_;
+            if (currentWindow_.nextWindowId == 0 || windowStart_ <= nextWindow_.windowStart) break;
 
-            // Since at least full period has passed, the new supply is snapshotted and compounded. 
-            // Won't be precisely at the end of period, so there will be some amount of time where the supply is not updated, but that's fine. 
-            //  Adding `amount_` because tokens haven't been minted yet.
-            newSupply_ = IERC20Like(token).totalSupply() + amount_;
-
-            // Get the amounts of full periods that have passed. On most situations, this will be 0.
-            // There's no way to snapshot the supply at the end of each period, so the last known supply is used.
-            uint256 fullPeriods_ = (timestamp - lastUpdated_) / PERIOD;
-            uint256 period_      = fullPeriods_; 
-
-            // There is a more optimized version of this, using the compound interest formula, but realistically this code should never
-            // run, therefore a simpler version is used, to avoid using a scaled exponentiation function.
-            while (period_ > 0) {
-                // For every full period, the full interest is added to the amount, and the supply is compounded.
-                uint256 periodAmount = _interestFor(PERIOD, newSupply_, rate_);
-
-                amount_    += periodAmount;
-                newSupply_ += periodAmount;
-
-                period_--;
-            }
-
-            // Update the lastUpdated_ and newPeriodStart_ variables.
-            newPeriodStart_ = uint40(periodStart + ((fullPeriods_ + 1) * PERIOD));
-            lastUpdated_    = newPeriodStart_;
+            windowId_      = currentWindow_.nextWindowId;
+            currentWindow_ = nextWindow_;
         }
-
-        // This will handle both the case where the lastUpdates is within the same period and that the interval from 
-        // the new periodStart to the timestamp.
-        amount_ += _interestFor(timestamp - lastUpdated_, newSupply_, rate_);
     }
 
-    function _interestFor(uint256 interval_, uint256 supply_, uint256 rate_) internal pure returns (uint256 amount) {
-        amount = (supply_ * rate_ * interval_ ) / (PERIOD * HUNDRED_PERCENT);
+    function _max(uint32 a_, uint32 b_) internal pure returns (uint32 max_) {
+        max_ = a_ > b_ ? a_ : b_;
+    }
+
+    function _min(uint32 a_, uint32 b_) internal pure returns (uint32 min_) {
+        min_ = a_ < b_ ? a_ : b_;
+    }
+
+    function _overlapOf(uint32 a1_, uint32 b1_, uint32 a2_, uint32 b2_) internal pure returns (uint32 overlap_) {
+        uint32 start_ = _max(a1_, a2_);
+        uint32 end_   = _min(b1_, b2_);
+
+        overlap_ = end_ > start_ ? end_ - start_ : 0;
+    }
+
+    function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
+        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:VW:EMPTY_ARRAY");
+        require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
+        require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
+
+        for (uint256 index_ = 1; index_ < windowStarts_.length; index_++) {
+            require(windowStarts_[index_] > windowStarts_[index_ - 1], "IM:VW:OUT_OF_ORDER");
+        }
+
+        uint208 maximumIssuanceRate_ = maximumIssuanceRate;
+
+        for (uint256 index_; index_ < issuanceRates_.length; index_++) {
+            require(issuanceRates_[index_] <= maximumIssuanceRate_, "IM:VW:OUT_OF_BOUNDS");
+        }
     }
 
 }
