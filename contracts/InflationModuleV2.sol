@@ -3,32 +3,31 @@ pragma solidity 0.8.18;
 
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
-import { console } from "../modules/forge-std/src/console.sol";
-
 // TODO: Add interface (with struct?), events, NatSpec.
 // TODO: Define which state variables should be publicly exposed.
+// TODO: Check what issuance rate precision is good enough for MPL.
+// TODO: Check if precision should be a constructor parameter.
+// TODO: Huge IR could cause overflows. ACL `issue()` or set maximum IR?
+// TODO: Should the inflation module be a proxy instead? Probably not.
+// TODO: Check uint types and storage slot packing.
+// TODO: Optimize `mintable()` for less storage reads and don't always iterate through entire array.
+// TODO: Add invariant for all windows being in strictly increasing order.
 
 contract InflationModule {
 
-    // TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
-    struct Schedule {
-        uint16  scheduleId;      // Identifier of the schedule (stored redundantly for convenience).
-        uint16  nextScheduleId;  // Identifier of the schedule that takes effect after this one (zero if there is none).
-        uint32  issuanceStart;   // Timestamp that defines when the schedule will start. It lasts until the start of the next schedule.
-        uint256 issuanceRate;    // Defines the rate at which tokens will be issued (zero indicates no issuance).
+    struct Window {
+        uint32  start;         // Timestamp that defines when vesting starts. Vesting lasts until the next window (or forever).
+        uint224 issuanceRate;  // Rate at which tokens will be vested during the window (zero represents no vesting).
     }
 
     uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
 
-    address public immutable globals;  // Address of the MapleGlobals contract.
-    address public immutable token;    // Address of the MapleToken contract.
+    address public immutable globals;  // Address of the `MapleGlobals` contract.
+    address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint16 public lastScheduleId;  // Stores the identifier of the schedule during which tokens were last issued.
-    uint16 public scheduleCount;   // Stores the number of schedules created so far.
+    uint32 public lastIssued;  // Timestamp of the last time tokens were issued.
 
-    uint32 public lastIssued;  // Stores the timestamp when tokens were last issued.
-
-    mapping(uint16 => Schedule) public schedules;  // Maps identifiers to schedules (effectively an implementation of a linked list).
+    Window[] public windows;  // Windows that define the inflation schedule.
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -36,93 +35,97 @@ contract InflationModule {
         _;
     }
 
-    // TODO: Should this module be a proxy instead?
     constructor(address globals_, address token_) {
         globals = globals_;
         token   = token_;
-
-        scheduleCount = 1;
     }
 
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
-    function issuableAt(uint32 issuanceTime_) public view returns (uint256 issuableAmount_, uint16 lastScheduleId_) {
-        uint32 lastIssued_ = lastIssued;
-        lastScheduleId_    = lastScheduleId;
+    function mintable(uint32 from_, uint32 to_) public view returns (uint256 amount_) {
+        uint256 windowsLength_ = windows.length;
 
-        require(issuanceTime_ >= lastIssued_, "IM:IA:OUT_OF_DATE");
+        for (uint256 windowId_; windowId_ < windowsLength_; windowId_++) {
+            Window memory window_     = windows[windowId_];
+            uint256 windowEnd_        = windowId_ != windowsLength_ - 1 ? windows[windowId_ + 1].start : type(uint256).max;
+            uint256 issuanceInterval_ = _calculateOverlap(window_.start, windowEnd_, from_, to_);
 
-        while (true) {
-            Schedule memory currentSchedule_ = schedules[lastScheduleId_];
-            Schedule memory nextSchedule_    = schedules[currentSchedule_.nextScheduleId];
-
-            // Check if the current schedule is still active.
-            bool isScheduleActive = currentSchedule_.nextScheduleId == 0 ? true : issuanceTime_ < nextSchedule_.issuanceStart;
-
-            // If it's still active vest up to the current time, otherwise vest only up to the start of the next schedule.
-            uint256 issuanceInterval_ = (isScheduleActive ? issuanceTime_ : nextSchedule_.issuanceStart) - lastIssued_;
-
-            issuableAmount_ += currentSchedule_.issuanceRate * issuanceInterval_ / PRECISION;
-
-            // End the issuance here if the current schedule is still active.
-            if (isScheduleActive) break;
-
-            // Otherwise repeat the entire process for the next schedule.
-            lastIssued_     = nextSchedule_.issuanceStart;
-            lastScheduleId_ = currentSchedule_.nextScheduleId;
+            amount_ += _vestTokens(window_.issuanceRate, issuanceInterval_);
         }
     }
 
-    // Issues tokens from the time of the last issuance up until the current time.
-    // The tokens are issued separately for each schedule according to their issuance rates.
-    function issue() external returns (uint256 tokensIssued_, uint16 lastScheduleId_) {
-        ( tokensIssued_, lastScheduleId_ ) = issuableAt(uint32(block.timestamp));
+    // Mints tokens from the time of the last mint up until the current time.
+    // Tokens are minted separately for each window according to their issuance rates.
+    function mint() external returns (uint256 amountMinted_) {
+        amountMinted_ = mintable(lastIssued, lastIssued = uint32(block.timestamp));
 
-        lastIssued     = uint32(block.timestamp);
-        lastScheduleId = lastScheduleId_;
-
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), tokensIssued_);
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amountMinted_);
     }
 
     // Sets a new schedule some time in the future (can't schedule retroactively).
-    // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
-    // Can also be used to delete the schedule by setting the issuance rate to zero.
-    // TODO: Should we set limits (maximum) to the issuance rate? Huge values could cause irreparable overflows. ACL `issue()` or max IR?
-    function schedule(uint32 issuanceStart_, uint256 issuanceRate_) external onlyGovernor {
-        require(issuanceStart_ >= block.timestamp, "IM:S:OUT_OF_DATE");
+    function schedule(Window[] memory windows_) external onlyGovernor {
+        _validateWindows(windows_);
 
-        ( Schedule memory schedule_ ) = _findInsertionPoint(issuanceStart_);
+        // Find the window from which the new windows will be inserted.
+        uint256 windowsLength_     = windows.length;
+        uint256 insertionWindowId_ = _findWindow(windows_[0].start, windowsLength_);
 
-        // If the schedule already exists then replace it.
-        if (issuanceStart_ == schedule_.issuanceStart) {
-            schedules[schedule_.scheduleId].issuanceRate = issuanceRate_;
-        }
-
-        // Otherwise create a new schedule and insert it.
-        else {
-            uint16 newScheduleId_ = schedules[schedule_.scheduleId].nextScheduleId = scheduleCount++;
-            schedules[newScheduleId_] = Schedule(newScheduleId_, schedule_.nextScheduleId, issuanceStart_, issuanceRate_);
-        }
+        _updateSchedule(insertionWindowId_, windowsLength_, windows_);
     }
 
     /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // Searches schedules from start to end to find where the new schedule should be inserted.
-    function _findInsertionPoint(uint256 issuanceStart_) internal view returns (Schedule memory schedule_) {
-        schedule_ = schedules[0];
+    function _calculateOverlap(
+        uint256 windowStart_,
+        uint256 windowEnd_,
+        uint256 from_,
+        uint256 to_
+    )
+        internal pure returns (uint256 overlap_)
+    {
+        overlap_ = _max(0, _min(windowEnd_, to_) - _max(windowStart_, from_));
+    }
 
-        while (true) {
-            Schedule memory nextSchedule_ = schedules[schedule_.nextScheduleId];
+    // 0 - 1 - A - 3 - 4 - B - 6 - 7 - 8
+    // 0 - 1 - 2 - 3 - C - 5 - D - 7 - 8
 
-            if (schedule_.nextScheduleId == 0 || issuanceStart_ <= nextSchedule_.issuanceStart) break;
+    function _findWindow(uint32 issuanceStart_, uint256 windowsLength_) internal view returns (uint256 windowId_) {
+        for (; windowId_ < windowsLength_; windowId_++)
+            if (issuanceStart_ <= windows[windowId_].start) break;
+    }
 
-            schedule_ = nextSchedule_;
-        }
+    function _max(uint256 a_, uint256 b_) internal pure returns (uint256 max_) {
+        max_ = a_ > b_ ? a_ : b_;
+    }
+
+    function _min(uint256 a_, uint256 b_) internal pure returns (uint256 min_) {
+        min_ = a_ < b_ ? a_ : b_;
+    }
+
+    function _updateSchedule(uint256 startingWindowId_, uint256 oldWindowsLength_, Window[] memory newWindows_) internal {
+        for (uint256 offset_; offset_ < newWindows_.length; offset_++)
+            windows[startingWindowId_ + offset_] = newWindows_[offset_];
+
+        uint256 newWindowsLength_ = startingWindowId_ + newWindows_.length;
+
+        if (newWindowsLength_ > oldWindowsLength_) return;
+
+        for (uint256 windowsToPop_ = oldWindowsLength_ - newWindowsLength_; windowsToPop_ > 0; windowsToPop_--)
+            windows.pop();
+    }
+
+    function _validateWindows(Window[] memory windows_) internal view {
+        // TODO: Check it's not an empty array.
+        // TODO: Check first window starts at `block.timestamp` or later.
+        // TODO: Check all following windows start at strictly increasing dates.
+    }
+
+    function _vestTokens(uint256 rate_, uint256 interval_) internal pure returns (uint256 amount_) {
+        amount_ = rate_ * interval_ / PRECISION;
     }
 
 }
