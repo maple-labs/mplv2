@@ -44,6 +44,14 @@ contract InflationModule {
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
+    // Mints tokens from the time of the last mint up until the current time.
+    // Tokens are minted separately for each window according to their issuance rates.
+    function mint() external returns (uint256 amountMinted_) {
+        amountMinted_ = mintable(lastMinted, lastMinted = uint32(block.timestamp));
+
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amountMinted_);
+    }
+
     // Calculates how many tokens have been or will be minted between the given timestamps.
     function mintable(uint32 from_, uint32 to_) public view returns (uint256 amount_) {
         uint256 windowsLength_ = windows.length;
@@ -51,18 +59,10 @@ contract InflationModule {
         for (uint256 windowId_; windowId_ < windowsLength_; windowId_++) {
             Window memory window_     = windows[windowId_];
             uint256 windowEnd_        = windowId_ != windowsLength_ - 1 ? windows[windowId_ + 1].start : type(uint256).max;
-            uint256 issuanceInterval_ = _calculateOverlap(window_.start, windowEnd_, from_, to_);
+            uint256 issuanceInterval_ = _calculateOverlap(.start, windowEnd_, from_, to_);
 
             amount_ += _vestTokens(window_.issuanceRate, issuanceInterval_);
         }
-    }
-
-    // Mints tokens from the time of the last mint up until the current time.
-    // Tokens are minted separately for each window according to their issuance rates.
-    function mint() external returns (uint256 amountMinted_) {
-        amountMinted_ = mintable(lastMinted, lastMinted = uint32(block.timestamp));
-
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amountMinted_);
     }
 
     // Sets a new schedule some time in the future (can't schedule retroactively).
@@ -84,20 +84,13 @@ contract InflationModule {
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function _calculateOverlap(
-        uint256 windowStart_,
-        uint256 windowEnd_,
-        uint256 from_,
-        uint256 to_
-    )
-        internal pure returns (uint256 overlap_)
-    {
-        overlap_ = _max(0, _min(windowEnd_, to_) - _max(windowStart_, from_));
+    function _calculateOverlap(uint256 start_, uint256 end_, uint256 from_, uint256 to_) internal pure returns (uint256 overlap_) {
+        overlap_ = _max(0, _min(end_, to_) - _max(start_, from_));
     }
 
-    function _findWindow(uint32 issuanceStart_, uint256 windowsLength_) internal view returns (uint256 windowId_) {
+    function _findWindow(uint32 start_, uint256 windowsLength_) internal view returns (uint256 windowId_) {
         for (; windowId_ < windowsLength_; windowId_++)
-            if (issuanceStart_ <= windows[windowId_].start) break;
+            if (start_ <= windows[windowId_].start) break;
     }
 
     function _max(uint256 a_, uint256 b_) internal pure returns (uint256 max_) {
