@@ -7,8 +7,6 @@ import { InflationModule } from "../contracts/InflationModuleV2.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 
-// TODO: Add fuzz tests.
-
 contract InflationModuleTestBase is TestBase {
 
     address governor = makeAddr("governor");
@@ -20,7 +18,7 @@ contract InflationModuleTestBase is TestBase {
     MockToken   token;
 
     InflationModule          module;
-    InflationModule.Window[] schedule;
+    InflationModule.Window[] windows;
 
     function setUp() public virtual {
         globals = new MockGlobals();
@@ -104,41 +102,41 @@ contract ScheduleTests is InflationModuleTestBase {
     function test_schedule_notGovernor() external {
         vm.stopPrank();
         vm.expectRevert("IM:NOT_GOVERNOR");
-        module.schedule(schedule);
+        module.schedule(windows);
     }
 
     function test_schedule_noWindows() external {
         vm.expectRevert("IM:VW:NO_WINDOWS");
-        module.schedule(schedule);
+        module.schedule(windows);
     }
 
     function test_schedule_outOfDate() external {
-        schedule.push(InflationModule.Window(start - 1 seconds, 1e30));
+        windows.push(InflationModule.Window(start - 1 seconds, 1e30));
 
         vm.expectRevert("IM:VW:OUT_OF_DATE");
-        module.schedule(schedule);
+        module.schedule(windows);
 
-        schedule[0] = InflationModule.Window(start, 1e30);
+        windows[0] = InflationModule.Window(start, 1e30);
 
-        module.schedule(schedule);
+        module.schedule(windows);
     }
 
     function test_schedule_outOfOrder() external {
-        schedule.push(InflationModule.Window(start, 1e30));
-        schedule.push(InflationModule.Window(start, 1.1e30));
+        windows.push(InflationModule.Window(start, 1e30));
+        windows.push(InflationModule.Window(start, 1.1e30));
 
         vm.expectRevert("IM:VW:OUT_OF_ORDER");
-        module.schedule(schedule);
+        module.schedule(windows);
 
-        schedule[1] = InflationModule.Window(start + 1 seconds, 1e30);
+        windows[1] = InflationModule.Window(start + 1 seconds, 1e30);
 
-        module.schedule(schedule);
+        module.schedule(windows);
     }
 
     function test_schedule_basic() external {
-        schedule.push(InflationModule.Window(start + 10 days, 1e30));
+        windows.push(InflationModule.Window(start + 10 days, 1e30));
 
-        module.schedule(schedule);
+        module.schedule(windows);
 
         assertEq(module.windowCount(), 1);
 
@@ -146,10 +144,10 @@ contract ScheduleTests is InflationModuleTestBase {
     }
 
     function test_schedule_simultaneously() external {
-        schedule.push(InflationModule.Window(start + 10 days, 1e30));
-        schedule.push(InflationModule.Window(start + 90 days, 1.1e30));
+        windows.push(InflationModule.Window(start + 10 days, 1e30));
+        windows.push(InflationModule.Window(start + 90 days, 1.1e30));
 
-        module.schedule(schedule);
+        module.schedule(windows);
 
         assertEq(module.windowCount(), 2);
 
@@ -158,13 +156,13 @@ contract ScheduleTests is InflationModuleTestBase {
     }
 
     function test_schedule_sequentially() external {
-        schedule.push(InflationModule.Window(start + 10 days, 1e30));
+        windows.push(InflationModule.Window(start + 10 days, 1e30));
 
-        module.schedule(schedule);
+        module.schedule(windows);
 
-        schedule[0] = InflationModule.Window(start + 90 days, 1.1e30);
+        windows[0] = InflationModule.Window(start + 90 days, 1.1e30);
 
-        module.schedule(schedule);
+        module.schedule(windows);
 
         assertEq(module.windowCount(), 2);
 
