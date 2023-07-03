@@ -11,7 +11,7 @@ interface IMapleToken is IERC20, INonTransparentProxied {
     /**************************************************************************************************************************************/
 
     /**
-     *  @dev   A new was added to the MapleToken.
+     *  @dev   A new module was added to the MapleToken.
      *  @param module  The address the module added.
      *  @param canBurn Whether or not the module can burn tokens.
      *  @param canMint Whether or not the module can mint tokens.

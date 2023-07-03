@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 import { IEmergencyModule }         from "./interfaces/IEmergencyModule.sol";
 
-contract EmergencyModule is IEmergencyModule{
+contract EmergencyModule is IEmergencyModule {
 
     address public immutable globals;
     address public immutable token;

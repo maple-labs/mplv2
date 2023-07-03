@@ -13,9 +13,8 @@ interface IMapleTokenProxy is INonTransparentProxy {
 
     /**
      *  @dev   Sets the implementation address.
-     *  @param newImplementation_ The address to set the implementation to.
+     *  @param newImplementation The address to set the implementation to.
      */
-    function setImplementation(address newImplementation_) external override;
-
+    function setImplementation(address newImplementation) external override;
 
 }
