@@ -41,11 +41,15 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
         isBurner[module] = burner;
         isMinter[module] = minter;
+
+        emit ModuleAdded(module, burner, minter);
     }
 
     function removeModule(address module) external onlyGovernor onlyScheduled("MT:REMOVE_MODULE") {
         delete isBurner[module];
         delete isMinter[module];
+
+        emit ModuleRemoved(module);
     }
 
     function burn(address from_, uint256 amount_) external {
