@@ -25,7 +25,7 @@ contract InflationModule {
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint32 public lastIssued;  // Timestamp of the last time tokens were issued.
+    uint32 public lastMinted;  // Timestamp of the last time tokens were issued.
 
     Window[] public windows;  // Windows that define the inflation schedule.
 
@@ -59,7 +59,7 @@ contract InflationModule {
     // Mints tokens from the time of the last mint up until the current time.
     // Tokens are minted separately for each window according to their issuance rates.
     function mint() external returns (uint256 amountMinted_) {
-        amountMinted_ = mintable(lastIssued, lastIssued = uint32(block.timestamp));
+        amountMinted_ = mintable(lastMinted, lastMinted = uint32(block.timestamp));
 
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amountMinted_);
     }
@@ -73,6 +73,10 @@ contract InflationModule {
         uint256 insertionWindowId_ = _findWindow(windows_[0].start, windowsLength_);
 
         _updateSchedule(insertionWindowId_, windowsLength_, windows_);
+    }
+
+    function windowCount() external view returns (uint256 windowCount_) {
+        windowCount_ = windows.length;
     }
 
     /**************************************************************************************************************************************/
@@ -119,9 +123,11 @@ contract InflationModule {
     }
 
     function _validateWindows(Window[] memory windows_) internal view {
-        // TODO: Check it's not an empty array.
-        // TODO: Check first window starts at `block.timestamp` or later.
-        // TODO: Check all following windows start at strictly increasing dates.
+        require(windows_.length > 0,                  "IM:VW:NO_WINDOWS");
+        require(windows_[0].start >= block.timestamp, "IM:VW:OUT_OF_DATE");
+
+        for (uint256 index_ = 1; index_ < windows_.length; index_++)
+            require(windows[index_].start > windows[index_ - 1].start, "IM:VW:OUT_OF_ORDER");
     }
 
     function _vestTokens(uint256 rate_, uint256 interval_) internal pure returns (uint256 amount_) {

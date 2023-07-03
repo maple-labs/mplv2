@@ -66,41 +66,41 @@ contract ConstructorTests is InflationModuleTestBase {
 
 }
 
-contract IssuableAtTests is InflationModuleTestBase {
+contract MintableTests is InflationModuleTestBase {
 
-    function test_issuableAt_outOfDate() external {
+    function test_mint_outOfDate() external {
         // TODO
     }
 
-    function test_issuableAt_nothingIssued() external {
+    function test_mint_nothingIssued() external {
         // TODO
     }
 
-    function test_issuableAt_oneSchedule_fromStart_oneDayAhead() external {
+    function test_mint_oneSchedule_fromStart_oneDayAhead() external {
         // TODO
     }
 
-    function test_issuableAt_oneSchedule_fromStart_toCurrentTime() external {
+    function test_mint_oneSchedule_fromStart_toCurrentTime() external {
         // TODO
     }
 
-    function test_issuableAt_oneSchedule_afterIssuance_oneDayHead() external {
+    function test_mint_oneSchedule_afterIssuance_oneDayHead() external {
         // TODO
     }
 
-    function test_issuableAt_oneSchedule_afterIssuance_toCurrentTime() external {
+    function test_mint_oneSchedule_afterIssuance_toCurrentTime() external {
         // TODO
     }
 
-    function test_issuableAt_twoSchedules_fromStart_beforeFirstSchedule() external {
+    function test_mint_twoSchedules_fromStart_beforeFirstSchedule() external {
         // TODO
     }
 
-    function test_issuableAt_twoSchedules_fromStart_beforeSecondSchedule() external {
+    function test_mint_twoSchedules_fromStart_beforeSecondSchedule() external {
         // TODO
     }
 
-    function test_issuableAt_twoSchedules_fromStart_afterSecondSchedule() external {
+    function test_mint_twoSchedules_fromStart_afterSecondSchedule() external {
         // TODO
     }
 
@@ -108,7 +108,7 @@ contract IssuableAtTests is InflationModuleTestBase {
 
 }
 
-contract IssueTests is InflationModuleTestBase {
+contract MintTests is InflationModuleTestBase {
 
     // TODO: Decide if function should be permissioned.
     // function test_issue_notGovernor() external {
@@ -158,24 +158,22 @@ contract ScheduleTests is InflationModuleTestBase {
         module.schedule(start, 1e30);
     }
 
-    function test_schedule_firstSchedule_outOfDate() external {
+    function test_schedule_noWindows() external {
+        // TODO
+    }
+
+    function test_schedule_outOfDate() external {
         vm.expectRevert("IM:S:OUT_OF_DATE");
         module.schedule(start - 1 seconds, 1e30);
 
         module.schedule(start, 1e30);
     }
 
-    function test_schedule_secondSchedule_outOfDate() external {
-        module.schedule(start, 1e30);
-
-        vm.warp(start + 10 days);
-        vm.expectRevert("IM:S:OUT_OF_DATE");
-        module.schedule(start + 10 days - 1 seconds, 1e30);
-
-        module.schedule(start + 10 days, 1e30);
+    function test_schedule_outOfOrder() external {
+        // TODO
     }
 
-    function test_schedule_firstSchedule() external {
+    function test_schedule_firstWindow() external {
         module.schedule(start, 1e30);
 
         assertEq(module.scheduleCount(), 2);
@@ -184,7 +182,11 @@ contract ScheduleTests is InflationModuleTestBase {
         assertSchedule(1, 0, start, 1e30);
     }
 
-    function test_schedule_twoSchedules_ascending() external {
+    function test_schedule_secondWindow() external {
+        // TODO
+    }
+
+    function test_schedule_twoWindows_simultaneously() external {
         module.schedule(start + 10 days,  1e30);
         module.schedule(start + 175 days, 1.1e30);
 
@@ -195,7 +197,7 @@ contract ScheduleTests is InflationModuleTestBase {
         assertSchedule(2, 0, start + 175 days, 1.1e30);
     }
 
-    function test_schedule_twoSchedules_descending() external {
+    function test_schedule_twoWindows_sequentially() external {
         module.schedule(start + 65 days, 1.1e30);
         module.schedule(start + 15 days, 1e30);
 
@@ -206,7 +208,7 @@ contract ScheduleTests is InflationModuleTestBase {
         assertSchedule(2, 1, start + 15 days, 1e30);
     }
 
-    function test_schedule_threeSchedules_withInsert() external {
+    function test_schedule_threeWindows_withInsert() external {
         module.schedule(start + 50 days,  1e30);
         module.schedule(start + 100 days, 1.1e30);
         module.schedule(start + 75 days,  1.05e30);
@@ -219,7 +221,7 @@ contract ScheduleTests is InflationModuleTestBase {
         assertSchedule(3, 2, start + 75 days,  1.05e30);
     }
 
-    function test_schedule_threeSchedules_withInsertAndUpdate() external {
+    function test_schedule_threeWindows_withUpdate() external {
         module.schedule(start + 50 days,  1.05e30);
         module.schedule(start + 100 days, 1.1e30);
         module.schedule(start + 45 days,  1e30);
