@@ -3,18 +3,9 @@ pragma solidity 0.8.18;
 
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
-// TODO: Add interface (with struct?), events, NatSpec.
-// TODO: Define which state variables should be publicly exposed.
-// TODO: Check what issuance rate precision is good enough for MPL.
-// TODO: Check if precision should be a constructor parameter.
-// TODO: Huge IR could cause overflows. ACL `issue()` or set maximum IR?
-// TODO: Should the inflation module be a proxy instead? Probably not.
-// TODO: Optimize `mintable()` for less storage reads and don't always iterate through entire array.
+// TODO: Add interface (with struct), events, NatSpec.
+// TODO: Add require for all windows being in strictly increasing order and delete all old future windows after new scheduling.
 // TODO: Add invariant for all windows being in strictly increasing order.
-// TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
-// TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
-// TODO: Check uint types and storage slot packing.
-// TODO: Check if windows are order in strictly ascending order when scheduling? Prevent duplicate windows from being passed?
 
 contract InflationModule {
 
@@ -22,20 +13,22 @@ contract InflationModule {
         uint16  windowId;      // Identifier of the window (stored redundantly for convenience).
         uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
         uint32  windowStart;   // Timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
-        uint256 issuanceRate;  // Defines the rate at which tokens will be minted (zero indicates no minting).
+        uint192 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
     }
 
-    uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
+    uint192 public constant PRECISION = 1e30;  // Precision of the issuance rate.
 
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint16 public currentWindowId;  // Identifier of the last window during which tokens were issued.
-    uint16 public windowCounter;    // Number of windows created so far.
+    uint16 public currentWindowId;  // Identifier of the last window during which tokens were claimed.
+    uint16 public windowCounter;    // Total number of new windows created so far.
 
-    uint32 public lastMinted;  // Stores the timestamp when tokens were last minted.
+    uint32 public lastClaimed;  // Iimestamp of the last time tokens were claimed.
 
-    mapping(uint16 => Window) public windows;  // Maps identifiers to schedules (effectively an implementation of a linked list).
+    uint192 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
+
+    mapping(uint16 => Window) public windows;  // Maps identifiers to windows (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -48,18 +41,18 @@ contract InflationModule {
         token   = token_;
 
         windowCounter = 1;
+        maximumIssuanceRate = 1e30;
     }
 
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // Mint tokens from the time of the last mint up until the current time.
-    // The tokens are minted separately for each window according to it's issuance rate.
-    function mint() external returns (uint256 mintableAmount_, uint16 currentWindowId_) {
-        ( mintableAmount_, currentWindowId_ ) = mintable(uint32(block.timestamp));
+    // Claims tokens from the time of the last claim up until the current time.
+    function claim() external returns (uint256 mintableAmount_, uint16 currentWindowId_) {
+        ( mintableAmount_, currentWindowId_ ) = claimable(uint32(block.timestamp));
 
-        lastMinted      = uint32(block.timestamp);
+        lastClaimed     = uint32(block.timestamp);
         currentWindowId = currentWindowId_;
 
         if (mintableAmount_ > 0) {
@@ -67,11 +60,12 @@ contract InflationModule {
         }
     }
 
-    function mintable(uint32 to_) public view returns (uint256 mintableAmount_, uint16 currentWindowId_) {
-        uint32 lastMinted_ = lastMinted;
-        currentWindowId_   = currentWindowId;
+    // Calculates how many tokens can be claimed from the time of the last claim up until the specified time.
+    function claimable(uint32 to_) public view returns (uint256 mintableAmount_, uint16 currentWindowId_) {
+        uint32 lastClaimed_ = lastClaimed;
+        currentWindowId_    = currentWindowId;
 
-        if (to_ <= lastMinted_) return (0, currentWindowId_);
+        if (to_ <= lastClaimed_) return (0, currentWindowId_);
 
         while (true) {
             Window memory currentWindow_ = windows[currentWindowId_];
@@ -81,7 +75,7 @@ contract InflationModule {
             bool isWindowActive_ = currentWindow_.nextWindowId == 0 ? true : to_ < nextWindow_.windowStart;
 
             // If it's still active mint up to the current time, otherwise mint only up to the start of the next window.
-            uint256 vestingInterval_ = (isWindowActive_ ? to_ : nextWindow_.windowStart) - lastMinted_;
+            uint256 vestingInterval_ = (isWindowActive_ ? to_ : nextWindow_.windowStart) - lastClaimed_;
 
             mintableAmount_ += currentWindow_.issuanceRate * vestingInterval_ / PRECISION;
 
@@ -89,15 +83,13 @@ contract InflationModule {
             if (isWindowActive_) break;
 
             // Otherwise repeat the entire process for the next window.
-            lastMinted_      = nextWindow_.windowStart;
+            lastClaimed_     = nextWindow_.windowStart;
             currentWindowId_ = nextWindow_.windowId;
         }
     }
 
-    // Sets a new schedule some time in the future (can't schedule retroactively).
-    // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
-    // Can also be used to delete the schedule by setting the issuance rate to zero.
-    function schedule(uint32[] memory windowStarts_, uint256[] memory issuanceRates_) external onlyGovernor {
+    // Schedules new windows that define when tokens will be issued.
+    function schedule(uint32[] memory windowStarts_, uint192[] memory issuanceRates_) external onlyGovernor {
         require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:S:NO_WINDOW");
         require(windowStarts_.length == issuanceRates_.length,         "IM:S:LENGTH_MISMATCH");
 
@@ -105,6 +97,11 @@ contract InflationModule {
             _scheduleWindow(windowStarts_[index_], issuanceRates_[index_]);
         }
 
+    }
+
+    // Sets a new limit to the maximum issuance rate allowed for any window.
+    function setMaximumIssuanceRate(uint192 maximumIssuanceRate_) external onlyGovernor {
+        maximumIssuanceRate = maximumIssuanceRate_;
     }
 
     /**************************************************************************************************************************************/
@@ -124,7 +121,7 @@ contract InflationModule {
         }
     }
 
-    function _scheduleWindow(uint32 windowStart_, uint256 issuanceRate_) internal {
+    function _scheduleWindow(uint32 windowStart_, uint192 issuanceRate_) internal {
         require(windowStart_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
         ( Window memory window_ ) = _findInsertionPoint(windowStart_);
