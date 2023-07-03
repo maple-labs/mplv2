@@ -4,19 +4,17 @@ pragma solidity 0.8.18;
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
 // TODO: Add interface (with struct), events, NatSpec.
-// TODO: Add require for all windows being in strictly increasing order and delete all old future windows after new scheduling.
 // TODO: Add invariant for all windows being in strictly increasing order.
 
 contract InflationModule {
 
     struct Window {
-        uint16  windowId;      // Identifier of the window (stored redundantly for convenience).
         uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
         uint32  windowStart;   // Timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
-        uint192 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
+        uint208 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
     }
 
-    uint192 public constant PRECISION = 1e30;  // Precision of the issuance rate.
+    uint208 public constant PRECISION = 1e30;  // Precision of the issuance rate.
 
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
@@ -26,7 +24,7 @@ contract InflationModule {
 
     uint32 public lastClaimed;  // Iimestamp of the last time tokens were claimed.
 
-    uint192 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
+    uint208 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
 
     mapping(uint16 => Window) public windows;  // Maps identifiers to windows (effectively an implementation of a linked list).
 
@@ -83,20 +81,31 @@ contract InflationModule {
             if (isWindowActive_) break;
 
             // Otherwise repeat the entire process for the next window.
+            currentWindowId_ = currentWindow_.nextWindowId;
             lastClaimed_     = nextWindow_.windowStart;
-            currentWindowId_ = nextWindow_.windowId;
         }
     }
 
     // Schedules new windows that define when tokens will be issued.
-    function schedule(uint32[] memory windowStarts_, uint192[] memory issuanceRates_) external onlyGovernor {
-        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:S:NO_WINDOW");
-        require(windowStarts_.length == issuanceRates_.length,         "IM:S:LENGTH_MISMATCH");
+    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor {
+        _validateWindows(windowStarts_, issuanceRates_);
 
-        for (uint32 index_ = 0; index_ < windowStarts_.length; index_++) {
-            _scheduleWindow(windowStarts_[index_], issuanceRates_[index_]);
+        // Link up the insertion window to the first new window.
+        uint16 windowId_    = _findInsertionPoint(windowStarts_[0]);
+        uint16 newWindowId_ = windowCounter;
+
+        windows[windowId_].nextWindowId = newWindowId_;
+
+        // Create all the new windows and link them up to each other.
+        for (uint16 index_; index_ < windowStarts_.length; index_++) {
+            windows[newWindowId_ + index_] = Window({
+                nextWindowId: index_ < windowStarts_.length - 1 ? newWindowId_ + index_ + 1 : 0,
+                windowStart:  windowStarts_[index_],
+                issuanceRate: issuanceRates_[index_]
+            });
         }
 
+        windowCounter += uint16(windowStarts_.length);
     }
 
     // Sets a new limit to the maximum issuance rate allowed for any window.
@@ -109,32 +118,34 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // Search windows from start to end to find where the new window should be inserted.
-    function _findInsertionPoint(uint32 windowStart_) internal view returns (Window memory window_) {
-        window_ = windows[0];
+    function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
+        Window memory window_ = windows[0];
 
         while (true) {
+            if (window_.nextWindowId == 0) break;
+
             Window memory nextWindow_ = windows[window_.nextWindowId];
 
-            if (window_.nextWindowId == 0 || windowStart_ < nextWindow_.windowStart) break;
+            if (windowStart_ <= window_.windowStart) break;
 
-            window_ = nextWindow_;
+            windowId_ = window_.nextWindowId;
+            window_   = nextWindow_;
         }
     }
 
-    function _scheduleWindow(uint32 windowStart_, uint192 issuanceRate_) internal {
-        require(windowStart_ >= block.timestamp, "IM:S:OUT_OF_DATE");
+    function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
+        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:VW:EMPTY_ARRAY");
+        require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
+        require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
 
-        ( Window memory window_ ) = _findInsertionPoint(windowStart_);
-
-        // If the window already exists then replace it.
-        if (windowStart_ == window_.windowStart) {
-            windows[window_.windowId].issuanceRate = issuanceRate_;
+        for (uint256 index_ = 1; index_ < windowStarts_.length; index_++) {
+            require(windowStarts_[index_] > windowStarts_[index_ - 1], "IM:VW:OUT_OF_ORDER");
         }
 
-        // Otherwise create a new window and insert it.
-        else {
-            uint16 newWindowId_ = windows[window_.windowId].nextWindowId = windowCounter++;
-            windows[newWindowId_] = Window(newWindowId_, window_.nextWindowId, windowStart_, issuanceRate_);
+        uint208 maximumIssuanceRate_ = maximumIssuanceRate;
+
+        for (uint256 index_; index_ < issuanceRates_.length; index_++) {
+            require(issuanceRates_[index_] <= maximumIssuanceRate_, "IM:VW:OUT_OF_BOUNDS");
         }
     }
 

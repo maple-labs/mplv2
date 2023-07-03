@@ -32,15 +32,13 @@ contract InflationModuleTestBase is TestBase {
         vm.warp(start);
     }
 
-    function assertWindow(uint16 windowId, uint16 nextWindowId, uint32 windowStart, uint192 issuanceRate) internal {
+    function assertWindow(uint16 windowId, uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate) internal {
         (
-            uint16  windowId_,
             uint16  nextWindowId_,
             uint32  windowStart_,
-            uint192 issuanceRate_
+            uint208 issuanceRate_
         ) = module.windows(windowId);
 
-        assertEq(windowId_,     windowId,     "windowId");
         assertEq(nextWindowId_, nextWindowId, "nextWindowId");
         assertEq(windowStart_,  windowStart,  "windowStart");
         assertEq(issuanceRate_, issuanceRate, "issuanceRate");
