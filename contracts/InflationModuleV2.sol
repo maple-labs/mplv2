@@ -14,8 +14,6 @@ contract InflationModule {
         uint208 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
     }
 
-    uint208 public constant PRECISION = 1e30;  // Precision of the issuance rate.
-
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
 
@@ -34,12 +32,23 @@ contract InflationModule {
         _;
     }
 
+    modifier onlyScheduled(bytes32 functionId_) {
+        IGlobalsLike globals_ = IGlobalsLike(globals);
+        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
+
+        require(isScheduledCall_, "IM:NOT_SCHEDULED");
+
+        globals_.unscheduleCall(msg.sender, functionId_, msg.data);
+
+        _;
+    }
+
     constructor(address globals_, address token_) {
         globals = globals_;
         token   = token_;
 
         windowCounter = 1;
-        maximumIssuanceRate = PRECISION;
+        maximumIssuanceRate = 1e18;
     }
 
     /**************************************************************************************************************************************/
@@ -75,7 +84,7 @@ contract InflationModule {
             // If it's still active mint up to the current time, otherwise mint only up to the start of the next window.
             uint256 vestingInterval_ = (isWindowActive_ ? to_ : nextWindow_.windowStart) - lastClaimed_;
 
-            mintableAmount_ += currentWindow_.issuanceRate * vestingInterval_ / PRECISION;
+            mintableAmount_ += currentWindow_.issuanceRate * vestingInterval_;
 
             // End the minting here if the current window is still active.
             if (isWindowActive_) break;
@@ -87,7 +96,7 @@ contract InflationModule {
     }
 
     // Schedules new windows that define when tokens will be issued.
-    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor {
+    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
         // Find at which point in the linked list to insert the new windows.

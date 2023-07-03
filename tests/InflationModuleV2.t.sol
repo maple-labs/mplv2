@@ -29,8 +29,9 @@ contract InflationModuleTestBase is TestBase {
 
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
+        globals.__setIsValidScheduledCall(true);
 
-        module  = new InflationModule(address(globals), address(token));
+        module = new InflationModule(address(globals), address(token));
 
         vm.startPrank(governor);
         vm.warp(start);
@@ -48,20 +49,23 @@ contract InflationModuleTestBase is TestBase {
         assertEq(issuanceRate_, issuanceRate, "issuanceRate");
     }
 
+    function expectUnscheduleCall() internal {
+        globals.__expectCall();
+        globals.unscheduleCall(governor, "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
+    }
+
 }
 
 contract ConstructorTests is InflationModuleTestBase {
 
     function test_inflationModule_constructor() external {
-        assertEq(module.PRECISION(), 1e30);
-
         assertEq(module.globals(), address(globals));
         assertEq(module.token(),   address(token));
 
         assertEq(module.currentWindowId(),     0);
         assertEq(module.lastClaimed(),         0);
         assertEq(module.windowCounter(),       1);
-        assertEq(module.maximumIssuanceRate(), 1e30);
+        assertEq(module.maximumIssuanceRate(), 1e18);
 
         assertWindow(0, 0, 0, 0);
     }
@@ -87,13 +91,20 @@ contract ScheduleTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
     }
 
+    function test_schedule_notScheduled() external {
+        globals.__setIsValidScheduledCall(false);
+
+        vm.expectRevert("IM:NOT_SCHEDULED");
+        module.schedule(windowStarts, issuanceRates);
+    }
+
     function test_schedule_noArrays() external {
         vm.expectRevert("IM:VW:EMPTY_ARRAY");
         module.schedule(windowStarts, issuanceRates);
     }
 
     function test_schedule_noWindowStarts() external {
-        issuanceRates.push(1e30);
+        issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:EMPTY_ARRAY");
         module.schedule(windowStarts, issuanceRates);
@@ -110,7 +121,7 @@ contract ScheduleTests is InflationModuleTestBase {
         windowStarts.push(start);
         windowStarts.push(start + 10 days);
 
-        issuanceRates.push(1e30);
+        issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:LENGTH_MISMATCH");
         module.schedule(windowStarts, issuanceRates);
@@ -118,7 +129,7 @@ contract ScheduleTests is InflationModuleTestBase {
 
     function test_schedule_outOfDate() external {
         windowStarts.push(start - 1 seconds);
-        issuanceRates.push(1e30);
+        issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:OUT_OF_DATE");
         module.schedule(windowStarts, issuanceRates);
@@ -128,8 +139,8 @@ contract ScheduleTests is InflationModuleTestBase {
         windowStarts.push(start + 100 days);
         windowStarts.push(start + 10 days);
 
-        issuanceRates.push(1e30);
-        issuanceRates.push(0.9e30);
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:OUT_OF_ORDER");
         module.schedule(windowStarts, issuanceRates);
@@ -137,7 +148,7 @@ contract ScheduleTests is InflationModuleTestBase {
 
     function test_schedule_outOfBounds() external {
         windowStarts.push(start + 10 days);
-        issuanceRates.push(1e30 + 1);
+        issuanceRates.push(1e18 + 1);
 
         vm.expectRevert("IM:VW:OUT_OF_BOUNDS");
         module.schedule(windowStarts, issuanceRates);
@@ -145,75 +156,105 @@ contract ScheduleTests is InflationModuleTestBase {
 
     function test_schedule_basic() external {
         windowStarts.push(start + 10 days);
-        issuanceRates.push(0.9e30);
+        issuanceRates.push(0.9e18);
 
+        expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.windowCounter(), 2);
 
         assertWindow(0, 1, 0,               0);
-        assertWindow(1, 0, start + 10 days, 0.9e30);
+        assertWindow(1, 0, start + 10 days, 0.9e18);
     }
 
     function test_schedule_simultaneously() external {
         windowStarts.push(start + 10 days);
         windowStarts.push(start + 100 days);
 
-        issuanceRates.push(0.9e30);
-        issuanceRates.push(0.95e30);
+        issuanceRates.push(0.9e18);
+        issuanceRates.push(0.95e18);
 
+        expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.windowCounter(), 3);
 
         assertWindow(0, 1, 0,                0);
-        assertWindow(1, 2, start + 10 days,  0.9e30);
-        assertWindow(2, 0, start + 100 days, 0.95e30);
+        assertWindow(1, 2, start + 10 days,  0.9e18);
+        assertWindow(2, 0, start + 100 days, 0.95e18);
     }
 
     function test_schedule_sequentially() external {
         windowStarts.push(start + 10 days);
-        issuanceRates.push(0.9e30);
+        issuanceRates.push(0.9e18);
 
+        expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 100 days;
-        issuanceRates[0] = 0.95e30;
+        issuanceRates[0] = 0.95e18;
 
+        expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.windowCounter(), 3);
 
         assertWindow(0, 1, 0,                0);
-        assertWindow(1, 2, start + 10 days,  0.9e30);
-        assertWindow(2, 0, start + 100 days, 0.95e30);
+        assertWindow(1, 2, start + 10 days,  0.9e18);
+        assertWindow(2, 0, start + 100 days, 0.95e18);
     }
 
     function test_schedule_sequentiallyWithWarp() external {
         windowStarts.push(start + 10 days);
-        issuanceRates.push(0.9e30);
+        issuanceRates.push(0.9e18);
 
+        expectUnscheduleCall();
         vm.warp(start + 5 days);
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 100 days;
-        issuanceRates[0] = 0.95e30;
+        issuanceRates[0] = 0.95e18;
 
+        expectUnscheduleCall();
         vm.warp(start + 95 days);
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.windowCounter(), 3);
 
         assertWindow(0, 1, 0,                0);
-        assertWindow(1, 2, start + 10 days,  0.9e30);
-        assertWindow(2, 0, start + 100 days, 0.95e30);
+        assertWindow(1, 2, start + 10 days,  0.9e18);
+        assertWindow(2, 0, start + 100 days, 0.95e18);
     }
 
-    function test_schedule_replacement() external {
-        // TODO
+    function test_schedule_append() external {
+        windowStarts.push(start + 10 days);
+        windowStarts.push(start + 100 days);
+
+        issuanceRates.push(0.9e18);
+        issuanceRates.push(0.95e18);
+
+        expectUnscheduleCall();
+        module.schedule(windowStarts, issuanceRates);
+
+        windowStarts[0] = start + 150 days;
+        windowStarts[1] = start + 200 days;
+
+        issuanceRates[0] = 0.96e18;
+        issuanceRates[1] = 0.99e18;
+
+        expectUnscheduleCall();
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.windowCounter(), 5);
+
+        assertWindow(0, 1, 0,                0);
+        assertWindow(1, 2, start + 10 days,  0.9e18);
+        assertWindow(2, 3, start + 100 days, 0.95e18);
+        assertWindow(3, 4, start + 150 days, 0.96e18);
+        assertWindow(4, 0, start + 200 days, 0.99e18);
     }
 
-    function test_schedule_insertion() external {
+    function test_schedule_insert() external {
         // TODO
     }
 
