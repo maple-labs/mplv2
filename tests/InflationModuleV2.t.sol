@@ -54,6 +54,11 @@ contract InflationModuleTestBase is TestBase {
         globals.unscheduleCall(governor, "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
     }
 
+    function expectTreasuryMint(uint256 amount) internal {
+        token.__expectCall();
+        token.mint(treasury, amount);
+    }
+
 }
 
 contract ConstructorTests is InflationModuleTestBase {
@@ -62,7 +67,6 @@ contract ConstructorTests is InflationModuleTestBase {
         assertEq(module.globals(), address(globals));
         assertEq(module.token(),   address(token));
 
-        assertEq(module.currentWindowId(),     0);
         assertEq(module.lastClaimed(),         0);
         assertEq(module.windowCounter(),       1);
         assertEq(module.maximumIssuanceRate(), 1e18);
@@ -73,7 +77,143 @@ contract ConstructorTests is InflationModuleTestBase {
 
 contract ClaimTests is InflationModuleTestBase {
 
-    // TODO
+    function setUp() public override {
+        super.setUp();
+
+        vm.stopPrank();
+    }
+
+    function test_claim_zeroMint_atomic() external {
+        vm.expectRevert("IM:C:ZERO_MINT");
+        module.claim();
+    }
+
+    function test_claim_zeroMint_afterWarp() external {
+        vm.warp(start + 10 days);
+        vm.expectRevert("IM:C:ZERO_MINT");
+        module.claim();
+    }
+
+    function test_claim_zeroMint_emptyWindow() external {
+        windowStarts.push(start + 5 days);
+        issuanceRates.push(0);
+
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 10 days);
+        vm.expectRevert("IM:C:ZERO_MINT");
+        module.claim();
+    }
+
+    function test_claim_zeroMint_beforeWindow() external {
+        windowStarts.push(start + 20 days);
+        issuanceRates.push(1e18);
+
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 10 days);
+        vm.expectRevert("IM:C:ZERO_MINT");
+        module.claim();
+    }
+
+    function test_claim_duringWindow() external {
+        windowStarts.push(start);
+        issuanceRates.push(1e18);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 40 days);
+        expectTreasuryMint(1e18 * 40 days);
+        module.claim();
+
+        assertEq(module.lastClaimed(), start + 40 days);
+    }
+
+    function test_claim_afterWindow() external {
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+
+        issuanceRates.push(1e18);
+        issuanceRates.push(0);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 65 days);
+        expectTreasuryMint(1e18 * 50 days);
+        module.claim();
+
+        assertEq(module.lastClaimed(), start + 65 days);
+    }
+
+    function test_claim_threeWindows() external {
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+        windowStarts.push(start + 85 days);
+
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(0.96e18);
+        issuanceRates.push(0.97e18);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 65 days);
+        expectTreasuryMint(0.95e18 * 50 days + 0.96e18 * 15 days);
+        module.claim();
+
+        assertEq(module.lastClaimed(), start + 65 days);
+    }
+
+    function test_claim_complex() external {
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+        windowStarts.push(start + 85 days);
+        windowStarts.push(start + 120 days);
+        windowStarts.push(start + 150 days);
+        windowStarts.push(start + 190 days);
+        windowStarts.push(start + 300 days);
+
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(0.96e18);
+        issuanceRates.push(0.97e18);
+        issuanceRates.push(0);
+        issuanceRates.push(1e18);
+        issuanceRates.push(0);
+        issuanceRates.push(0.98e18);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 20 days);
+        expectTreasuryMint(0.95e18 * 20 days);
+        module.claim();
+
+        vm.warp(start + 60 days);
+        expectTreasuryMint(0.95e18 * 30 days + 0.96e18 * 10 days);
+        module.claim();
+
+        vm.warp(start + 100 days);
+        expectTreasuryMint(0.96e18 * 25 days + 0.97e18 * 15 days);
+        module.claim();
+
+        vm.warp(start + 200 days);
+        expectTreasuryMint(0.97e18 * 20 days + 1e18 * 40 days);
+        module.claim();
+
+        assertEq(module.lastClaimed(), start + 200 days);
+    }
+
+    function test_claim_afterReschedule() external {
+
+    }
 
 }
 

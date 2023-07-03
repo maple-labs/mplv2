@@ -3,6 +3,8 @@ pragma solidity 0.8.18;
 
 import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 
+import { console } from "../modules/forge-std/src/console.sol";
+
 // TODO: Add interface (with struct), events, NatSpec.
 // TODO: Add invariant for all windows being in strictly increasing order.
 
@@ -17,8 +19,7 @@ contract InflationModule {
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint16 public currentWindowId;  // Identifier of the last window during which tokens were claimed.
-    uint16 public windowCounter;    // Total number of new windows created so far.
+    uint16 public windowCounter;  // Total number of new windows created so far.
 
     uint32 public lastClaimed;  // Iimestamp of the last time tokens were claimed.
 
@@ -56,42 +57,38 @@ contract InflationModule {
     /**************************************************************************************************************************************/
 
     // Claims tokens from the time of the last claim up until the current time.
-    function claim() external returns (uint256 mintableAmount_, uint16 currentWindowId_) {
-        ( mintableAmount_, currentWindowId_ ) = claimable(uint32(block.timestamp));
+    function claim() external returns (uint256 mintableAmount_) {
+        ( mintableAmount_ ) = claimable(uint32(block.timestamp));
 
-        lastClaimed     = uint32(block.timestamp);
-        currentWindowId = currentWindowId_;
+        lastClaimed = uint32(block.timestamp);
 
-        if (mintableAmount_ > 0) {
-            IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), mintableAmount_);
-        }
+        require(mintableAmount_ > 0, "IM:C:ZERO_MINT");
+
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), mintableAmount_);
     }
 
     // Calculates how many tokens can be claimed from the time of the last claim up until the specified time.
-    function claimable(uint32 to_) public view returns (uint256 mintableAmount_, uint16 currentWindowId_) {
-        uint32 lastClaimed_ = lastClaimed;
-        currentWindowId_    = currentWindowId;
+    function claimable(uint32 to_) public view returns (uint256 mintableAmount_) {
+        Window memory currentWindow_ = windows[0];
+        Window memory nextWindow_;
 
-        if (to_ <= lastClaimed_) return (0, currentWindowId_);
+        uint32 from_ = lastClaimed;
 
         while (true) {
-            Window memory currentWindow_ = windows[currentWindowId_];
-            Window memory nextWindow_    = windows[currentWindow_.nextWindowId];
+            bool isLastWindow_ = currentWindow_.nextWindowId == 0;
 
-            // Check if the current window is still active.
-            bool isWindowActive_ = currentWindow_.nextWindowId == 0 ? true : to_ < nextWindow_.windowStart;
+            if (!isLastWindow_) {
+                nextWindow_ = windows[currentWindow_.nextWindowId];
+            }
 
-            // If it's still active mint up to the current time, otherwise mint only up to the start of the next window.
-            uint256 vestingInterval_ = (isWindowActive_ ? to_ : nextWindow_.windowStart) - lastClaimed_;
+            uint32 windowEnd_ = !isLastWindow_ ? nextWindow_.windowStart : type(uint32).max;
+            uint32 interval_  = _overlapOf(currentWindow_.windowStart, windowEnd_, from_, to_);
 
-            mintableAmount_ += currentWindow_.issuanceRate * vestingInterval_;
+            mintableAmount_ += currentWindow_.issuanceRate * interval_;
 
-            // End the minting here if the current window is still active.
-            if (isWindowActive_) break;
+            if (isLastWindow_) break;
 
-            // Repeat the entire process for the next window.
-            currentWindowId_ = currentWindow_.nextWindowId;
-            lastClaimed_     = nextWindow_.windowStart;
+            currentWindow_   = nextWindow_;
         }
     }
 
@@ -140,6 +137,18 @@ contract InflationModule {
             windowId_      = currentWindow_.nextWindowId;
             currentWindow_ = nextWindow_;
         }
+    }
+
+    function _max(uint32 a_, uint32 b_) internal pure returns (uint32 max_) {
+        max_ = a_ > b_ ? a_ : b_;
+    }
+
+    function _min(uint32 a_, uint32 b_) internal pure returns (uint32 min_) {
+        min_ = a_ < b_ ? a_ : b_;
+    }
+
+    function _overlapOf(uint32 a1_, uint32 b1_, uint32 a2_, uint32 b2_) internal pure returns (uint32 overlap_) {
+        overlap_ = _max(0, _min(b1_, b2_) - _max(a1_, a2_));
     }
 
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
