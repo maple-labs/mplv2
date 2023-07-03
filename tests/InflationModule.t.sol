@@ -7,6 +7,8 @@ import { InflationModule } from "../contracts/InflationModule.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 
+// TODO: Add fuzz tests.
+
 contract InflationModuleTestBase is TestBase {
 
     address governor = makeAddr("governor");
