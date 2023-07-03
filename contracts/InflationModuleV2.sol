@@ -9,15 +9,20 @@ import { IERC20Like, IGlobalsLike } from "./interfaces/Interfaces.sol";
 // TODO: Check if precision should be a constructor parameter.
 // TODO: Huge IR could cause overflows. ACL `issue()` or set maximum IR?
 // TODO: Should the inflation module be a proxy instead? Probably not.
-// TODO: Check uint types and storage slot packing.
 // TODO: Optimize `mintable()` for less storage reads and don't always iterate through entire array.
 // TODO: Add invariant for all windows being in strictly increasing order.
+// TODO: Add invariant test that checks the current amount of issuable tokens is not beyond a certain limit.
+// TODO: If struct optimization is not relevant, should order of variables be alphabetical or whatever is most intuitive?
+// TODO: Check uint types and storage slot packing.
+// TODO: Check if windows are order in strictly ascending order when scheduling? Prevent duplicate windows from being passed?
 
 contract InflationModule {
 
     struct Window {
-        uint32  start;         // Timestamp that defines when vesting starts. Vesting lasts until the next window (or forever).
-        uint224 issuanceRate;  // Rate at which tokens will be vested during the window (zero represents no vesting).
+        uint16  windowId;      // Identifier of the window (stored redundantly for convenience).
+        uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
+        uint32  windowStart;   // Timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
+        uint256 issuanceRate;  // Defines the rate at which tokens will be minted (zero indicates no minting).
     }
 
     uint256 public constant PRECISION = 1e30;  // Precision of the issuance rate.
@@ -25,9 +30,12 @@ contract InflationModule {
     address public immutable globals;  // Address of the `MapleGlobals` contract.
     address public immutable token;    // Address of the `MapleToken` contract.
 
-    uint32 public lastMinted;  // Timestamp of the last time tokens were issued.
+    uint16 public currentWindowId;  // Identifier of the last window during which tokens were issued.
+    uint16 public windowCounter;    // Number of windows created so far.
 
-    Window[] public windows;  // Windows of time and their associated issuance rates that define the inflation schedule.
+    uint32 public lastMinted;  // Stores the timestamp when tokens were last minted.
+
+    mapping(uint16 => Window) public windows;  // Maps identifiers to schedules (effectively an implementation of a linked list).
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "IM:NOT_GOVERNOR");
@@ -38,96 +46,99 @@ contract InflationModule {
     constructor(address globals_, address token_) {
         globals = globals_;
         token   = token_;
+
+        windowCounter = 1;
     }
 
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // Mints tokens from the time of the last mint up until the current time.
-    // Tokens are minted separately for each window according to their issuance rates.
-    function mint() external returns (uint256 amountMinted_) {
-        amountMinted_ = mintable(lastMinted, lastMinted = uint32(block.timestamp));
+    // Mint tokens from the time of the last mint up until the current time.
+    // The tokens are minted separately for each window according to it's issuance rate.
+    function mint() external returns (uint256 mintableAmount_, uint16 currentWindowId_) {
+        ( mintableAmount_, currentWindowId_ ) = mintable(uint32(block.timestamp));
 
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amountMinted_);
+        lastMinted      = uint32(block.timestamp);
+        currentWindowId = currentWindowId_;
+
+        if (mintableAmount_ > 0) {
+            IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), mintableAmount_);
+        }
     }
 
-    // Calculates how many tokens have been or will be minted between the given timestamps.
-    function mintable(uint32 from_, uint32 to_) public view returns (uint256 amount_) {
-        uint256 windowsLength_ = windows.length;
+    function mintable(uint32 to_) public view returns (uint256 mintableAmount_, uint16 currentWindowId_) {
+        uint32 lastMinted_ = lastMinted;
+        currentWindowId_   = currentWindowId;
 
-        for (uint256 windowId_; windowId_ < windowsLength_; windowId_++) {
-            Window memory window_     = windows[windowId_];
-            uint256 windowEnd_        = windowId_ != windowsLength_ - 1 ? windows[windowId_ + 1].start : type(uint256).max;
-            uint256 issuanceInterval_ = _calculateOverlap(.start, windowEnd_, from_, to_);
+        if (to_ <= lastMinted_) return (0, currentWindowId_);
 
-            amount_ += _vestTokens(window_.issuanceRate, issuanceInterval_);
+        while (true) {
+            Window memory currentWindow_ = windows[currentWindowId_];
+            Window memory nextWindow_    = windows[currentWindow_.nextWindowId];
+
+            // Check if the current window is still active.
+            bool isWindowActive_ = currentWindow_.nextWindowId == 0 ? true : to_ < nextWindow_.windowStart;
+
+            // If it's still active mint up to the current time, otherwise mint only up to the start of the next window.
+            uint256 vestingInterval_ = (isWindowActive_ ? to_ : nextWindow_.windowStart) - lastMinted_;
+
+            mintableAmount_ += currentWindow_.issuanceRate * vestingInterval_ / PRECISION;
+
+            // End the minting here if the current window is still active.
+            if (isWindowActive_) break;
+
+            // Otherwise repeat the entire process for the next window.
+            lastMinted_      = nextWindow_.windowStart;
+            currentWindowId_ = nextWindow_.windowId;
         }
     }
 
     // Sets a new schedule some time in the future (can't schedule retroactively).
-    function schedule(Window[] memory windows_) external onlyGovernor {
-        _validateWindows(windows_);
+    // Can be called on a yearly basis to "compound" the issuance rate or update it on demand via governance.
+    // Can also be used to delete the schedule by setting the issuance rate to zero.
+    function schedule(uint32[] memory windowStarts_, uint256[] memory issuanceRates_) external onlyGovernor {
+        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:S:NO_WINDOW");
+        require(windowStarts_.length == issuanceRates_.length,         "IM:S:LENGTH_MISMATCH");
 
-        // Find the window from which the new windows will be inserted.
-        uint256 windowsLength_     = windows.length;
-        uint256 insertionWindowId_ = _findWindow(windows_[0].start, windowsLength_);
+        for (uint32 index_ = 0; index_ < windowStarts_.length; index_++) {
+            _scheduleWindow(windowStarts_[index_], issuanceRates_[index_]);
+        }
 
-        _updateSchedule(insertionWindowId_, windowsLength_, windows_);
-    }
-
-    function windowCount() external view returns (uint256 windowCount_) {
-        windowCount_ = windows.length;
     }
 
     /**************************************************************************************************************************************/
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function _calculateOverlap(uint256 start_, uint256 end_, uint256 from_, uint256 to_) internal pure returns (uint256 overlap_) {
-        overlap_ = _max(0, _min(end_, to_) - _max(start_, from_));
+    // Search windows from start to end to find where the new window should be inserted.
+    function _findInsertionPoint(uint32 windowStart_) internal view returns (Window memory window_) {
+        window_ = windows[0];
+
+        while (true) {
+            Window memory nextWindow_ = windows[window_.nextWindowId];
+
+            if (window_.nextWindowId == 0 || windowStart_ < nextWindow_.windowStart) break;
+
+            window_ = nextWindow_;
+        }
     }
 
-    function _findWindow(uint32 start_, uint256 windowsLength_) internal view returns (uint256 windowId_) {
-        for (; windowId_ < windowsLength_; windowId_++)
-            if (start_ <= windows[windowId_].start) break;
-    }
+    function _scheduleWindow(uint32 windowStart_, uint256 issuanceRate_) internal {
+        require(windowStart_ >= block.timestamp, "IM:S:OUT_OF_DATE");
 
-    function _max(uint256 a_, uint256 b_) internal pure returns (uint256 max_) {
-        max_ = a_ > b_ ? a_ : b_;
-    }
+        ( Window memory window_ ) = _findInsertionPoint(windowStart_);
 
-    function _min(uint256 a_, uint256 b_) internal pure returns (uint256 min_) {
-        min_ = a_ < b_ ? a_ : b_;
-    }
-
-    function _updateSchedule(uint256 startingWindowId_, uint256 oldWindowsLength_, Window[] memory newWindows_) internal {
-        uint256 newWindowsLength_ = startingWindowId_ + newWindows_.length;
-
-        for (uint256 offset_; offset_ < newWindows_.length; offset_++) {
-            uint256 windowId_     = startingWindowId_ + offset_;
-            Window memory window_ = newWindows_[offset_];
-
-            if (windowId_ >= oldWindowsLength_) windows.push(window_);
-            else windows[windowId_] = window_;
+        // If the window already exists then replace it.
+        if (windowStart_ == window_.windowStart) {
+            windows[window_.windowId].issuanceRate = issuanceRate_;
         }
 
-        if (newWindowsLength_ >= oldWindowsLength_) return;
-
-        for (uint256 windowsToPop_ = oldWindowsLength_ - newWindowsLength_; windowsToPop_ > 0; windowsToPop_--)
-            windows.pop();
-    }
-
-    function _validateWindows(Window[] memory windows_) internal view {
-        require(windows_.length > 0,                  "IM:VW:NO_WINDOWS");
-        require(windows_[0].start >= block.timestamp, "IM:VW:OUT_OF_DATE");
-
-        for (uint256 index_ = 1; index_ < windows_.length; index_++)
-            require(windows_[index_].start > windows_[index_ - 1].start, "IM:VW:OUT_OF_ORDER");
-    }
-
-    function _vestTokens(uint256 rate_, uint256 interval_) internal pure returns (uint256 amount_) {
-        amount_ = rate_ * interval_ / PRECISION;
+        // Otherwise create a new window and insert it.
+        else {
+            uint16 newWindowId_ = windows[window_.windowId].nextWindowId = windowCounter++;
+            windows[newWindowId_] = Window(newWindowId_, window_.nextWindowId, windowStart_, issuanceRate_);
+        }
     }
 
 }
