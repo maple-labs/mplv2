@@ -49,14 +49,14 @@ contract InflationModuleTestBase is TestBase {
         assertEq(issuanceRate_, issuanceRate, "issuanceRate");
     }
 
-    function expectUnscheduleCall() internal {
-        globals.__expectCall();
-        globals.unscheduleCall(governor, "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
-    }
-
     function expectTreasuryMint(uint256 amount) internal {
         token.__expectCall();
         token.mint(treasury, amount);
+    }
+
+    function expectUnscheduleCall() internal {
+        globals.__expectCall();
+        globals.unscheduleCall(governor, "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
     }
 
 }

@@ -58,7 +58,7 @@ contract InflationModule {
 
     // Claims tokens from the time of the last claim up until the current time.
     function claim() external returns (uint256 mintableAmount_) {
-        ( mintableAmount_ ) = claimable(uint32(block.timestamp));
+        ( mintableAmount_ ) = claimable(lastClaimed, uint32(block.timestamp));
 
         lastClaimed = uint32(block.timestamp);
 
@@ -68,13 +68,11 @@ contract InflationModule {
     }
 
     // Calculates how many tokens can be claimed from the time of the last claim up until the specified time.
-    function claimable(uint32 to_) public view returns (uint256 mintableAmount_) {
+    function claimable(uint32 from_, uint32 to_) public view returns (uint256 mintableAmount_) {
         Window memory currentWindow_ = windows[0];
         Window memory nextWindow_;
 
-        uint32 from_ = lastClaimed;
-
-        while (true) {
+        while (from_ < to_) {
             bool isLastWindow_ = currentWindow_.nextWindowId == 0;
 
             if (!isLastWindow_) {
@@ -88,7 +86,7 @@ contract InflationModule {
 
             if (isLastWindow_) break;
 
-            currentWindow_   = nextWindow_;
+            currentWindow_ = nextWindow_;
         }
     }
 
@@ -148,7 +146,10 @@ contract InflationModule {
     }
 
     function _overlapOf(uint32 a1_, uint32 b1_, uint32 a2_, uint32 b2_) internal pure returns (uint32 overlap_) {
-        overlap_ = _max(0, _min(b1_, b2_) - _max(a1_, a2_));
+        uint32 start_ = _max(a1_, a2_);
+        uint32 end_   = _min(b1_, b2_);
+
+        overlap_ = end_ > start_ ? end_ - start_ : 0;
     }
 
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
