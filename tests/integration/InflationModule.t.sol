@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { InflationModule }       from "../../contracts/InflationModuleV2.sol";
+import { InflationModule }       from "../../contracts/InflationModule.sol";
 import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
