@@ -30,3 +30,25 @@ interface IGlobalsLike {
 
     function unscheduleCall(address caller_, address contract_, bytes32 functionId_, bytes calldata callData_) external; 
 }
+
+interface IXmplLike {
+
+    function  asset() external view returns (address asset);
+
+    function cancelMigration() external;
+
+    function performMigration() external;
+
+    function scheduleMigration(address migrator, address newAsset) external;
+
+    function MINIMUM_MIGRATION_DELAY() external pure returns (uint256 minimumMigrationDelay);
+
+    function owner() external view returns (address owner);
+
+    function scheduledMigrationTimestamp() external view returns (uint256 scheduledMigrationTimestamp);
+
+    function scheduledMigrator() external view returns (address scheduledMigrator);
+
+    function scheduledNewAsset() external view returns (address scheduledNewAsset);
+
+}
