@@ -7,7 +7,7 @@ interface IEmergencyModule {
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
 
-    // Note: those are exactly the same as a the events on the ERC20. Should we even are to emit?
+    // Note: those are exactly the same as a the events on the ERC20. Should we even are to emit?  // MDL: Agreed, redundant.
     /**
      *  @dev   A burn was performed.
      *  @param from   The address of the account whose tokens were burned.

@@ -15,6 +15,7 @@ contract InflationModule is IInflationModule {
         uint208 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
     }
 
+    // MDL: Globals can be pulled from `token.globals()`, making migration smoother.
     address public immutable globals;
     address public immutable token;
 
@@ -71,6 +72,8 @@ contract InflationModule is IInflationModule {
         claimableAmount_ = _claimable(from_, to_);
     }
 
+    // MDL: Instead of having to find an insertion point (unbounded loop that takes longer and longer), instead, allow the caller to
+    //      define an insertion point, and just validate that the insertion point is not in the past (i.e. before the current).
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
@@ -103,6 +106,7 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     function _claimable(uint32 from_, uint32 to_) internal view returns (uint256 claimableAmount_) {
+        // MDL: if we store `latestFullyClaimedWindow`, then we no longer need to start this search from `windows[0]`.
         Window memory currentWindow_ = windows[0];
         Window memory nextWindow_;
 
@@ -125,6 +129,7 @@ contract InflationModule is IInflationModule {
     }
 
     function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
+        // MDL: This is going to start from the first window every single time, taking longer and longer as time progresses.
         Window memory window_ = windows[windowId_];
 
         while (true) {

@@ -6,10 +6,12 @@ import { NonTransparentProxy } from "../modules/ntp/contracts/NonTransparentProx
 import { IMapleTokenInitializerLike, IGlobalsLike } from "./interfaces/Interfaces.sol";
 import { IMapleTokenProxy, INonTransparentProxy }   from "./interfaces/IMapleTokenProxy.sol";
 
+// MDL: The name of this contract does not match its functionality. There are no "token" aspects of this contract.
 contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
 
     bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
 
+    // MDL: governor is passed to ntp to be written to admin slot, yet throughout code, governor is still fetched from globals.
     constructor(
         address globals_,
         address implementation_,
@@ -41,6 +43,8 @@ contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
         require(isScheduledCall_,       "MTP:SI:NOT_SCHEDULED");
 
         globals_.unscheduleCall(msg.sender, "MTP:SET_IMPLEMENTATION", msg.data);
+
+        // MDL: Can instead call `super.setImplementation(newImplementation_)` and remove the admin check above and the `_setAddress` below.
 
         _setAddress(IMPLEMENTATION_SLOT, newImplementation_);
 

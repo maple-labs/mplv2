@@ -6,6 +6,7 @@ import { IEmergencyModule }         from "./interfaces/IEmergencyModule.sol";
 
 contract EmergencyModule is IEmergencyModule {
 
+    // MDL: Globals can be pulled from `token.globals()`, making migration smoother.
     address public immutable globals;
     address public immutable token;
 
@@ -21,10 +22,12 @@ contract EmergencyModule is IEmergencyModule {
     }
 
     function burn(address from_, uint256 amount_) external onlyGovernor {
+        // MDL: This is unprincipled, but also a _worse_ PR disaster if there is no scheduled call check.
         IERC20Like(token).burn(from_, amount_);
     }
 
     function mint(uint256 amount_) external onlyGovernor {
+        // MDL: This is unprincipled, but also a PR disaster if there is no scheduled call check.
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount_);
     }
 
