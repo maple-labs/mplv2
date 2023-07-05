@@ -121,22 +121,7 @@ contract InflationModule {
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // Search windows from start to end to find where the new window should be inserted.
     function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
-        Window memory currentWindow_ = windows[windowId_];
-
-        while (true) {
-            Window memory nextWindow_ = windows[currentWindow_.nextWindowId];
-
-            if (currentWindow_.nextWindowId == 0 || windowStart_ <= nextWindow_.windowStart) break;
-
-            windowId_      = currentWindow_.nextWindowId;
-            currentWindow_ = nextWindow_;
-        }
-    }
-
-    function _findInsertionPoint2(uint32 windowStart_) internal view returns (uint16 windowId_) {
-        // MDL: This is going to start from the first window every single time, taking longer and longer as time progresses.
         Window memory window_ = windows[windowId_];
 
         while (true) {
