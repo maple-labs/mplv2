@@ -20,6 +20,8 @@ jobs:
           forge install
 
       - name: Run tests
+        env:
+            ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
         run: forge test
 
   coverage_report:

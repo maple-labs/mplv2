@@ -27,6 +27,7 @@ jobs:
         run: forge test
         env:
           FOUNDRY_PROFILE: production
+          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
 
   coverage_report:
     name: Generate coverage report
