@@ -33,7 +33,7 @@ interface IGlobalsLike {
 
 interface IXmplLike {
 
-    function  asset() external view returns (address asset);
+    function asset() external view returns (address asset);
 
     function cancelMigration() external;
 

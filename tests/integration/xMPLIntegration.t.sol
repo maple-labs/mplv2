@@ -10,8 +10,8 @@ import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { IGlobalsLike, IXmplLike }  from "../utils/Interfaces.sol";
-import { TestBase }                 from "../utils/TestBase.sol";
+import { IGlobalsLike, IXmplLike } from "../utils/Interfaces.sol";
+import { TestBase }                from "../utils/TestBase.sol";
 
 contract xMPLMigration is TestBase {
 
