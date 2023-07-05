@@ -4,8 +4,8 @@ pragma solidity 0.8.18;
 import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
 import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
 
-import { IGlobalsLike }        from "./interfaces/Interfaces.sol";
-import { IMapleToken, IERC20 } from "./interfaces/IMapleToken.sol";
+import { IGlobalsLike } from "./interfaces/Interfaces.sol";
+import { IMapleToken }  from "./interfaces/IMapleToken.sol";
 
 contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
 
@@ -21,8 +21,8 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     }
 
     modifier onlyScheduled(bytes32 functionId_) {
-        IGlobalsLike globals_ = IGlobalsLike(globals());
-        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
+        IGlobalsLike globals_         = IGlobalsLike(globals());
+        bool         isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
 
         require(isScheduledCall_, "MT:NOT_SCHEDULED");
 
@@ -35,7 +35,7 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-   // Note: technically, a module can be removed with this function, but that's alright, since it's more restrictive than removeModule()
+    // Note: Technically, a module can be removed with this function, but that's alright, since it's more restrictive than `removeModule()`.
     function addModule(address module, bool burner, bool minter) external onlyGovernor onlyScheduled("MT:ADD_MODULE") {
         require(burner || minter, "MT:AM:INVALID_MODULE");
 

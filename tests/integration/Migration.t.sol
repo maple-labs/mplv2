@@ -5,35 +5,40 @@ import { IMigrator } from "../../modules/migrator/contracts/interfaces/IMigrator
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
+import { IMapleToken } from "../../contracts/interfaces/IMapleToken.sol";
+
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { IGlobalsLike }  from "../utils/Interfaces.sol";
-import { TestBase }      from "../utils/TestBase.sol";
+import { TestBase } from "../utils/TestBase.sol";
 
 contract MigratorIntegrationTest is TestBase {
 
     uint256 constant OLD_SUPPLY = 10_000_000e18;
 
-    address governor = makeAddr("governor");
-    address treasury = makeAddr("treasury");
+    address governor        = makeAddr("governor");
+    address migratorAddress = makeAddr("migrator");
+    address treasury        = makeAddr("treasury");
 
     uint256 start;
 
     IGlobalsLike globals;
+    IMapleToken  oldToken;
     IMapleToken  token;
     IMigrator    migrator;
-    IMapleToken  oldToken;
-
-    address migratorAddress = makeAddr("migrator");
 
     function setUp() public virtual {
         oldToken = IMapleToken(deployMockERC20());
 
-        globals  = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
-        token    = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
+        globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
+
+        token = IMapleToken(address(
+            new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)
+        ));
+
         migrator = IMigrator(deployMigrator(address(oldToken), address(token)));
 
         start = block.timestamp;
@@ -138,10 +143,10 @@ contract MigratorIntegrationTest is TestBase {
 
         assertEq(oldToken.allowance(address(this), address(migrator)), partialAmount_);
 
-        assertEq(oldToken.balanceOf(address(this)),      amount_);
-        assertEq(oldToken.balanceOf(address(migrator)),  0);
-        assertEq(token.balanceOf(address(this)),         0);
-        assertEq(token.balanceOf(address(migrator)),     OLD_SUPPLY);
+        assertEq(oldToken.balanceOf(address(this)),     amount_);
+        assertEq(oldToken.balanceOf(address(migrator)), 0);
+        assertEq(token.balanceOf(address(this)),        0);
+        assertEq(token.balanceOf(address(migrator)),    OLD_SUPPLY);
 
         migrator.migrate(partialAmount_);
 

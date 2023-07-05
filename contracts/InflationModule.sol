@@ -19,7 +19,7 @@ contract InflationModule {
 
     uint16 public windowCounter;  // Total number of new windows created so far.
 
-    uint32 public lastClaimed;  // Iimestamp of the last time tokens were claimed.
+    uint32 public lastClaimed;  // Timestamp of the last time tokens were claimed.
 
     uint208 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
 
@@ -32,8 +32,8 @@ contract InflationModule {
     }
 
     modifier onlyScheduled(bytes32 functionId_) {
-        IGlobalsLike globals_ = IGlobalsLike(globals);
-        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
+        IGlobalsLike globals_         = IGlobalsLike(globals);
+        bool         isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
 
         require(isScheduledCall_, "IM:NOT_SCHEDULED");
 
@@ -56,11 +56,11 @@ contract InflationModule {
 
     // Claims tokens from the time of the last claim up until the current time.
     function claim() external returns (uint256 mintableAmount_) {
-        ( mintableAmount_ ) = claimable(lastClaimed, uint32(block.timestamp));
-
-        lastClaimed = uint32(block.timestamp);
+        mintableAmount_ = claimable(lastClaimed, uint32(block.timestamp));
 
         require(mintableAmount_ > 0, "IM:C:ZERO_MINT");
+
+        lastClaimed = uint32(block.timestamp);
 
         IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), mintableAmount_);
     }
@@ -77,7 +77,7 @@ contract InflationModule {
                 nextWindow_ = windows[currentWindow_.nextWindowId];
             }
 
-            uint32 windowEnd_ = !isLastWindow_ ? nextWindow_.windowStart : type(uint32).max;
+            uint32 windowEnd_ = isLastWindow_ ? type(uint32).max : nextWindow_.windowStart;
             uint32 interval_  = _overlapOf(currentWindow_.windowStart, windowEnd_, from_, to_);
 
             mintableAmount_ += currentWindow_.issuanceRate * interval_;
@@ -101,7 +101,7 @@ contract InflationModule {
         // Create all the new windows and link them up to each other.
         uint16 newWindowCount_ = uint16(windowStarts_.length);
 
-        for (uint16 index_; index_ < newWindowCount_; index_++) {
+        for (uint16 index_; index_ < newWindowCount_; ++index_) {
             windows[newWindowId_ + index_] = Window({
                 nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + index_ + 1 : 0,
                 windowStart:  windowStarts_[index_],
@@ -135,6 +135,23 @@ contract InflationModule {
         }
     }
 
+    function _findInsertionPoint2(uint32 windowStart_) internal view returns (uint16 windowId_) {
+        // MDL: This is going to start from the first window every single time, taking longer and longer as time progresses.
+        Window memory window_ = windows[windowId_];
+
+        while (true) {
+            uint16 nextWindowId_ = window_.nextWindowId;
+
+            if (nextWindowId_ == 0) break;
+
+            window_ = windows[nextWindowId_];
+
+            if (windowStart_ <= window_.windowStart) break;
+
+            windowId_ = nextWindowId_;
+        }
+    }
+
     function _max(uint32 a_, uint32 b_) internal pure returns (uint32 max_) {
         max_ = a_ > b_ ? a_ : b_;
     }
@@ -155,13 +172,13 @@ contract InflationModule {
         require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
         require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
 
-        for (uint256 index_ = 1; index_ < windowStarts_.length; index_++) {
+        for (uint256 index_ = 1; index_ < windowStarts_.length; ++index_) {
             require(windowStarts_[index_] > windowStarts_[index_ - 1], "IM:VW:OUT_OF_ORDER");
         }
 
         uint208 maximumIssuanceRate_ = maximumIssuanceRate;
 
-        for (uint256 index_; index_ < issuanceRates_.length; index_++) {
+        for (uint256 index_; index_ < issuanceRates_.length; ++index_) {
             require(issuanceRates_[index_] <= maximumIssuanceRate_, "IM:VW:OUT_OF_BOUNDS");
         }
     }

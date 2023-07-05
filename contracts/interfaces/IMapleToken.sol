@@ -15,12 +15,12 @@ interface IMapleToken is IERC20, INonTransparentProxied {
      *  @param module  The address the module added.
      *  @param canBurn Whether or not the module can burn tokens.
      *  @param canMint Whether or not the module can mint tokens.
-     */ 
+     */
     event ModuleAdded(address indexed module, bool canBurn, bool canMint);
 
     /**
      *  @dev   A module was removed from the MapleToken.
-     *  @param module  The address the module removed.
+     *  @param module The address the module removed.
      */
     event ModuleRemoved(address indexed module);
 
@@ -33,7 +33,7 @@ interface IMapleToken is IERC20, INonTransparentProxied {
      *  @param module  The address the module to add.
      *  @param canBurn Whether or not the module can burn tokens.
      *  @param canMint Whether or not the module can mint tokens.
-     */    
+     */
     function addModule(address module, bool canBurn, bool canMint) external;
 
     /**
@@ -58,7 +58,7 @@ interface IMapleToken is IERC20, INonTransparentProxied {
 
     /**
      *  @dev    Returns true if the specified module is a minter.
-     *  @param  module The address of the module to check.
+     *  @param  module   The address of the module to check.
      *  @return isMinter True if the module is a minter, false otherwise.
      */
     function isMinter(address module) external view returns (bool isMinter);

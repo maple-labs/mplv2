@@ -16,10 +16,10 @@ interface IGlobalsLike {
     function governor() external view returns (address governor);
 
     function isValidScheduledCall(
-        address caller,
-        address target,
-        bytes32 functionId,
-        bytes calldata callData
+        address          caller,
+        address          target,
+        bytes32          functionId,
+        bytes   calldata callData
     ) external view returns (bool isValidScheduledCall);
 
     function mapleTreasury() external view returns (address mapleTreasury);

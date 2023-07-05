@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { TestBase } from "./utils/TestBase.sol";
-
 import { InflationModule } from "../contracts/InflationModule.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
+import { TestBase }               from "./utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
 
@@ -20,10 +19,9 @@ contract InflationModuleTestBase is TestBase {
 
     uint208[] issuanceRates;
 
-    MockGlobals globals;
-    MockToken   token;
-
     InflationModule module;
+    MockGlobals     globals;
+    MockToken       token;
 
     function setUp() public virtual {
         globals = new MockGlobals();

@@ -14,7 +14,7 @@ contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
         address globals_,
         address implementation_,
         address initializer_,
-        address migrator_
+        address tokenMigrator_
     )
         NonTransparentProxy(IGlobalsLike(globals_).governor(), implementation_)
     {
@@ -22,7 +22,7 @@ contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
 
         ( bool success_, ) = initializer_.delegatecall(abi.encodeWithSelector(
             IMapleTokenInitializerLike(initializer_).initialize.selector,
-            migrator_,
+            tokenMigrator_,
             IGlobalsLike(globals_).mapleTreasury()
         ));
 
@@ -34,8 +34,8 @@ contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
     /**************************************************************************************************************************************/
 
     function setImplementation(address newImplementation_) override(IMapleTokenProxy, NonTransparentProxy) external {
-        IGlobalsLike globals_ = IGlobalsLike(globals());
-        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+        IGlobalsLike globals_         = IGlobalsLike(_getAddress(GLOBALS_SLOT));
+        bool         isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
 
         require(msg.sender == _admin(), "MTP:SI:NOT_ADMIN");
         require(isScheduledCall_,       "MTP:SI:NOT_SCHEDULED");
@@ -45,14 +45,6 @@ contract MapleTokenProxy is IMapleTokenProxy, NonTransparentProxy {
         _setAddress(IMPLEMENTATION_SLOT, newImplementation_);
 
         emit ImplementationSet(newImplementation_);
-    }
-
-    /**************************************************************************************************************************************/
-    /*** Utility Functions                                                                                                              ***/
-    /**************************************************************************************************************************************/
-
-    function globals() private view returns (address globals_) {
-        globals_ = _getAddress(GLOBALS_SLOT);
     }
 
 }
