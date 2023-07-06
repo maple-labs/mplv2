@@ -38,10 +38,10 @@ contract EmergencyModuleIntegrationTest is TestBase {
 
         module = new EmergencyModule(address(globals), address(token));
 
-        vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, true));
+        vm.startPrank(governor);        
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
-        token.addModule(address(module), true, true);
+        token.addModule(address(module));
         vm.stopPrank();
 
         start = block.timestamp;
@@ -53,12 +53,12 @@ contract EmergencyModuleIntegrationTest is TestBase {
     }
 
     function test_emergencyModule_mint_notMinter() external {
-        vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, false));
+        vm.startPrank(governor);        
+        globals.scheduleCall(address(token), "MT:REMOVE_MODULE", abi.encodeWithSelector(IMapleToken.removeModule.selector, module));
 
-        token.addModule(address(module), true, false);
+        token.removeModule(address(module));
 
-        vm.expectRevert("MT:M:NOT_MINTER");
+        vm.expectRevert("MT:M:NOT_MODULE");
         module.mint(1e18);
 
         vm.stopPrank();
@@ -83,11 +83,11 @@ contract EmergencyModuleIntegrationTest is TestBase {
 
     function test_emergencyModule_burn_notBurner() external {
         vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
+        globals.scheduleCall(address(token), "MT:REMOVE_MODULE", abi.encodeWithSelector(IMapleToken.removeModule.selector, module));
 
-        token.addModule(address(module), false, true);
+        token.removeModule(address(module));        
 
-        vm.expectRevert("MT:B:NOT_BURNER");
+        vm.expectRevert("MT:B:NOT_MODULE");
         module.burn(treasury, 1e18);
 
         vm.stopPrank();
