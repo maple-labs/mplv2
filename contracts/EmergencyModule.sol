@@ -20,12 +20,12 @@ contract EmergencyModule is IEmergencyModule {
         _;
     }
 
-    function mint(uint256 amount_) external onlyGovernor {
-        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount_);
-    }
-
     function burn(address from_, uint256 amount_) external onlyGovernor {
         IERC20Like(token).burn(from_, amount_);
+    }
+
+    function mint(uint256 amount_) external onlyGovernor {
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount_);
     }
 
 }

@@ -66,7 +66,7 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     /*** View Functions                                                                                                                 ***/
     /**************************************************************************************************************************************/
 
-    function globals() public view override returns (address globals_) {
+    function globals() public view returns (address globals_) {
         globals_ = _getAddress(GLOBALS_SLOT);
     }
 
