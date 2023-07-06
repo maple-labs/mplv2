@@ -41,7 +41,7 @@ contract MapleTokenTestsBase is TestBase {
 contract SetImplementationTests is MapleTokenTestsBase {
 
     function test_setImplementation_notAdmin() external {
-        vm.expectRevert("MTP:SI:NOT_ADMIN");
+        vm.expectRevert("MTP:SI:NOT_GOVERNOR");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
     }
 
