@@ -40,28 +40,28 @@ contract AddModuleIntegrationTests is TestBase {
 
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
-        token.addModule(module, false, true);
+        token.addModule(module);
     }
 
     function test_addModule_notScheduled() external {
         vm.prank(governor);
         vm.expectRevert("MT:NOT_SCHEDULED");
-        token.addModule(module, false, true);
+        token.addModule(module);
     }
 
     function test_addModule_notScheduled_beforeDelay() external {
         vm.startPrank(governor);
 
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
         vm.warp(start + 7 days - 1);
 
         vm.expectRevert("MT:NOT_SCHEDULED");
-        token.addModule(module, false, true);
+        token.addModule(module);
 
         vm.warp(start + 7 days + 1);
 
-        token.addModule(module, false, true);
+        token.addModule(module);
 
         vm.stopPrank();
     }
@@ -69,66 +69,30 @@ contract AddModuleIntegrationTests is TestBase {
     function test_addModule_notScheduled_afterWindow() external {
         vm.startPrank(governor);
 
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
         vm.warp(start + 9 days + 1);
 
         vm.expectRevert("MT:NOT_SCHEDULED");
-        token.addModule(module, false, true);
+        token.addModule(module);
 
         vm.warp(start + 9 days);
 
-        token.addModule(module, false, true);
+        token.addModule(module);
 
         vm.stopPrank();
     }
 
-    function test_addModule_invalidModule() external {
+    function test_addModule_success() external {
         vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, false));
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
         vm.warp(start + 8 days);
 
-        vm.expectRevert("MT:AM:INVALID_MODULE");
-        token.addModule(module, false, false);
-        vm.stopPrank();
-    }
-
-    function test_addModule_create() external {
-        vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
-
-        vm.warp(start + 8 days);
-
-        token.addModule(module, false, true);
+        token.addModule(module);
         vm.stopPrank();
 
-        assertTrue(!token.isBurner(module));
-        assertTrue(token.isMinter(module));
-    }
-
-    function test_addModule_update() external {
-        // Add the module
-        vm.startPrank(governor);
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
-
-        vm.warp(start + 8 days);
-
-        token.addModule(module, false, true);
-
-        assertTrue(!token.isBurner(module));
-        assertTrue(token.isMinter(module));
-
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, false));
-
-        vm.warp(start + 16 days);
-
-        token.addModule(module, true, false);
-
-        assertTrue(token.isBurner(module));
-        assertTrue(!token.isMinter(module));
-
-        vm.stopPrank();
+        assertTrue(token.isModule(module));
     }
 
 }

@@ -34,10 +34,10 @@ contract RemoveModuleIntegrationTests is TestBase {
 
         vm.startPrank(governor);
         globals.setTimelockWindow(address(token), "MT:REMOVE_MODULE", 7 days, 2 days);
+        
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, true));
-
-        token.addModule(module, true, true);
+        token.addModule(module);
         vm.stopPrank();
 
         start = block.timestamp;
@@ -97,8 +97,7 @@ contract RemoveModuleIntegrationTests is TestBase {
         token.removeModule(module);
         vm.stopPrank();
 
-        assertTrue(!token.isBurner(module));
-        assertTrue(!token.isMinter(module));
+        assertTrue(!token.isModule(module));
     }
 
 }
