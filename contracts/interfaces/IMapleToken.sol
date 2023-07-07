@@ -12,15 +12,13 @@ interface IMapleToken is IERC20, INonTransparentProxied {
 
     /**
      *  @dev   A new module was added to the MapleToken.
-     *  @param module  The address the module added.
-     *  @param canBurn Whether or not the module can burn tokens.
-     *  @param canMint Whether or not the module can mint tokens.
+     *  @param module The address the module added.
      */ 
-    event ModuleAdded(address indexed module, bool canBurn, bool canMint);
+    event ModuleAdded(address indexed module);
 
     /**
      *  @dev   A module was removed from the MapleToken.
-     *  @param module  The address the module removed.
+     *  @param module The address the module removed.
      */
     event ModuleRemoved(address indexed module);
 
@@ -31,10 +29,8 @@ interface IMapleToken is IERC20, INonTransparentProxied {
     /**
      *  @dev   Adds a new module to the MapleToken.
      *  @param module  The address the module to add.
-     *  @param canBurn Whether or not the module can burn tokens.
-     *  @param canMint Whether or not the module can mint tokens.
      */    
-    function addModule(address module, bool canBurn, bool canMint) external;
+    function addModule(address module) external;
 
     /**
      *  @dev   Burns a specified amount of tokens from the an account.
@@ -50,18 +46,11 @@ interface IMapleToken is IERC20, INonTransparentProxied {
     function globals() external view returns (address globals);
 
     /**
-     *  @dev    Returns true if the specified module is a burner.
+     *  @dev    Returns true if the specified address is module.
      *  @param  module The address of the module to check.
-     *  @return isBurner True if the module is a burner, false otherwise.
+     *  @return isModule True if the address is a valid module.
      */
-    function isBurner(address module) external view returns (bool isBurner);
-
-    /**
-     *  @dev    Returns true if the specified module is a minter.
-     *  @param  module The address of the module to check.
-     *  @return isMinter True if the module is a minter, false otherwise.
-     */
-    function isMinter(address module) external view returns (bool isMinter);
+    function isModule(address module) external view returns (bool isModule);
 
     /**
      *  @dev   Mints a specified amount of tokens to an account.

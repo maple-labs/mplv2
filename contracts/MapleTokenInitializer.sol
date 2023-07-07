@@ -9,14 +9,14 @@ import { IMapleTokenInitializer } from "./interfaces/IMapleTokenInitializer.sol"
 contract MapleTokenInitializer is IMapleTokenInitializer, ERC20Proxied, NonTransparentProxied {
 
     function initialize(address migrator_, address treasury_) external {
-        name     = "Maple Finance";
+        name     = "Maple Finance Token";
         symbol   = "MPL";
         decimals = 18;
 
+        emit Initialized(migrator_, treasury_);
+
         _mint(migrator_, 10_000_000e18);
         _mint(treasury_, 1_000_000e18);
-        
-        emit Initialized(migrator_, treasury_);
     }
 
 }

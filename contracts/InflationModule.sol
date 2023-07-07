@@ -3,10 +3,11 @@ pragma solidity 0.8.18;
 
 import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
-// TODO: Add interface (with struct), events, NatSpec.
-// TODO: Add a view function that returns the current schedule as an array of windows.
+import { IInflationModule } from "./interfaces/IInflationModule.sol";
 
-contract InflationModule {
+// TODO: What if the `maximumIssuanceRate` is set to a value lower than an already existing issuance rate of any of the windows?
+
+contract InflationModule is IInflationModule {
 
     struct Window {
         uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
@@ -14,17 +15,16 @@ contract InflationModule {
         uint208 issuanceRate;  // Defines the rate (per second) at which tokens will be issued (zero indicates no issuance).
     }
 
-    address public immutable token;    // Address of the `MapleToken` contract.
+    address public immutable token;
 
-    uint16 public newWindowId;  // Identifier that will be assigned to the next scheduled window.
+    uint16 public newWindowId;
 
-    uint32 public lastClaimedTimestamp;  // Iimestamp of the last time tokens were claimed.
-    uint16 public lastClaimedWindowId;   // Identifier of the window during which tokens were last claimed.
+    uint32 public lastClaimedTimestamp;
+    uint16 public lastClaimedWindowId;
 
-    // TODO: What if this is set to a value lower than an already existing issuance rate for any of the windows?
-    uint208 public maximumIssuanceRate;  // Maximum issuance rate allowed for any window (to prevent overflows).
+    uint208 public maximumIssuanceRate;
 
-    mapping(uint16 => Window) public windows;  // Maps identifiers to windows (effectively an implementation of a linked list).
+    mapping(uint16 => Window) public windows;
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(_globals()).governor(), "IM:NOT_GOVERNOR");
@@ -65,7 +65,6 @@ contract InflationModule {
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
     }
 
-    // Schedules new windows that define when tokens will be issued.
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
@@ -89,7 +88,6 @@ contract InflationModule {
         newWindowId += newWindowCount_;
     }
 
-    // Sets a new limit to the maximum issuance rate allowed for any window.
     function setMaximumIssuanceRate(uint192 maximumIssuanceRate_) external onlyGovernor onlyScheduled("IM:SMIR") {
         maximumIssuanceRate = maximumIssuanceRate_;
     }
@@ -98,7 +96,6 @@ contract InflationModule {
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    // Calculates how many tokens can be claimed from the time of the last claim up until the current time.
     function _claimable(
         uint16 lastClaimedWindowId_,
         uint32 lastClaimedTimestamp_

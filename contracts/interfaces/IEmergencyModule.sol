@@ -6,6 +6,7 @@ interface IEmergencyModule {
     /**************************************************************************************************************************************/
     /*** Events                                                                                                                         ***/
     /**************************************************************************************************************************************/
+
     // Note: those are exactly the same as a the events on the ERC20. Should we even are to emit?
     /**
      *  @dev   A burn was performed.
@@ -36,7 +37,7 @@ interface IEmergencyModule {
      *  @dev    Returns the address of the Maple Globals contract.
      *  @return globals The address of the Maple Globals contract.
      */
-    function globals() external view returns(address globals);
+    function globals() external view returns (address globals);
 
     /**
      *  @dev   Mints a specified amount of tokens to the Maple treasury.
@@ -48,6 +49,6 @@ interface IEmergencyModule {
      *  @dev    Returns the address of the Maple treasury.
      *  @return token The address of the underlying token being managed.
      */
-    function token() external view returns(address token);
+    function token() external view returns (address token);
 
 }

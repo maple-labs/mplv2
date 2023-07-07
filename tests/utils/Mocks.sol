@@ -37,22 +37,22 @@ contract MockGlobals is Spied {
     address public governor;
     address public mapleTreasury;
 
-    bool internal isScheduled;
+    bool internal _isScheduled;
 
     function __setGovernor(address governor_) external {
         governor = governor_;
+    }
+
+    function __setIsValidScheduledCall(bool isValidScheduledCall_) external {
+        _isScheduled = isValidScheduledCall_;
     }
 
     function __setMapleTreasury(address mapleTreasury_) external {
         mapleTreasury = mapleTreasury_;
     }
 
-    function __setIsValidScheduledCall(bool isValidScheduledCall_) external {
-        isScheduled = isValidScheduledCall_;
-    }
-
     function isValidScheduledCall(address, address, bytes32, bytes calldata) external view returns (bool isValidScheduledCall_) {
-        isValidScheduledCall_ = isScheduled;
+        isValidScheduledCall_ = _isScheduled;
     }
 
     function unscheduleCall(address, bytes32, bytes calldata) external spied { }
