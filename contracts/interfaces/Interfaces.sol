@@ -33,3 +33,9 @@ interface IMapleTokenInitializerLike {
     function initialize(address migrator, address treasury) external;
 
 }
+
+interface IMapleTokenLike is IERC20Like {
+
+    function globals() external view returns (address globals);
+
+}
