@@ -3,19 +3,21 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
+import { IMapleToken } from "../../contracts/interfaces/IMapleToken.sol";
+
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { TestBase }       from "../utils/TestBase.sol";
-import { IGlobalsLike  }  from "../utils/Interfaces.sol";
+import { TestBase } from "../utils/TestBase.sol";
 
 contract AddModuleIntegrationTests is TestBase {
 
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
-    address migrator = makeAddr("migrator"); 
+    address migrator = makeAddr("migrator");
     address module   = makeAddr("module");
 
     uint256 start;
@@ -25,7 +27,10 @@ contract AddModuleIntegrationTests is TestBase {
 
     function setUp() public virtual {
         globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
-        token   = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
+
+        token = IMapleToken(address(
+            new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)
+        ));
 
         vm.prank(governor);
         globals.setTimelockWindow(address(token), "MT:ADD_MODULE", 7 days, 2 days);

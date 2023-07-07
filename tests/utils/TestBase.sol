@@ -16,12 +16,12 @@ contract TestBase is Test {
     bytes internal constant memOverflowError    = abi.encodeWithSignature("Panic(uint256)", 0x41);
     bytes internal constant zeroVarError        = abi.encodeWithSignature("Panic(uint256)", 0x51);
 
-    function deployGlobals() internal returns (address globals) {
-        return deployCode("MapleGlobals.sol");
+    function deployGlobals() internal returns (address globals_) {
+        globals_ = deployCode("MapleGlobals.sol");
     }
 
-    function deployMockERC20() internal returns (address mockERC20) {
-        return deployCode("MockERC20.sol", abi.encode("MOCK", "MOCK", 18));
+    function deployMockERC20() internal returns (address mockERC20_) {
+        mockERC20_ = deployCode("MockERC20.sol", abi.encode("MOCK", "MOCK", 18));
     }
 
 }

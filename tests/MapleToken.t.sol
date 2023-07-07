@@ -15,8 +15,8 @@ contract MapleTokenTestsBase is TestBase {
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
 
-    address initializer;
     address implementation;
+    address initializer;
     address tokenAddress;
 
     MockGlobals globals;

@@ -3,20 +3,22 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
+import { IMapleToken } from "../../contracts/interfaces/IMapleToken.sol";
+
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+
 import { EmergencyModule }       from "../../contracts/EmergencyModule.sol";
-import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { TestBase }       from "../utils/TestBase.sol";
-import { IGlobalsLike  }  from "../utils/Interfaces.sol";
+import { TestBase } from "../utils/TestBase.sol";
 
 contract EmergencyModuleIntegrationTest is TestBase {
 
     address governor = makeAddr("governor");
-    address treasury = makeAddr("treasury");
     address migrator = makeAddr("migrator");
+    address treasury = makeAddr("treasury");
 
     uint256 start;
 
@@ -26,14 +28,17 @@ contract EmergencyModuleIntegrationTest is TestBase {
 
     function setUp() public virtual {
         globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
-        
+
         vm.prank(governor);
         globals.setMapleTreasury(treasury);
 
-        token   = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
-        module  = new EmergencyModule(address(token), address(globals));
+        token = IMapleToken(address(
+            new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)
+        ));
 
-        vm.startPrank(governor);        
+        module = new EmergencyModule(address(globals), address(token));
+
+        vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, true));
 
         token.addModule(address(module), true, true);
@@ -48,7 +53,7 @@ contract EmergencyModuleIntegrationTest is TestBase {
     }
 
     function test_emergencyModule_mint_notMinter() external {
-        vm.startPrank(governor);        
+        vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, true, false));
 
         token.addModule(address(module), true, false);
@@ -77,7 +82,7 @@ contract EmergencyModuleIntegrationTest is TestBase {
     }
 
     function test_emergencyModule_burn_notBurner() external {
-        vm.startPrank(governor);        
+        vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
 
         token.addModule(address(module), false, true);
