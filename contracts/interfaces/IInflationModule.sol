@@ -6,16 +6,16 @@ pragma solidity 0.8.18;
 interface IInflationModule {
 
     /**
-     *  @dev    Returns the address of the Maple treasury.
-     *  @return token The address of the underlying token being managed.
+     *  @dev    Claims tokens from the time of the last claim up until the current time.
+     *  @return claimedAmount The amount of tokens that were claimed.
      */
-    function token() external view returns (address token);
+    function claim() external returns (uint256 claimedAmount);
 
     /**
-     *  @dev    Returns the identifier that will be assigned to the next scheduled window.
-     *  @return newWindowId Identifier that will be assigned to the next scheduled window.
+     *  @dev    Calculates how many tokens would be claimable from the time of the last claim up to the specified point in time.
+     *  @return claimableAmount The amount of tokens that are claimable from the time of the last claim up to the specified time.
      */
-    function newWindowId() external view returns (uint16 newWindowId);
+    function claimable(uint32 to) external view returns (uint256 claimableAmount);
 
     /**
      *  @dev    Returns the timestamp of the last time tokens were claimed.
@@ -27,42 +27,19 @@ interface IInflationModule {
      *  @dev    Returns the identifier of the window during which tokens were last claimed.
      *  @return lastClaimedWindowId Identifier of the window during which tokens were last claimed.
      */
-    function lastClaimedWindowId() external view returns (uint32 lastClaimedWindowId);
+    function lastClaimedWindowId() external view returns (uint16 lastClaimedWindowId);
 
     /**
-     *  @dev    Returns the maximum issuance rate allowed for any window (to prevent overflows).
-     *  @return maximumIssuanceRate The maximum issuance rate allowed for any window.
+     *  @dev    Returns the identifier that was assigned to the last scheduled window.
+     *  @return lastScheduledWindowId Identifier that was assigned to the last scheduled window.
+     */
+    function lastScheduledWindowId() external view returns (uint16 lastScheduledWindowId);
+
+    /**
+     *  @dev    Returns the maximum issuance rate allowed for any window.
+     *  @return maximumIssuanceRate Maximum issuance rate allowed for any window.
      */
     function maximumIssuanceRate() external view returns (uint208 maximumIssuanceRate);
-
-    /**
-     *  @dev    Returns thew window parameters given a window identifier.
-     *  @param  windowId     The window identifier.
-     *  @return nextWindowId The identifier of the window that takes effect after the provided one (zero if there is none).
-     *  @return windowStart  The timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
-     *  @return issuanceRate The rate (per second) at which tokens will be issued (zero indicates no issuance).
-     */
-    function windows(uint16 windowId) external view returns (uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate);
-
-    /**
-     *  @dev    Claims tokens from the time of the last claim up until the current time.
-     *  @return claimedAmount The amount of token that was minted in this claim.
-     */
-    function claim() external returns (uint256 claimedAmount);
-
-    /**
-     *  @dev    Calculates how many tokens that would be claimed if `claim` is called right now.
-     *  @return claimableAmount The amount of token that are claimable from the time of the last claim up until now.
-     */
-    function claimable() external view returns (uint256 claimableAmount);
-
-    /**
-     *  @dev    Calculates how many tokens can be claimed from a specified start time to end time.
-     *  @param  from            The start of a time span.
-     *  @param  to              The end of a time span.
-     *  @return claimableAmount The amount of token that are claimable during this period.
-     */
-    function claimable(uint32 from, uint32 to) external view returns (uint256 claimableAmount);
 
     /**
      *  @dev   Schedules new windows that define when tokens will be issued.
@@ -72,9 +49,18 @@ interface IInflationModule {
     function schedule(uint32[] memory windowStarts, uint208[] memory issuanceRates) external;
 
     /**
-     *  @dev   Sets a new limit to the maximum issuance rate allowed for any window.
-     *  @param maximumIssuanceRate The new maximum issuance rate allowed for any window.
+     *  @dev    Returns the address of the Maple treasury.
+     *  @return token The address of the underlying token being managed.
      */
-    function setMaximumIssuanceRate(uint192 maximumIssuanceRate) external;
+    function token() external view returns (address token);
+
+    /**
+     *  @dev    Returns thew window parameters given a window identifier.
+     *  @param  windowId     The window identifier.
+     *  @return nextWindowId The identifier of the window that takes effect after the provided one (zero if there is none).
+     *  @return windowStart  The timestamp that marks when the window starts. It lasts until the start of the next window (or forever).
+     *  @return issuanceRate The rate (per second) at which tokens will be issued (zero indicates no issuance).
+     */
+    function windows(uint16 windowId) external view returns (uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate);
 
 }

@@ -12,20 +12,24 @@ import { TestBase }               from "./utils/TestBase.sol";
 
 contract InflationModuleTestBase is TestBase {
 
-    address governor = makeAddr("governor");
-    address treasury = makeAddr("treasury");
+    address governor;
+    address treasury;
 
-    uint32 start = uint32(block.timestamp);
+    uint32 start;
 
     uint32[] windowStarts;
 
     uint208[] issuanceRates;
 
+    MockGlobals globals;
+    MockToken   token;
+
     InflationModule module;
-    MockGlobals     globals;
-    MockToken       token;
 
     function setUp() public virtual {
+        governor = makeAddr("governor");
+        treasury = makeAddr("treasury");
+
         globals = new MockGlobals();
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
@@ -34,10 +38,11 @@ contract InflationModuleTestBase is TestBase {
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModule(address(token));
+        module = new InflationModule(address(token), 1e18);
+
+        start = uint32(block.timestamp);
 
         vm.startPrank(governor);
-        vm.warp(start);
     }
 
     function assertWindow(uint16 windowId, uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate) internal {
@@ -69,10 +74,11 @@ contract ConstructorTests is InflationModuleTestBase {
     function test_inflationModule_constructor() external {
         assertEq(module.token(), address(token));
 
-        assertEq(module.lastClaimedTimestamp(), 0);
-        assertEq(module.lastClaimedWindowId(),  0);
-        assertEq(module.maximumIssuanceRate(),  1e18);
-        assertEq(module.newWindowId(),          1);
+        assertEq(module.maximumIssuanceRate(), 1e18);
+
+        assertEq(module.lastClaimedTimestamp(),  0);
+        assertEq(module.lastClaimedWindowId(),   0);
+        assertEq(module.lastScheduledWindowId(), 0);
 
         assertWindow(0, 0, 0, 0);
     }
@@ -86,18 +92,18 @@ contract ClaimTests is InflationModuleTestBase {
         vm.stopPrank();
     }
 
-    function test_claim_zeroMint_atomic() external {
-        vm.expectRevert("IM:C:ZERO_MINT");
+    function test_claim_zeroClaim_atomic() external {
+        vm.expectRevert("IM:C:ZERO_CLAIM");
         module.claim();
     }
 
-    function test_claim_zeroMint_afterWarp() external {
+    function test_claim_zeroClaim_afterWarp() external {
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_MINT");
+        vm.expectRevert("IM:C:ZERO_CLAIM");
         module.claim();
     }
 
-    function test_claim_zeroMint_emptyWindow() external {
+    function test_claim_zeroClaim_emptyWindow() external {
         windowStarts.push(start + 5 days);
         issuanceRates.push(0);
 
@@ -105,11 +111,11 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_MINT");
+        vm.expectRevert("IM:C:ZERO_CLAIM");
         module.claim();
     }
 
-    function test_claim_zeroMint_beforeWindow() external {
+    function test_claim_zeroClaim_beforeWindow() external {
         windowStarts.push(start + 20 days);
         issuanceRates.push(1e18);
 
@@ -117,7 +123,7 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_MINT");
+        vm.expectRevert("IM:C:ZERO_CLAIM");
         module.claim();
     }
 
@@ -156,6 +162,25 @@ contract ClaimTests is InflationModuleTestBase {
         assertEq(module.lastClaimedWindowId(),  2);
     }
 
+    function test_claim_betweenWindows() external {
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+
+        issuanceRates.push(1e18);
+        issuanceRates.push(0);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+
+        vm.warp(start + 50 days);
+        expectTreasuryMint(1e18 * 50 days);
+        module.claim();
+
+        assertEq(module.lastClaimedTimestamp(), start + 50 days);
+        assertEq(module.lastClaimedWindowId(),  2);
+    }
+
     function test_claim_threeWindows() external {
         windowStarts.push(start);
         windowStarts.push(start + 50 days);
@@ -174,10 +199,10 @@ contract ClaimTests is InflationModuleTestBase {
         module.claim();
 
         assertEq(module.lastClaimedTimestamp(), start + 65 days);
-        assertEq(module.lastClaimedWindowId(),  3);
+        assertEq(module.lastClaimedWindowId(),  2);
     }
 
-    function test_claim_complex() external {
+    function test_claim_sevenWindows() external {
         windowStarts.push(start);
         windowStarts.push(start + 50 days);
         windowStarts.push(start + 85 days);
@@ -202,28 +227,31 @@ contract ClaimTests is InflationModuleTestBase {
         expectTreasuryMint(0.95e18 * 20 days);
         module.claim();
 
-        assertEq(module.lastClaimedTimestamp(), start + 20 days);
-        assertEq(module.lastClaimedWindowId(),  1);
+        vm.warp(start + 60 days);
+        expectTreasuryMint(0.95e18 * 30 days + 0.96e18 * 10 days);
+        module.claim();
 
-        // vm.warp(start + 60 days);
-        // expectTreasuryMint(0.95e18 * 30 days + 0.96e18 * 10 days);
-        // module.claim();
+        vm.warp(start + 100 days);
+        expectTreasuryMint(0.96e18 * 25 days + 0.97e18 * 15 days);
+        module.claim();
 
-        // vm.warp(start + 100 days);
-        // expectTreasuryMint(0.96e18 * 25 days + 0.97e18 * 15 days);
-        // module.claim();
+        vm.warp(start + 200 days);
+        expectTreasuryMint(0.97e18 * 20 days + 1e18 * 40 days);
+        module.claim();
 
-        // vm.warp(start + 200 days);
-        // expectTreasuryMint(0.97e18 * 20 days + 1e18 * 40 days);
-        // module.claim();
-
-        // assertEq(module.lastClaimedTimestamp(), start + 200 days);
-        // assertEq(module.lastClaimedWindowId(),  7);
+        assertEq(module.lastClaimedTimestamp(), start + 200 days);
+        assertEq(module.lastClaimedWindowId(),  6);
     }
 
     function test_claim_afterReschedule() external {
         // TODO
     }
+
+}
+
+contract ClaimableTests is InflationModuleTestBase {
+
+    // TODO
 
 }
 
@@ -305,7 +333,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 2);
+        assertEq(module.lastScheduledWindowId(), 1);
 
         assertWindow(0, 1, 0,               0);
         assertWindow(1, 0, start + 10 days, 0.9e18);
@@ -321,7 +349,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 3);
+        assertEq(module.lastScheduledWindowId(), 2);
 
         assertWindow(0, 1, 0,                0);
         assertWindow(1, 2, start + 10 days,  0.9e18);
@@ -341,7 +369,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 3);
+        assertEq(module.lastScheduledWindowId(), 2);
 
         assertWindow(0, 1, 0,                0);
         assertWindow(1, 2, start + 10 days,  0.9e18);
@@ -363,7 +391,7 @@ contract ScheduleTests is InflationModuleTestBase {
         vm.warp(start + 95 days);
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 3);
+        assertEq(module.lastScheduledWindowId(), 2);
 
         assertWindow(0, 1, 0,                0);
         assertWindow(1, 2, start + 10 days,  0.9e18);
@@ -389,7 +417,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 5);
+        assertEq(module.lastScheduledWindowId(), 4);
 
         assertWindow(0, 1, 0,                0);
         assertWindow(1, 2, start + 10 days,  0.9e18);
@@ -417,38 +445,12 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
         module.schedule(windowStarts, issuanceRates);
 
-        assertEq(module.newWindowId(), 5);
+        assertEq(module.lastScheduledWindowId(), 4);
 
         assertWindow(0, 1, 0,                0);
         assertWindow(1, 3, start + 10 days,  0.9e18);
         assertWindow(3, 4, start + 50 days,  0.96e18);
         assertWindow(4, 0, start + 120 days, 0.99e18);
-    }
-
-}
-
-contract SetMaximumIssuanceRateTests is InflationModuleTestBase {
-
-    function test_setMaximumIssuanceRate_notGovernor() external {
-        vm.stopPrank();
-        vm.expectRevert("IM:NOT_GOVERNOR");
-        module.setMaximumIssuanceRate(0.5e18);
-    }
-
-    function test_setMaximumIssuanceRate_notScheduled() external {
-        globals.__setIsValidScheduledCall(false);
-
-        vm.expectRevert("IM:NOT_SCHEDULED");
-        module.setMaximumIssuanceRate(0.5e18);
-    }
-
-    function test_setMaximumIssuanceRate_success() external {
-        globals.__expectCall();
-        globals.unscheduleCall(governor, "IM:SMIR", abi.encodeWithSelector(module.setMaximumIssuanceRate.selector, 0.5e18));
-
-        module.setMaximumIssuanceRate(0.5e18);
-
-        assertEq(module.maximumIssuanceRate(), 0.5e18);
     }
 
 }
