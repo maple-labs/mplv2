@@ -227,13 +227,22 @@ contract ClaimTests is InflationModuleTestBase {
         expectTreasuryMint(0.95e18 * 20 days);
         module.claim();
 
+        assertEq(module.lastClaimedTimestamp(), start + 20 days);
+        assertEq(module.lastClaimedWindowId(),  1);
+
         vm.warp(start + 60 days);
         expectTreasuryMint(0.95e18 * 30 days + 0.96e18 * 10 days);
         module.claim();
 
+        assertEq(module.lastClaimedTimestamp(), start + 60 days);
+        assertEq(module.lastClaimedWindowId(),  2);
+
         vm.warp(start + 100 days);
         expectTreasuryMint(0.96e18 * 25 days + 0.97e18 * 15 days);
         module.claim();
+
+        assertEq(module.lastClaimedTimestamp(), start + 100 days);
+        assertEq(module.lastClaimedWindowId(),  3);
 
         vm.warp(start + 200 days);
         expectTreasuryMint(0.97e18 * 20 days + 1e18 * 40 days);
