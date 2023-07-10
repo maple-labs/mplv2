@@ -34,9 +34,9 @@ contract InflationModuleIntegrationTest is TestBase {
         module = new InflationModule(address(globals), address(token));
 
         vm.startPrank(governor);        
-        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module, false, true));
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
-        token.addModule(address(module), false, true);
+        token.addModule(address(module));
 
         uint32[] memory times = new uint32[](1);
         times[0] = uint32(block.timestamp);
@@ -60,7 +60,7 @@ contract InflationModuleIntegrationTest is TestBase {
 
         vm.warp(start + 1);
 
-        vm.expectRevert("MT:M:NOT_MINTER");
+        vm.expectRevert("MT:M:NOT_MODULE");
         module.claim();
     }
 
