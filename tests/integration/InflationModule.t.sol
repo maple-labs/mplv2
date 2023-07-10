@@ -26,14 +26,14 @@ contract InflationModuleIntegrationTest is TestBase {
 
     function setUp() public virtual {
         globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
-        
+
         vm.prank(governor);
         globals.setMapleTreasury(treasury);
 
         token  = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
-        module = new InflationModule(address(globals), address(token));
+        module = new InflationModule(address(token), 1e18);
 
-        vm.startPrank(governor);        
+        vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
         token.addModule(address(module));
@@ -53,12 +53,12 @@ contract InflationModuleIntegrationTest is TestBase {
     }
 
     function test_inflationModule_claim_notMinter() external {
-        vm.startPrank(governor);        
+        vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:REMOVE_MODULE", abi.encodeWithSelector(IMapleToken.removeModule.selector, module));
 
         token.removeModule(address(module));
 
-        vm.warp(start + 1);
+        vm.warp(start + 1 seconds);
 
         vm.expectRevert("MT:M:NOT_MODULE");
         module.claim();
@@ -75,13 +75,14 @@ contract InflationModuleIntegrationTest is TestBase {
         assertEq(token.balanceOf(treasury), startingBalance + 1_000e18);
         assertEq(token.totalSupply(),       supply + 1_000e18);
 
-        assertEq(module.lastClaimed(), start + 1000 seconds);
+        assertEq(module.lastClaimedTimestamp(), start + 1000 seconds);
+        assertEq(module.lastClaimedWindowId(),  1);
     }
 
     function test_inflationModule_claim_success_multiWindow() external {
         // Schedule another window
         uint32[] memory times = new uint32[](1);
-        times[0] = uint32(start + 500);
+        times[0] = uint32(start + 500 seconds);
 
         uint208[] memory rates = new uint208[](1);
         rates[0] = 0.5e18;
@@ -100,6 +101,9 @@ contract InflationModuleIntegrationTest is TestBase {
 
         assertEq(token.balanceOf(treasury), startingBalance + 750e18);
         assertEq(token.totalSupply(),       supply + 750e18);
+
+        assertEq(module.lastClaimedTimestamp(), start + 1000 seconds);
+        assertEq(module.lastClaimedWindowId(),  2);
     }
-   
+
 }
