@@ -24,19 +24,21 @@ contract Assertions is TestBase {
     /**************************************************************************************************************************************/
 
     // Verifies the integrity of the linked list of windows by traversing it from the start and ensuring the last window can be reached.
-    // Invariant A (v1): traverseFrom(zeroWindowId) == lastScheduledWindowId
-    // Invariant A (v2): traverseFrom(lastClaimedWindowId) == lastScheduledWindowId
+    // Invariant A: traverseFrom(zeroWindowId) == lastScheduledWindowId
+
+    // Verify the last claimed window is contained in the linked list.
+    // Invariant Z: windows.contains(lastClaimedWindow)
 
     // Verify the zero index window is the first window.
-    // Invariant B (v1): zeroWindow.windowStart == 0
-    // Invariant B (v2): zeroWindow.windowStart == block.timestamp
+    // Invariant B: zeroWindow.windowStart == 0
 
     // Verify the zero index window is not issuing any tokens.
     // Invariant C: zeroWindow.issuanceRate == 0
 
+    // TODO: Discuss more.
     // Verify the size of the linked list of windows is within limits.
     // Invariant D (v1): countWindowsFrom(zeroWindowId) <= maximumWindows
-    // Invariant D (v1): countWindowsFrom(lastClaimedWindowId) <= maximumWindows
+    // Invariant D (v2): countWindowsFrom(lastClaimedWindowId) <= maximumWindows
     // Invariant D (v3): lastScheduledWindowId <= maximumWindows
 
     // Verify the last scheduled window is the last one in the linked list.
@@ -48,6 +50,7 @@ contract Assertions is TestBase {
     // Verify all windows are ordered in strictly ascending order by timestamps:
     // Invariant G: ∑window(window.windowStart < nextWindow.windowStart)
 
+    // TODO: Should MAX_IR be defined at the level of the contract?
     // Verify all window issuance rates are lower than the maximum issuance rate.
     // Invariant H: ∑window(window.issuanceRate <= maximumIssuanceRate)
 
