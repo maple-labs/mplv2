@@ -11,9 +11,9 @@ import { MockGlobals } from "./utils/Mocks.sol";
 
 contract MapleTokenInitializerTests is TestBase {
 
-    address governor;
-    address migrator;
-    address treasury;
+    address governor = makeAddr("governor");
+    address migrator = makeAddr("migrator");
+    address treasury = makeAddr("treasury");
 
     address implementation;
     address initializer;
@@ -21,10 +21,6 @@ contract MapleTokenInitializerTests is TestBase {
     MockGlobals globals;
 
     function setUp() external {
-        governor = makeAddr("governor");
-        migrator = makeAddr("migrator");
-        treasury = makeAddr("treasury");
-
         globals = new MockGlobals();
 
         globals.__setGovernor(governor);
@@ -41,7 +37,7 @@ contract MapleTokenInitializerTests is TestBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.implementation(), implementation);
 
-        assertEq(token.name(),     "Maple Finance");
+        assertEq(token.name(),     "Maple Finance Token");
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
 

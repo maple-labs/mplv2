@@ -9,26 +9,23 @@ contract EmergencyModule is IEmergencyModule {
     address public immutable globals;
     address public immutable token;
 
-    constructor(address _token, address _globals) {
-        token   = _token;
-        globals = _globals;
+    constructor(address globals_, address token_) {
+        globals = globals_;
+        token   = token_;
     }
 
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(globals).governor(), "EM:NOT_GOVERNOR");
+
         _;
     }
 
-    function mint(uint256 amount) external onlyGovernor {
-        IERC20Like(token).mint(treasury(), amount);
+    function burn(address from_, uint256 amount_) external onlyGovernor {
+        IERC20Like(token).burn(from_, amount_);
     }
 
-    function burn(address from, uint256 amount) external onlyGovernor {
-        IERC20Like(token).burn(from, amount);
+    function mint(uint256 amount_) external onlyGovernor {
+        IERC20Like(token).mint(IGlobalsLike(globals).mapleTreasury(), amount_);
     }
 
-    function treasury() internal view returns (address) {
-        return IGlobalsLike(globals).mapleTreasury();
-    }
-    
 }

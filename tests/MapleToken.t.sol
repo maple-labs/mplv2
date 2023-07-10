@@ -15,8 +15,8 @@ contract MapleTokenTestsBase is TestBase {
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
 
-    address initializer;
     address implementation;
+    address initializer;
     address tokenAddress;
 
     MockGlobals globals;
@@ -75,7 +75,7 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
-        token.addModule(address(0x1), true, false);
+        token.addModule(address(0x1));
     }
 
     function test_addModule_notScheduled() external {
@@ -83,13 +83,7 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 
         vm.prank(governor);
         vm.expectRevert("MT:NOT_SCHEDULED");
-        token.addModule(address(0x1), true, false);
-    }
-
-    function test_addModule_invalidModule() external {
-        vm.prank(governor);
-        vm.expectRevert("MT:AM:INVALID_MODULE");
-        token.addModule(address(0x1), false, false);
+        token.addModule(address(0x1));
     }
 
     function test_addModule_success() external {
@@ -97,14 +91,13 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         globals.unscheduleCall(
             governor,
             bytes32("MT:ADD_MODULE"),
-            abi.encodeWithSelector(token.addModule.selector, address(0x1), true, false)
+            abi.encodeWithSelector(token.addModule.selector, address(0x1))
         );
 
         vm.prank(governor);
-        token.addModule(address(0x1), true, false);
+        token.addModule(address(0x1));
 
-        assertTrue(token.isBurner(address(0x1)));
-        assertTrue(!token.isMinter(address(0x1)));
+        assertTrue(token.isModule(address(0x1)));
     }
 
     function test_removeModule_notGovernor() external {
@@ -122,7 +115,7 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 
     function test_removeModule_success() external {
         vm.prank(governor);
-        token.addModule(address(0x1), true, true);
+        token.addModule(address(0x1));
 
         globals.__expectCall();
         globals.unscheduleCall(
@@ -134,8 +127,7 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
         vm.prank(governor);
         token.removeModule(address(0x1));
 
-        assertTrue(!token.isBurner(address(0x1)));
-        assertTrue(!token.isMinter(address(0x1)));
+        assertTrue(!token.isModule(address(0x1)));
     }
 
 }
@@ -149,12 +141,12 @@ contract BurnTests is MapleTokenTestsBase {
         super.setUp();
 
         vm.prank(governor);
-        token.addModule(address(burner), true, true);
+        token.addModule(address(burner));
     }
 
     function test_burn_notBurner() external {
         vm.prank(notBurner);
-        vm.expectRevert("MT:B:NOT_BURNER");
+        vm.expectRevert("MT:B:NOT_MODULE");
         token.burn(address(0x1), 1);
     }
 
@@ -186,11 +178,11 @@ contract MintTests is MapleTokenTestsBase {
         super.setUp();
 
         vm.prank(governor);
-        token.addModule(address(minter), false, true);
+        token.addModule(address(minter));
     }
 
      function test_mint_notMinter() external {
-        vm.expectRevert("MT:M:NOT_MINTER");
+        vm.expectRevert("MT:M:NOT_MODULE");
         token.mint(address(0x2), 1);
     }
 
