@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
-import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
+import { ERC20Proxied } from "../modules/erc20/contracts/ERC20Proxied.sol";
 
 import { IMapleTokenInitializer } from "./interfaces/IMapleTokenInitializer.sol";
 
-contract MapleTokenInitializer is IMapleTokenInitializer, ERC20Proxied, NonTransparentProxied {
+contract MapleTokenInitializer is IMapleTokenInitializer, ERC20Proxied {
 
     function initialize(address migrator_, address treasury_) external {
         name     = "Maple Finance Token";
