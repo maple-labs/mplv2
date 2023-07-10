@@ -7,6 +7,7 @@ methods {
     function InflationModule.lastClaimedWindowId() external returns (uint16) envfree;
     function InflationModule.lastScheduledWindowId() external returns (uint16) envfree;
     function InflationModule.maximumIssuanceRate() external returns (uint208) envfree;
+    function InflationModule.windows(uint16 windowId) external returns (uint16, uint32, uint208) envfree;
     function _.globals() external => DISPATCHER(true);
     function _.governor() external => DISPATCHER(true);
     function _.mapleTreasury() external => DISPATCHER(true);
@@ -23,8 +24,10 @@ rule LastClaimedTimestampRule(env e) {
     assert lastClaimedTimestampAfter >= lastClaimedTimestampBefore;
 }
 
-rule LastClaimedWindowIdRule(env e) {
+rule LastClaimedWindowIdRule(env e, calldataarg args) {
+    require InflationModule.lastClaimedWindowId() == 0;
     mathint lastClaimedWindowIdBefore = InflationModule.lastClaimedWindowId();
+    schedule(e, args);
     claim(e);
     mathint lastClaimedWindowIdAfter = InflationModule.lastClaimedWindowId();
 
@@ -41,8 +44,8 @@ rule lastScheduledWindowIdRule(env e, calldataarg args) {
 
 /// Used to check that a method does not have a reachablity vacuity.
 /// This rule is expected to always fail.
-// rule MethodsVacuityCheck(method f) {
-// 	env e; calldataarg args;
-// 	f(e, args);
-// 	assert false;
-// }
+rule MethodsVacuityCheck(method f) {
+	env e; calldataarg args;
+	f(e, args);
+	assert false;
+}
