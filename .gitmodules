@@ -1,9 +1,6 @@
 [submodule "modules/erc20"]
 	path = modules/erc20
 	url = git@github.com:maple-labs/erc20.git
-[submodule "modules/ntp"]
-	path = modules/ntp
-	url = git@github.com:maple-labs/non-transparent-proxy.git
 [submodule "modules/globals"]
 	path = modules/globals
 	url = git@github.com:maple-labs/globals-v2.git
@@ -13,3 +10,6 @@
 [submodule "modules/migrator"]
 	path = modules/migrator
 	url = git@github.com:maple-labs/mpl-migration.git
+[submodule "modules/ntp"]
+	path = modules/ntp
+	url = git@github.com:maple-labs/non-transparent-proxy.git

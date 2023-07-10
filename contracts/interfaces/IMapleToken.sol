@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { IERC20 }                 from "../../modules/erc20/contracts/interfaces/IERC20.sol";
-import { INonTransparentProxied } from "../../modules/ntp/contracts/interfaces/INonTransparentProxied.sol";
+import { IERC20 }  from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
-interface IMapleToken is IERC20, INonTransparentProxied {
+interface IMapleToken is IERC20 {
 
     /**************************************************************************************************************************************/
     /*** Events                                                                                                                         ***/
@@ -40,13 +39,25 @@ interface IMapleToken is IERC20, INonTransparentProxied {
     function burn(address from, uint256 amount) external;
 
     /**
+     *  @dev    Returns the address of the Maple Governor.
+     *  @return governor The address of the Maple Governor.
+     */
+    function governor() external view returns (address governor);
+
+    /**
      *  @dev    Returns the address of the Maple Globals contract.
      *  @return globals The address of the Maple Globals contract.
      */
     function globals() external view returns (address globals);
 
     /**
-     *  @dev    Returns true if the specified address is module.
+     *  @dev    Returns the proxy's implementation address.
+     *  @return implementation_ The address of the implementation.
+     */
+    function implementation() external view returns (address implementation_);
+
+    /**
+     *  @dev    Returns true if the specified module is a burner.
      *  @param  module The address of the module to check.
      *  @return isModule True if the address is a valid module.
      */

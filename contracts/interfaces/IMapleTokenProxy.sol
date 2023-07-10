@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { INonTransparentProxy } from "../../modules/ntp/contracts/interfaces/INonTransparentProxy.sol";
-
-interface IMapleTokenProxy is INonTransparentProxy {
+interface IMapleTokenProxy {
 
     /**
      *  @dev   Emitted when the implementation address is set.

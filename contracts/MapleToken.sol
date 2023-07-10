@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { ERC20Proxied }          from "../modules/erc20/contracts/ERC20Proxied.sol";
-import { NonTransparentProxied } from "../modules/ntp/contracts/NonTransparentProxied.sol";
+import { ERC20Proxied } from "../modules/erc20/contracts/ERC20Proxied.sol";
 
 import { IGlobalsLike } from "./interfaces/Interfaces.sol";
 import { IMapleToken }  from "./interfaces/IMapleToken.sol";
 
-contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
+contract MapleToken is IMapleToken, ERC20Proxied {
 
-    bytes32 internal constant GLOBALS_SLOT = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
+    bytes32 internal constant GLOBALS_SLOT        = bytes32(uint256(keccak256("eip1967.proxy.globals")) - 1);
+    bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1);
 
     mapping(address => bool) public isModule;
 
     modifier onlyGovernor {
-        require(msg.sender == IGlobalsLike(globals()).governor(), "MT:NOT_GOVERNOR");
-
+        require(msg.sender == governor(), "MT:NOT_GOVERNOR");
         _;
     }
 
@@ -60,8 +59,26 @@ contract MapleToken is IMapleToken, ERC20Proxied, NonTransparentProxied {
     /*** View Functions                                                                                                                 ***/
     /**************************************************************************************************************************************/
 
+    function implementation() public view returns (address implementation_) {
+        implementation_ = _getAddress(IMPLEMENTATION_SLOT);
+    }
+
+    function governor() public view returns (address governor_) {
+        governor_ = IGlobalsLike(globals()).governor();
+    }
+
     function globals() public view returns (address globals_) {
         globals_ = _getAddress(GLOBALS_SLOT);
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Utility Functions                                                                                                              ***/
+    /**************************************************************************************************************************************/
+
+    function _getAddress(bytes32 slot_) internal view returns (address value_) {
+        assembly {
+            value_ := sload(slot_)
+        }
     }
 
 }
