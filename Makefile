@@ -6,3 +6,6 @@ release:
 
 test:
 	@scripts/test.sh -p default
+
+verify:
+	@certora/verify.sh
