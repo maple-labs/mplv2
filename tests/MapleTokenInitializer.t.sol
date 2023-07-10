@@ -33,7 +33,7 @@ contract MapleTokenInitializerTests is TestBase {
     function test_initialize() external {
         MapleToken token = MapleToken(address(new MapleTokenProxy(address(globals), implementation, initializer, migrator)));
 
-        assertEq(token.admin(),          governor);
+        assertEq(token.governor(),       governor);
         assertEq(token.globals(),        address(globals));
         assertEq(token.implementation(), implementation);
 
