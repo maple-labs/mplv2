@@ -5,8 +5,6 @@ import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
 import { IInflationModule } from "./interfaces/IInflationModule.sol";
 
-import { console } from "../modules/forge-std/src/console.sol";
-
 contract InflationModule is IInflationModule {
 
     struct Window {
