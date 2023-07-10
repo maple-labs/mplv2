@@ -136,6 +136,9 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 40 days);
+
+        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 40 days);
+
         expectTreasuryMint(1e18 * 40 days);
         module.claim();
 
@@ -155,6 +158,9 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 65 days);
+
+        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 50 days);
+
         expectTreasuryMint(1e18 * 50 days);
         module.claim();
 
@@ -174,6 +180,10 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 50 days);
+
+        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 50 days);
+
+
         expectTreasuryMint(1e18 * 50 days);
         module.claim();
 
@@ -195,6 +205,9 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 65 days);
+
+        assertEq(module.claimable(uint32(block.timestamp)), 0.95e18 * 50 days + 0.96e18 * 15 days);
+
         expectTreasuryMint(0.95e18 * 50 days + 0.96e18 * 15 days);
         module.claim();
 

@@ -156,14 +156,6 @@ contract InflationModule is IInflationModule {
         globals_ = IMapleTokenLike(token).globals();
     }
 
-    function _max(uint32 a_, uint32 b_) internal pure returns (uint32 max_) {
-        max_ = a_ > b_ ? a_ : b_;
-    }
-
-    function _min(uint32 a_, uint32 b_) internal pure returns (uint32 min_) {
-        min_ = a_ < b_ ? a_ : b_;
-    }
-
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
         require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:VW:EMPTY_ARRAY");
         require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
