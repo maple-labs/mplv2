@@ -42,7 +42,7 @@ contract InflationModule is IInflationModule {
     }
 
     constructor(address token_, uint208 maximumIssuanceRate_) {
-        token = token_;
+        token               = token_;
         maximumIssuanceRate = maximumIssuanceRate_;
     }
 
