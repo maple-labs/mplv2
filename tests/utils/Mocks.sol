@@ -61,8 +61,14 @@ contract MockGlobals is Spied {
 
 contract MockToken is Spied {
 
-    function mint(address, uint256) external spied { }
+    address public globals;
 
     function burn(address, uint256) external spied { }
+
+    function mint(address, uint256) external spied { }
+
+    function __setGlobals(address globals_) external {
+        globals = globals_;
+    }
 
 }
