@@ -5,6 +5,25 @@ pragma solidity 0.8.18;
 // TODO: Add a view function that returns the current schedule as an array of windows.
 interface IInflationModule {
 
+    /**************************************************************************************************************************************/
+    /*** Events                                                                                                                         ***/
+    /**************************************************************************************************************************************/
+
+    /**
+     * @dev    Emitted when tokens are claimed.
+     * @param  amountClaimed       The amount of tokens that were claimed.
+     * @param  lastClaimedWindowId The identifier of the window during which the tokens were claimed.
+     */
+    event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
+
+    /**
+     * @dev    Emitted when new windows are scheduled.
+     * @param insertionPoint The identifier of the window after which the new windows were scheduled.
+     * @param windowStarts   The timestamps that mark when each windows starts.
+     * @param issuanceRates  The issuance rates that will be applied to each window.
+     */
+    event WindowsScheduled(uint256 insertionPoint, uint32[] windowStarts, uint208[] issuanceRates);
+
     /**
      *  @dev    Claims tokens from the time of the last claim up until the current time.
      *  @return claimedAmount The amount of tokens that were claimed.

@@ -10,6 +10,20 @@ interface IMapleToken is IERC20 {
     /**************************************************************************************************************************************/
 
     /**
+     *  @dev   A burn was performed.
+     *  @param from   The address of the account whose tokens were burned.
+     *  @param amount The amount of tokens that were burned.
+     */
+    event Burn(address indexed from, uint256 amount);
+
+    /**
+     *  @dev   A mint was performed.
+     *  @param to     The address of the account whose tokens were minted.
+     *  @param amount The amount of tokens that were minted.
+     */
+    event Mint(address indexed to, uint256 amount);
+
+    /**
      *  @dev   A new module was added to the MapleToken.
      *  @param module The address the module added.
      */ 

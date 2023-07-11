@@ -86,6 +86,8 @@ contract ConstructorTests is InflationModuleTestBase {
 
 contract ClaimTests is InflationModuleTestBase {
 
+    event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
+
     function setUp() public override {
         super.setUp();
 
@@ -271,13 +273,10 @@ contract ClaimTests is InflationModuleTestBase {
 
 }
 
-contract ClaimableTests is InflationModuleTestBase {
-
-    // TODO
-
-}
 
 contract ScheduleTests is InflationModuleTestBase {
+
+    event WindowsScheduled(uint256 insertionPoint, uint32[] windowStarts, uint208[] issuanceRates);
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();

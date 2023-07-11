@@ -61,6 +61,8 @@ contract InflationModule is IInflationModule {
         lastClaimedTimestamp = uint32(block.timestamp);
         lastClaimedWindowId  = lastClaimableWindowId_;
 
+        emit Claimed(claimableAmount_, lastClaimableWindowId_);
+
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
     }
 
@@ -94,6 +96,8 @@ contract InflationModule is IInflationModule {
         }
 
         lastScheduledWindowId += newWindowCount_;
+
+        emit WindowsScheduled(insertionWindowId_, windowStarts_, issuanceRates_);
     }
 
     /**************************************************************************************************************************************/
