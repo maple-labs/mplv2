@@ -139,10 +139,14 @@ contract ClaimTests is InflationModuleTestBase {
 
         vm.warp(start + 40 days);
 
-        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 40 days);
+        uint256 expectedClaim = 1e18 * 40 days;
 
-        expectTreasuryMint(1e18 * 40 days);
-        module.claim();
+        assertEq(module.claimable(start + 40 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 40 days);
         assertEq(module.lastClaimedWindowId(),  1);
@@ -161,10 +165,14 @@ contract ClaimTests is InflationModuleTestBase {
 
         vm.warp(start + 65 days);
 
-        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 50 days);
+        uint256 expectedClaim = 1e18 * 50 days;
 
-        expectTreasuryMint(1e18 * 50 days);
-        module.claim();
+        assertEq(module.claimable(start + 65 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 65 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -183,11 +191,14 @@ contract ClaimTests is InflationModuleTestBase {
 
         vm.warp(start + 50 days);
 
-        assertEq(module.claimable(uint32(block.timestamp)), 1e18 * 50 days);
+        uint256 expectedClaim = 1e18 * 50 days;
 
+        assertEq(module.claimable(start + 50 days), expectedClaim);
 
-        expectTreasuryMint(1e18 * 50 days);
-        module.claim();
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 50 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -208,10 +219,14 @@ contract ClaimTests is InflationModuleTestBase {
 
         vm.warp(start + 65 days);
 
-        assertEq(module.claimable(uint32(block.timestamp)), 0.95e18 * 50 days + 0.96e18 * 15 days);
+        uint256 expectedClaim =  0.95e18 * 50 days + 0.96e18 * 15 days;
 
-        expectTreasuryMint(0.95e18 * 50 days + 0.96e18 * 15 days);
-        module.claim();
+        assertEq(module.claimable(start + 65 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 65 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -276,7 +291,7 @@ contract ClaimTests is InflationModuleTestBase {
 
 contract ScheduleTests is InflationModuleTestBase {
 
-    event WindowsScheduled(uint256 insertionPoint, uint32[] windowStarts, uint208[] issuanceRates);
+    event WindowsScheduled(uint16 firstWindowId, uint16 lastWindowId, uint32[] windowStarts, uint208[] issuanceRates);
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();
@@ -352,6 +367,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 1);
@@ -368,6 +387,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -382,12 +405,20 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 100 days;
         issuanceRates[0] = 0.95e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(2, 2, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -402,6 +433,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+
         vm.warp(start + 5 days);
         module.schedule(windowStarts, issuanceRates);
 
@@ -410,6 +445,10 @@ contract ScheduleTests is InflationModuleTestBase {
 
         expectUnscheduleCall();
         vm.warp(start + 95 days);
+
+        vm.expectEmit();
+        emit WindowsScheduled(2, 2, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -427,6 +466,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 150 days;
@@ -436,6 +479,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates[1] = 0.99e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(3, 4, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 4);
@@ -455,6 +502,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 50 days;
@@ -464,6 +515,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates[1] = 0.99e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowsScheduled(3, 4, windowStarts, issuanceRates);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 4);

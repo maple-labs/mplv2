@@ -97,7 +97,7 @@ contract InflationModule is IInflationModule {
 
         lastScheduledWindowId += newWindowCount_;
 
-        emit WindowsScheduled(insertionWindowId_, windowStarts_, issuanceRates_);
+        emit WindowsScheduled(newWindowId_, newWindowId_ + newWindowCount_ - 1, windowStarts_, issuanceRates_);
     }
 
     /**************************************************************************************************************************************/
