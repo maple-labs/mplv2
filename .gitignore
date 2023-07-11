@@ -11,5 +11,7 @@ broadcast/
 output/
 
 .zip-output-url.txt
-.certora*
 .gas-snapshot
+
+.certora*
+certora/munged-simple/*

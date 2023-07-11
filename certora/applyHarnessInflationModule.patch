@@ -1,0 +1,27 @@
+diff --git a/contracts/InflationModule.sol b/contracts/InflationModule.sol
+index d26dcd9..1dd682c 100644
+--- a/contracts/InflationModule.sol
++++ b/contracts/InflationModule.sol
+@@ -46,6 +46,22 @@ contract InflationModule is IInflationModule {
+         maximumIssuanceRate = maximumIssuanceRate_;
+     }
+ 
++    /**************************************************************************************************************************************/
++    /*** Certora Helper Functions                                                                                                       ***/
++    /**************************************************************************************************************************************/
++
++    function getNextWindowId(uint16 windowId) external view returns (uint256 nextWindowId_) {
++        nextWindowId_ = windows[windowId].nextWindowId;
++    }
++
++    function getWindowStart(uint16 windowId) external view returns (uint256 windowStart_) {
++        windowStart_ = windows[windowId].windowStart;
++    }
++
++    function getIssuanceRate(uint16 windowId) external view returns (uint256 issuanceRate_) {
++        issuanceRate_ = windows[windowId].issuanceRate;
++    }
++
+     /**************************************************************************************************************************************/
+     /*** External Functions                                                                                                             ***/
+     /**************************************************************************************************************************************/
