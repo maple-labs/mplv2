@@ -8,19 +8,6 @@ import { TestBase } from "../utils/TestBase.sol";
 contract Assertions is TestBase {
 
     /**************************************************************************************************************************************/
-    /*** Maple Token Invariants                                                                                                         ***/
-    /**************************************************************************************************************************************/
-
-    // TODO: Are these invariants needed? Can we reuse existing ERC20 invariants?
-    // NOTE: ∑balanceOf(account) == totalSupply, etc.
-
-    /**************************************************************************************************************************************/
-    /*** Emergency Module Invariants                                                                                                    ***/
-    /**************************************************************************************************************************************/
-
-    // TODO: Is there any state to assert here?
-
-    /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/
     /**************************************************************************************************************************************/
 
@@ -87,22 +74,11 @@ contract Assertions is TestBase {
     }
 
     /**
-     *  @notice Asserts the size of the linked list of windows is within limits.
-     *  @dev    Invariant (v1): countWindowsFrom(zeroWindowId) <= maximumWindows
-     *          Invariant (v2): countWindowsFrom(lastClaimedWindowId) <= maximumWindows
-     *          Invariant (v3): lastScheduledWindowId <= maximumWindows
-     *  @param  module Address of the inflation module.
-     */
-    function assert_inflationModule_invariant_E(IInflationModule module) internal {
-        // TODO: Is this invariant needed? Should the maximum number of windows be defined by the contract or enforced operationally?
-    }
-
-    /**
      *  @notice Asserts the last scheduled window is the last one in the linked list.
      *  @dev    Invariant: lastScheduledWindow.nextWindowId == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_F(IInflationModule module) internal {
+    function assert_inflationModule_invariant_E(IInflationModule module) internal {
         ( , uint32 nextWindowId, ) = module.windows(module.lastScheduledWindowId());
 
         assertEq(nextWindowId, 0, "Last scheduled window is not the last window.");
@@ -113,7 +89,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(windowId < window.nextWindowId)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_G(IInflationModule module) internal {
+    function assert_inflationModule_invariant_F(IInflationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -132,7 +108,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(window.windowStart < nextWindow.windowStart)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module) internal {
+    function assert_inflationModule_invariant_G(IInflationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -153,9 +129,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(window.issuanceRate <= maximumIssuanceRate)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_I(IInflationModule module) internal {
-        // TODO: Is this invariant needed? Should the maximum issuance rate be defined by the contract or enforced operationally?
-
+    function assert_inflationModule_invariant_H(IInflationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -174,7 +148,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_J(IInflationModule module) internal {
+    function assert_inflationModule_invariant_I(IInflationModule module) internal {
         assertLe(module.lastClaimedTimestamp(), block.timestamp, "Last claimed timestamp is greater than the current time.");
     }
 
@@ -183,17 +157,16 @@ contract Assertions is TestBase {
      *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_K(IInflationModule module) internal {
-        // TODO
-    }
+    function assert_inflationModule_invariant_J(IInflationModule module) internal {
+        ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
-    /**
-     *  @notice Asserts the calculation of how many tokens are claimable at the current time is correct.
-     *  @dev    Invariant: claimable(block.timestamp) == manual calculation
-     *  @param  module Address of the inflation module.
-     */
-    function assert_inflationModule_invariant_L(IInflationModule module) internal {
-        // NOTE: There shouldn't be any rounding errors here since we're not using precision.
+        assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed winow is invalid.");
+
+        if (nextWindowId == 0) return;
+
+        ( , uint32 windowEnd, ) = module.windows(nextWindowId);
+
+        assertLt(module.lastClaimedTimestamp(), windowEnd, "Last claimed window is invalid.");
     }
 
 }
