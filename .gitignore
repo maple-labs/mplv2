@@ -1,6 +1,7 @@
 # Foundry
 cache/
 out/
+.gas-snapshot
 
 # MacOS
 .DS_Store
@@ -10,8 +11,8 @@ out/
 broadcast/
 output/
 
-.zip-output-url.txt
-.gas-snapshot
-
+# Certora
 .certora*
 certora/munged-simple/*
+.zip*
+*.zip

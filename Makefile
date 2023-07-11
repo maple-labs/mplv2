@@ -8,4 +8,7 @@ test:
 	@scripts/test.sh -p default
 
 verify:
-	@certora/verify.sh
+	@certora/scripts/verify.sh
+
+verify-sanity:
+	@certora/scripts/verify-sanity.sh

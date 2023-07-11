@@ -1,6 +1,7 @@
 using InflationModule as InflationModule;
 
 methods {
+    // InflationModule Methods
     function InflationModule._globals() external returns (address) envfree;
     function InflationModule.token() external returns (address) envfree;
     function InflationModule.lastClaimedTimestamp() external returns (uint32) envfree;
@@ -11,6 +12,8 @@ methods {
     function InflationModule.getNextWindowId(uint16 windowId) external returns (uint256) envfree;
     function InflationModule.getWindowStart(uint16 windowId) external returns (uint256) envfree;
     function InflationModule.getIssuanceRate(uint16 windowId) external returns (uint256) envfree;
+
+    // External Calls Summerized
     function _.globals() external => DISPATCHER(true);
     function _.governor() external => DISPATCHER(true);
     function _.mapleTreasury() external => DISPATCHER(true);
@@ -57,6 +60,8 @@ function safeAssumptions() {
 rule LastClaimedTimestampRule() {
     env eClaim;
 
+    safeAssumptions();
+
     mathint lastClaimedTimestampBefore = InflationModule.lastClaimedTimestamp();
 
     claim(eClaim);
@@ -74,6 +79,7 @@ rule LastClaimedWindowIdRule() {
     mathint lastClaimedWindowIdBefore = InflationModule.lastClaimedWindowId();
 
     schedule(eSchedule, args);
+
     claim(eClaim);
 
     mathint lastClaimedWindowIdAfter = InflationModule.lastClaimedWindowId();
@@ -84,6 +90,8 @@ rule LastClaimedWindowIdRule() {
 rule lastScheduledWindowIdRule() {
     env eSchedule; calldataarg args;
 
+    safeAssumptions();
+
     mathint lastScheduledWindowIdBefore = InflationModule.lastScheduledWindowId();
 
     schedule(eSchedule, args);
@@ -91,12 +99,4 @@ rule lastScheduledWindowIdRule() {
     mathint lastScheduledWindowIdAfter = InflationModule.lastScheduledWindowId();
 
     assert lastScheduledWindowIdAfter >= lastScheduledWindowIdBefore;
-}
-
-/// Used to check that a method does not have a reachablity vacuity.
-/// This rule is expected to always fail.
-rule MethodsVacuityCheck(method f) {
-	env e; calldataarg args;
-	f(e, args);
-	assert false;
 }
