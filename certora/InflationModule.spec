@@ -16,27 +16,40 @@ methods {
     function _.mint(address, uint256) external => DISPATCHER(true);
 }
 
-rule LastClaimedTimestampRule(env e) {
+rule LastClaimedTimestampRule() {
+    env eClaim;
+
     mathint lastClaimedTimestampBefore = InflationModule.lastClaimedTimestamp();
-    claim(e);
+
+    claim(eClaim);
+    
     mathint lastClaimedTimestampAfter = InflationModule.lastClaimedTimestamp();
 
     assert lastClaimedTimestampAfter >= lastClaimedTimestampBefore;
 }
 
-rule LastClaimedWindowIdRule(env e, calldataarg args) {
+rule LastClaimedWindowIdRule() {
+    env eSchedule; env eClaim; calldataarg args;
+
     require InflationModule.lastClaimedWindowId() == 0;
+
     mathint lastClaimedWindowIdBefore = InflationModule.lastClaimedWindowId();
-    schedule(e, args);
-    claim(e);
+
+    schedule(eSchedule, args);
+    claim(eClaim);
+
     mathint lastClaimedWindowIdAfter = InflationModule.lastClaimedWindowId();
 
     assert lastClaimedWindowIdAfter >= lastClaimedWindowIdBefore;
 }
 
-rule lastScheduledWindowIdRule(env e, calldataarg args) {
+rule lastScheduledWindowIdRule() {
+    env eSchedule; calldataarg args;
+
     mathint lastScheduledWindowIdBefore = InflationModule.lastScheduledWindowId();
-    schedule(e, args);
+
+    schedule(eSchedule, args);
+
     mathint lastScheduledWindowIdAfter = InflationModule.lastScheduledWindowId();
 
     assert lastScheduledWindowIdAfter >= lastScheduledWindowIdBefore;
@@ -44,8 +57,8 @@ rule lastScheduledWindowIdRule(env e, calldataarg args) {
 
 /// Used to check that a method does not have a reachablity vacuity.
 /// This rule is expected to always fail.
-rule MethodsVacuityCheck(method f) {
-	env e; calldataarg args;
-	f(e, args);
-	assert false;
-}
+// rule MethodsVacuityCheck(method f) {
+// 	env e; calldataarg args;
+// 	f(e, args);
+// 	assert false;
+// }
