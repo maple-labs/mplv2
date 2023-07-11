@@ -72,7 +72,7 @@ contract Assertions is TestBase {
     function assert_inflationModule_invariant_C(IInflationModule module) internal {
         ( , uint32 windowStart, ) = module.windows(0);
 
-        assertEq(windowStart, 0, "First window starting time is invalid.");
+        assertEq(windowStart, 0, "Zero index window timestamp is invalid.");
     }
 
     /**
@@ -83,7 +83,7 @@ contract Assertions is TestBase {
     function assert_inflationModule_invariant_D(IInflationModule module) internal {
         ( , , uint208 issuanceRate ) = module.windows(0);
 
-        assertEq(issuanceRate, 0, "First window starting time is invalid.");
+        assertEq(issuanceRate, 0, "Zero index window issuance rate is invalid.");
     }
 
     /**
@@ -94,7 +94,7 @@ contract Assertions is TestBase {
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_E(IInflationModule module) internal {
-        // TODO: Is this invariant is needed. Should the maximum number of windows be defined by the contract or enforced operationally?
+        // TODO: Is this invariant needed? Should the maximum number of windows be defined by the contract or enforced operationally?
     }
 
     /**
@@ -121,7 +121,7 @@ contract Assertions is TestBase {
 
             if (nextWindowId == 0) break;
 
-            assertLt(windowId, nextWindowId, "Windows identifiers are not in strictly ascending order.");
+            assertLt(windowId, nextWindowId, "Window identifiers are not in strictly ascending order.");
 
             windowId = nextWindowId;
         }
@@ -142,7 +142,7 @@ contract Assertions is TestBase {
 
             ( , uint32 nextWindowStart, ) = module.windows(nextWindowId);
 
-            assertLt(windowStart, nextWindowStart, "Windows timestamps are not in strictly ascending order.");
+            assertLt(windowStart, nextWindowStart, "Window timestamps are not in strictly ascending order.");
 
             windowId = nextWindowId;
         }
@@ -154,7 +154,7 @@ contract Assertions is TestBase {
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_I(IInflationModule module) internal {
-        // TODO: Is this invariant is needed. Should the maximum issuance rate be defined by the contract or enforced operationally?
+        // TODO: Is this invariant needed? Should the maximum issuance rate be defined by the contract or enforced operationally?
 
         uint16 windowId;
 
@@ -170,7 +170,7 @@ contract Assertions is TestBase {
     }
 
     /**
-     *  @notice Assert tokens can only be claimed up to the current time.
+     *  @notice Asserts tokens can only be claimed up to the current time.
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
@@ -179,7 +179,7 @@ contract Assertions is TestBase {
     }
 
     /**
-     *  @notice Assert the window of the last claim is set correctly based on the timestamp of the last claim.
+     *  @notice Asserts the window of the last claim is set correctly based on the timestamp of the last claim.
      *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
@@ -188,7 +188,7 @@ contract Assertions is TestBase {
     }
 
     /**
-     *  @notice Assert the calculation of how many tokens are claimable at the current time is correct.
+     *  @notice Asserts the calculation of how many tokens are claimable at the current time is correct.
      *  @dev    Invariant: claimable(block.timestamp) == manual calculation
      *  @param  module Address of the inflation module.
      */
