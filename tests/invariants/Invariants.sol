@@ -3,9 +3,7 @@ pragma solidity 0.8.18;
 
 import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
 
-import { TestBase } from "../utils/TestBase.sol";
-
-contract Assertions is TestBase {
+library Invariants {
 
     /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/
@@ -16,7 +14,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: traverseFrom(zeroWindowId) == lastScheduledWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_A(IInflationModule module) internal {
+    function assert_inflationModule_invariant_A(IInflationModule module) internal view {
         uint16 windowId;
 
         while (true) {
@@ -27,7 +25,7 @@ contract Assertions is TestBase {
             windowId = nextWindowId;
         }
 
-        assertEq(windowId, module.lastScheduledWindowId(), "Can't reach the last scheduled window.");
+        require(windowId == module.lastScheduledWindowId(), "Can't reach the last scheduled window.");
     }
 
     /**
@@ -35,7 +33,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: windows.contains(lastClaimedWindow)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_B(IInflationModule module) internal {
+    function assert_inflationModule_invariant_B(IInflationModule module) internal view {
         uint16 windowId;
 
         while (true) {
@@ -48,7 +46,7 @@ contract Assertions is TestBase {
             windowId = nextWindowId;
         }
 
-        assertTrue(false, "Last claimed window is unreachable.");
+        require(false, "Last claimed window is unreachable.");
     }
 
     /**
@@ -56,10 +54,10 @@ contract Assertions is TestBase {
      *  @dev    Invariant: zeroWindow.windowStart == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_C(IInflationModule module) internal {
+    function assert_inflationModule_invariant_C(IInflationModule module) internal view {
         ( , uint32 windowStart, ) = module.windows(0);
 
-        assertEq(windowStart, 0, "Zero index window timestamp is invalid.");
+        require(windowStart == 0, "Zero index window timestamp is invalid.");
     }
 
     /**
@@ -67,10 +65,10 @@ contract Assertions is TestBase {
      *  @dev    Invariant: zeroWindow.issuanceRate == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_D(IInflationModule module) internal {
+    function assert_inflationModule_invariant_D(IInflationModule module) internal view {
         ( , , uint208 issuanceRate ) = module.windows(0);
 
-        assertEq(issuanceRate, 0, "Zero index window issuance rate is invalid.");
+        require(issuanceRate == 0, "Zero index window issuance rate is invalid.");
     }
 
     /**
@@ -78,10 +76,10 @@ contract Assertions is TestBase {
      *  @dev    Invariant: lastScheduledWindow.nextWindowId == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_E(IInflationModule module) internal {
+    function assert_inflationModule_invariant_E(IInflationModule module) internal view {
         ( , uint32 nextWindowId, ) = module.windows(module.lastScheduledWindowId());
 
-        assertEq(nextWindowId, 0, "Last scheduled window is not the last window.");
+        require(nextWindowId == 0, "Last scheduled window is not the last window.");
     }
 
     /**
@@ -89,7 +87,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(windowId < window.nextWindowId)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_F(IInflationModule module) internal {
+    function assert_inflationModule_invariant_F(IInflationModule module) internal view {
         uint16 windowId;
 
         while (true) {
@@ -97,7 +95,7 @@ contract Assertions is TestBase {
 
             if (nextWindowId == 0) break;
 
-            assertLt(windowId, nextWindowId, "Window identifiers are not in strictly ascending order.");
+            require(windowId < nextWindowId, "Window identifiers are not in strictly ascending order.");
 
             windowId = nextWindowId;
         }
@@ -108,7 +106,7 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(window.windowStart < nextWindow.windowStart)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_G(IInflationModule module) internal {
+    function assert_inflationModule_invariant_G(IInflationModule module) internal view {
         uint16 windowId;
 
         while (true) {
@@ -118,7 +116,7 @@ contract Assertions is TestBase {
 
             ( , uint32 nextWindowStart, ) = module.windows(nextWindowId);
 
-            assertLt(windowStart, nextWindowStart, "Window timestamps are not in strictly ascending order.");
+            require(windowStart < nextWindowStart, "Window timestamps are not in strictly ascending order.");
 
             windowId = nextWindowId;
         }
@@ -129,13 +127,13 @@ contract Assertions is TestBase {
      *  @dev    Invariant: ∑window(window.issuanceRate <= maximumIssuanceRate)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module) internal {
+    function assert_inflationModule_invariant_H(IInflationModule module) internal view {
         uint16 windowId;
 
         while (true) {
             ( uint16 nextWindowId, , uint208 issuanceRate ) = module.windows(windowId);
 
-            assertLe(issuanceRate, module.maximumIssuanceRate(), "Issuance rate is over the maximum limit.");
+            require(issuanceRate <= module.maximumIssuanceRate(), "Issuance rate is over the maximum limit.");
 
             if (nextWindowId == 0) break;
 
@@ -148,8 +146,8 @@ contract Assertions is TestBase {
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_I(IInflationModule module) internal {
-        assertLe(module.lastClaimedTimestamp(), block.timestamp, "Last claimed timestamp is greater than the current time.");
+    function assert_inflationModule_invariant_I(IInflationModule module) internal view {
+        require(module.lastClaimedTimestamp() <= block.timestamp, "Last claimed timestamp is greater than the current time.");
     }
 
     /**
@@ -157,16 +155,16 @@ contract Assertions is TestBase {
      *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_J(IInflationModule module) internal {
+    function assert_inflationModule_invariant_J(IInflationModule module) internal view {
         ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
-        assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed winow is invalid.");
+        require(module.lastClaimedTimestamp() >= windowStart, "Last claimed winow is invalid.");
 
         if (nextWindowId == 0) return;
 
         ( , uint32 windowEnd, ) = module.windows(nextWindowId);
 
-        assertLt(module.lastClaimedTimestamp(), windowEnd, "Last claimed window is invalid.");
+        require(module.lastClaimedTimestamp() < windowEnd, "Last claimed window is invalid.");
     }
 
 }
