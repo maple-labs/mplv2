@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { console } from "../../modules/forge-std/src/console.sol";
-
-// TODO: Add validation for all constructor input parameters.
-// TODO: Verify selection/randomization logic works correctly.
 contract Router {
 
     address target;
