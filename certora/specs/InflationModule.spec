@@ -64,6 +64,11 @@ function safeAssumptions(uint16 windowId) {
     requireInvariant zeroLastScheduledAndFirstWindow();
 }
 
+function setupSchedule(env e) {
+    calldataarg args;
+    schedule(e, args);
+}
+
 rule LastClaimedTimestampRule() {
     env eClaim; uint16 windowId;
 
@@ -107,15 +112,20 @@ rule lastScheduledWindowIdRule() {
 }
 
 rule claimableAmountDoesNotChangeForABlock() {
-    env e; method f; calldataarg args; uint16 windowId;
+    env eSchedule; env e; method f; calldataarg args; uint16 windowId;
 
     safeAssumptions(windowId);
 
-    uint32 blockTimestamp = require_uint32(e.block.timestamp);
+    uint32 eblockTimestamp = require_uint32(e.block.timestamp);
+    uint32 eScheduleblockTimestamp = require_uint32(eSchedule.block.timestamp);
 
-    mathint claimableBefore = InflationModule.claimable(e, blockTimestamp);
+    require eScheduleblockTimestamp > eblockTimestamp;
+
+    setupSchedule(eSchedule);
+
+    mathint claimableBefore = InflationModule.claimable(e, eblockTimestamp);
     f(e, args);
-    mathint claimableAfter = InflationModule.claimable(e, blockTimestamp);
+    mathint claimableAfter = InflationModule.claimable(e, eblockTimestamp);
 
     assert claimableBefore == claimableAfter;
 }
