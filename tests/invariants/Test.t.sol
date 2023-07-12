@@ -16,7 +16,7 @@ import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";
 
-import { Actions }    from "./Actions.sol";
+import { Handler }    from "./Handler.sol";
 import { Invariants } from "./Invariants.sol";
 import { Router }     from "./Router.sol";
 
@@ -25,8 +25,6 @@ contract InvariantTests is TestBase {
     address governor = makeAddr("governor");
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
-
-    uint32 start = uint32(block.timestamp);
 
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
@@ -77,19 +75,41 @@ contract InvariantTests is TestBase {
     }
 
     function spec() internal {
-        Actions actions = new Actions();
+        Handler handler = new Handler(mapleToken, emergencyModule, inflationModule);
 
-        bytes4[] memory selectors = new bytes4[](2);
+        bytes4[] memory selectors = new bytes4[](13);
 
-        selectors[0] = actions.doStuff.selector;
-        selectors[1] = actions.doOtherStuff.selector;
+        selectors[0]  = handler.addModule.selector;
+        selectors[1]  = handler.approve.selector;
+        selectors[2]  = handler.claim.selector;
+        selectors[3]  = handler.decreaseAllowance.selector;
+        selectors[4]  = handler.emergencyBurn.selector;
+        selectors[5]  = handler.emergencyMint.selector;
+        selectors[6]  = handler.increaseAllowance.selector;
+        selectors[7]  = handler.permit.selector;
+        selectors[8]  = handler.removeModule.selector;
+        selectors[9]  = handler.schedule.selector;
+        selectors[10] = handler.transfer.selector;
+        selectors[11] = handler.transferFrom.selector;
+        selectors[12] = handler.warp.selector;
 
-        uint256[] memory weights = new uint256[](2);
+        uint256[] memory weights = new uint256[](13);
 
-        weights[0] = 100;
-        weights[1] = 750;
+        weights[0]  = 1;
+        weights[1]  = 1;
+        weights[2]  = 1;
+        weights[3]  = 1;
+        weights[4]  = 1;
+        weights[5]  = 1;
+        weights[6]  = 1;
+        weights[7]  = 1;
+        weights[8]  = 1;
+        weights[9]  = 1;
+        weights[10] = 1;
+        weights[11] = 1;
+        weights[12] = 100;
 
-        Router router = new Router(address(actions), selectors, weights);
+        Router router = new Router(address(handler), selectors, weights);
 
         targetContract(address(router));
     }

@@ -24,12 +24,21 @@ contract Router {
         }
     }
 
-    function act(uint256 weightSeed, uint256 dataSeed) external {
-        uint256 index = select(weightSeed % totalWeight);
+    function call(uint256 weightSeed, uint256 dataSeed) external {
+        while (true) {
+            uint256 index = select(weightSeed % totalWeight);
 
-        ( bool success, ) = target.call(abi.encodeWithSelector(selectors[index], dataSeed));
+            ( bool success, bytes memory output ) = target.call(abi.encodeWithSelector(selectors[index], dataSeed));
 
-        require(success, "Action failed!");
+            assert(success);
+
+            bool skip = abi.decode(output, (bool));
+
+            if (!skip) break;
+
+            weightSeed = uint256(keccak256(abi.encode(weightSeed)));
+            dataSeed   = uint256(keccak256(abi.encode(dataSeed)));
+        }
     }
 
     function select(uint256 selectedWeight) internal view returns (uint256 index) {
