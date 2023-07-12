@@ -26,10 +26,11 @@ contract InvariantTests is TestBase {
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
 
+    IGlobalsLike mapleGlobals;
+    IMapleToken  mapleToken;
+
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
-    IGlobalsLike     mapleGlobals;
-    IMapleToken      mapleToken;
 
     function setUp() external {
         deploy();
@@ -75,39 +76,35 @@ contract InvariantTests is TestBase {
     }
 
     function spec() internal {
-        Handler handler = new Handler(mapleToken, emergencyModule, inflationModule);
+        Handler handler = new Handler(mapleGlobals, mapleToken, emergencyModule, inflationModule);
 
-        bytes4[] memory selectors = new bytes4[](13);
+        bytes4[] memory selectors = new bytes4[](11);
 
-        selectors[0]  = handler.addModule.selector;
-        selectors[1]  = handler.approve.selector;
-        selectors[2]  = handler.claim.selector;
-        selectors[3]  = handler.decreaseAllowance.selector;
-        selectors[4]  = handler.emergencyBurn.selector;
-        selectors[5]  = handler.emergencyMint.selector;
-        selectors[6]  = handler.increaseAllowance.selector;
-        selectors[7]  = handler.permit.selector;
-        selectors[8]  = handler.removeModule.selector;
-        selectors[9]  = handler.schedule.selector;
-        selectors[10] = handler.transfer.selector;
-        selectors[11] = handler.transferFrom.selector;
-        selectors[12] = handler.warp.selector;
+        selectors[0]  = handler.approve.selector;
+        selectors[1]  = handler.claim.selector;
+        selectors[2]  = handler.decreaseAllowance.selector;
+        selectors[3]  = handler.emergencyBurn.selector;
+        selectors[4]  = handler.emergencyMint.selector;
+        selectors[5]  = handler.increaseAllowance.selector;
+        selectors[6]  = handler.permit.selector;
+        selectors[7]  = handler.schedule.selector;
+        selectors[8]  = handler.transfer.selector;
+        selectors[9]  = handler.transferFrom.selector;
+        selectors[10] = handler.warp.selector;
 
-        uint256[] memory weights = new uint256[](13);
+        uint256[] memory weights = new uint256[](11);
 
         weights[0]  = 1;
         weights[1]  = 1;
         weights[2]  = 1;
-        weights[3]  = 1;
-        weights[4]  = 1;
+        weights[3]  = 10;
+        weights[4]  = 10;
         weights[5]  = 1;
         weights[6]  = 1;
         weights[7]  = 1;
         weights[8]  = 1;
         weights[9]  = 1;
-        weights[10] = 1;
-        weights[11] = 1;
-        weights[12] = 100;
+        weights[10] = 100;
 
         Router router = new Router(address(handler), selectors, weights);
 

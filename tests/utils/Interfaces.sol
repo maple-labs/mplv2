@@ -3,6 +3,8 @@ pragma solidity 0.8.18;
 
 interface IGlobalsLike {
 
+    function governor() external view returns (address governor_);
+
     function isValidScheduledCall(
         address          caller_,
         address          contract_,

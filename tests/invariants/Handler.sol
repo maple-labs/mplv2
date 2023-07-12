@@ -5,22 +5,23 @@ import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.so
 import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
 import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
 
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+
 import { TestBase } from "../utils/TestBase.sol";
 
 contract Handler is TestBase {
 
-    IMapleToken      mapleToken;
+    IGlobalsLike mapleGlobals;
+    IMapleToken  mapleToken;
+
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
 
-    constructor(IMapleToken mapleToken_, IEmergencyModule emergencyModule_, IInflationModule inflationModule_) {
+    constructor(IGlobalsLike mapleGlobals_, IMapleToken mapleToken_, IEmergencyModule emergencyModule_, IInflationModule inflationModule_) {
+        mapleGlobals    = mapleGlobals_;
         mapleToken      = mapleToken_;
         emergencyModule = emergencyModule_;
         inflationModule = inflationModule_;
-    }
-
-    function addModule(uint256 seed) external returns (bool skip) {
-        // TODO
     }
 
     function approve(uint256 seed) external returns (bool skip) {
@@ -30,6 +31,7 @@ contract Handler is TestBase {
     function claim(uint256 seed) external returns (bool skip) {
         address caller = makeAddr(vm.toString(seed));
 
+        // Skip if nothing is claimable.
         if (inflationModule.claimable(uint32(block.timestamp)) == 0) return true;
 
         vm.prank(caller);
@@ -41,11 +43,30 @@ contract Handler is TestBase {
     }
 
     function emergencyBurn(uint256 seed) external returns (bool skip) {
-        // TODO
+        address treasury = mapleGlobals.mapleTreasury();
+        uint256 balance  = mapleToken.balanceOf(treasury);
+
+        // Skip if no tokens can be burned.
+        if (balance == 0) return true;
+
+        address governor = mapleGlobals.governor();
+        uint256 amount   = bound(seed, 1, balance);
+
+        vm.prank(governor);
+        emergencyModule.burn(treasury, amount);
     }
 
     function emergencyMint(uint256 seed) external returns (bool skip) {
-        // TODO
+        uint256 totalSupply = mapleToken.totalSupply();
+
+        // Skip if no tokens can be minted.
+        if (totalSupply == type(uint256).max) return true;
+
+        address governor = mapleGlobals.governor();
+        uint256 amount   = bound(seed, 1, type(uint256).max - totalSupply);
+
+        vm.prank(governor);
+        emergencyModule.mint(amount);
     }
 
     function increaseAllowance(uint256 seed) external returns (bool skip) {
@@ -53,10 +74,6 @@ contract Handler is TestBase {
     }
 
     function permit(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
-    function removeModule(uint256 seed) external returns (bool skip) {
         // TODO
     }
 
@@ -76,6 +93,8 @@ contract Handler is TestBase {
         uint256 time = bound(seed, 1 seconds, 30 days);
 
         vm.warp(block.timestamp + time);
+
+        return false;
     }
 
 }
