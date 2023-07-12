@@ -95,7 +95,7 @@ contract InvariantTests is TestBase {
         uint256[] memory weights = new uint256[](11);
 
         weights[0]  = 1;
-        weights[1]  = 1;
+        weights[1]  = 50;
         weights[2]  = 1;
         weights[3]  = 10;
         weights[4]  = 10;

@@ -26,9 +26,9 @@ contract Router {
 
     function call(uint256 weightSeed, uint256 dataSeed) external {
         while (true) {
-            uint256 index = select(weightSeed % totalWeight);
+            bytes4 selector = findSelector(weightSeed % totalWeight);
 
-            ( bool success, bytes memory output ) = target.call(abi.encodeWithSelector(selectors[index], dataSeed));
+            ( bool success, bytes memory output ) = target.call(abi.encodeWithSelector(selector, dataSeed));
 
             assert(success);
 
@@ -37,16 +37,15 @@ contract Router {
             if (!skip) break;
 
             weightSeed = uint256(keccak256(abi.encode(weightSeed)));
-            dataSeed   = uint256(keccak256(abi.encode(dataSeed)));
         }
     }
 
-    function select(uint256 selectedWeight) internal view returns (uint256 index) {
-        uint256 accumulatedWeight;
+    function findSelector(uint256 weight) internal view returns (bytes4 selector) {
+        uint256 runningWeight;
 
-        for (; index < selectors.length; ++index) {
-            accumulatedWeight += weights[index];
-            if (accumulatedWeight > selectedWeight) break;
+        for (uint256 i; i < selectors.length; ++i) {
+            runningWeight += weights[i];
+            if (runningWeight > weight) return selectors[i];
         }
     }
 
