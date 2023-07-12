@@ -18,12 +18,12 @@ interface IInflationModule {
 
     /**
      * @dev    Emitted when new windows are scheduled.
-     * @param firstWindowId The identifier of the first new window that was scheduled.
-     * @param lastWindowId  The identifier of the last new window that was scheduled.
-     * @param windowStarts  The timestamps that mark when each windows starts.
-     * @param issuanceRates The issuance rates that will be applied to each window.
+     * @param previousWindowId The identifier of the window that comes before the scheduled window (zero if there is none).
+     * @param windowId         The identifier of the window that was scheduled.
+     * @param windowStart      The timestamps that mark when each windows starts.
+     * @param issuanceRate     The issuance rates that will be applied to each window.
      */
-    event WindowsScheduled(uint16 firstWindowId, uint16 lastWindowId, uint32[] windowStarts, uint208[] issuanceRates);
+    event WindowScheduled(uint16 previousWindowId, uint16 windowId, uint32 windowStart, uint208 issuanceRate);
 
     /**
      *  @dev    Claims tokens from the time of the last claim up until the current time.

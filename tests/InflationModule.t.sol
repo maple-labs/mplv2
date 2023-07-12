@@ -7,7 +7,6 @@ import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 import { TestBase }               from "./utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
-// TODO: Check if events are correctly emitted.
 // TODO: Check if function return values are correct (not just state changes).
 
 contract InflationModuleTestBase is TestBase {
@@ -291,7 +290,7 @@ contract ClaimTests is InflationModuleTestBase {
 
 contract ScheduleTests is InflationModuleTestBase {
 
-    event WindowsScheduled(uint16 firstWindowId, uint16 lastWindowId, uint32[] windowStarts, uint208[] issuanceRates);
+    event WindowScheduled(uint16 windowId, uint16 previousWindowId, uint32 windowStart, uint208 issuanceRate);
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();
@@ -369,7 +368,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days, 0.9e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -389,7 +388,8 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -407,7 +407,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -417,7 +417,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(2, 2, windowStarts, issuanceRates);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -435,7 +435,7 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 1, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
 
         vm.warp(start + 5 days);
         module.schedule(windowStarts, issuanceRates);
@@ -447,7 +447,7 @@ contract ScheduleTests is InflationModuleTestBase {
         vm.warp(start + 95 days);
 
         vm.expectEmit();
-        emit WindowsScheduled(2, 2, windowStarts, issuanceRates);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -468,7 +468,8 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -481,7 +482,8 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(3, 4, windowStarts, issuanceRates);
+        emit WindowScheduled(2, 3, start + 150 days, 0.96e18);
+        emit WindowScheduled(3, 4, start + 200 days, 0.99e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -504,7 +506,8 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(1, 2, windowStarts, issuanceRates);
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -517,7 +520,8 @@ contract ScheduleTests is InflationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowsScheduled(3, 4, windowStarts, issuanceRates);
+        emit WindowScheduled(1, 3, start + 50 days,  0.96e18);
+        emit WindowScheduled(3, 4, start + 120 days, 0.99e18);
 
         module.schedule(windowStarts, issuanceRates);
 

@@ -75,6 +75,12 @@ contract InflationModule is IInflationModule {
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
     }
 
+    function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
+        uint16 currentWindow = _findInsertionPoint(uint32(block.timestamp));
+
+        issuanceRate_ = windows[currentWindow].issuanceRate;
+    }
+
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
@@ -93,11 +99,10 @@ contract InflationModule is IInflationModule {
                 windowStart:  windowStarts_[index_],
                 issuanceRate: issuanceRates_[index_]
             });
+            emit WindowScheduled(insertionWindowId_ + index_, newWindowId_ + index_, windowStarts_[index_], issuanceRates_[index_]);
         }
 
         lastScheduledWindowId += newWindowCount_;
-
-        emit WindowsScheduled(newWindowId_, newWindowId_ + newWindowCount_ - 1, windowStarts_, issuanceRates_);
     }
 
     /**************************************************************************************************************************************/
@@ -165,11 +170,10 @@ contract InflationModule is IInflationModule {
         require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
         require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
 
-        for (uint256 index_ = 0; index_ < windowStarts_.length - 1; ++index_) {
-            require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
-        }
-
-        for (uint256 index_; index_ < issuanceRates_.length; ++index_) {
+        for (uint256 index_ = 0; index_ < windowStarts_.length; ++index_) {
+            if (index_ < windowStarts_.length - 1) {
+                require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
+            }
             require(issuanceRates_[index_] <= maximumIssuanceRate, "IM:VW:OUT_OF_BOUNDS");
         }
     }
