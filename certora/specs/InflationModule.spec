@@ -9,6 +9,8 @@ methods {
     function InflationModule.lastScheduledWindowId() external returns (uint16) envfree;
     function InflationModule.maximumIssuanceRate() external returns (uint208) envfree;
     function InflationModule.windows(uint16 windowId) external returns (uint16, uint32, uint208) envfree;
+
+    // InflationModule Methods added via patch
     function InflationModule.getNextWindowId(uint16 windowId) external returns (uint256) envfree;
     function InflationModule.getWindowStart(uint16 windowId) external returns (uint256) envfree;
     function InflationModule.getIssuanceRate(uint16 windowId) external returns (uint256) envfree;
@@ -34,8 +36,8 @@ definition isNonZeroNextWindowId(uint16 windowId) returns bool =
 definition isWindowsEmpty(uint16 windowId) returns bool =
     !isWindowScheduled(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
 
-invariant zeroWindowsScheduled()
-    isWindowsEmpty(1)
+invariant zeroWindowsScheduled(uint16 windowId)
+    isWindowsEmpty(windowId)
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
 
 invariant zeroLastScheduledWindowId()
@@ -50,17 +52,22 @@ invariant zeroLastClaimedTimestamp()
     InflationModule.lastClaimedTimestamp() == 0
     filtered { f -> f.selector != sig:claim().selector }
 
-function safeAssumptions() {
-    requireInvariant zeroWindowsScheduled();
+invariant zeroLastScheduledAndFirstWindow()
+    isWindowsEmpty(0) && InflationModule.lastScheduledWindowId() == 0
+    filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
+
+function safeAssumptions(uint16 windowId) {
+    requireInvariant zeroWindowsScheduled(windowId);
     requireInvariant zeroLastScheduledWindowId();
     requireInvariant zeroLastClaimedWindowId();
     requireInvariant zeroLastClaimedTimestamp();
+    requireInvariant zeroLastScheduledAndFirstWindow();
 }
 
 rule LastClaimedTimestampRule() {
-    env eClaim;
+    env eClaim; uint16 windowId;
 
-    safeAssumptions();
+    safeAssumptions(windowId);
 
     mathint lastClaimedTimestampBefore = InflationModule.lastClaimedTimestamp();
 
@@ -72,13 +79,11 @@ rule LastClaimedTimestampRule() {
 }
 
 rule LastClaimedWindowIdRule() {
-    env eSchedule; env eClaim; calldataarg args;
+    env eSchedule; env eClaim; calldataarg args; uint16 windowId;
 
-    safeAssumptions();
+    safeAssumptions(windowId);
 
     mathint lastClaimedWindowIdBefore = InflationModule.lastClaimedWindowId();
-
-    schedule(eSchedule, args);
 
     claim(eClaim);
 
@@ -88,9 +93,9 @@ rule LastClaimedWindowIdRule() {
 }
 
 rule lastScheduledWindowIdRule() {
-    env eSchedule; calldataarg args;
+    env eSchedule; calldataarg args; uint16 windowId;
 
-    safeAssumptions();
+    safeAssumptions(windowId);
 
     mathint lastScheduledWindowIdBefore = InflationModule.lastScheduledWindowId();
 
@@ -100,3 +105,23 @@ rule lastScheduledWindowIdRule() {
 
     assert lastScheduledWindowIdAfter >= lastScheduledWindowIdBefore;
 }
+
+rule claimableAmountDoesNotChangeForABlock() {
+    env e; method f; calldataarg args; uint16 windowId;
+
+    safeAssumptions(windowId);
+
+    uint32 blockTimestamp = require_uint32(e.block.timestamp);
+
+    mathint claimableBefore = InflationModule.claimable(e, blockTimestamp);
+    f(e, args);
+    mathint claimableAfter = InflationModule.claimable(e, blockTimestamp);
+
+    assert claimableBefore == claimableAfter;
+}
+
+// Rules to add
+// No issuance rate can be greater then the maximumIssuanceRate
+// If issuance rate is non-zero in the current window then claimable should be non-zero
+// If lastclaimedTimestamp change that means lastClaimedWindowId changed
+// in the mapping next windowId and windowStart should be greater than the previous
