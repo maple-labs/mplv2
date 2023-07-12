@@ -16,8 +16,9 @@ import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";
 
+import { Actions }    from "./Actions.sol";
 import { Invariants } from "./Invariants.sol";
-import { Selector }   from "./Selector.sol";
+import { Router }     from "./Router.sol";
 
 contract InvariantTests is TestBase {
 
@@ -33,6 +34,12 @@ contract InvariantTests is TestBase {
     IMapleToken      mapleToken;
 
     function setUp() external {
+        deploy();
+        configure();
+        spec();
+    }
+
+    function deploy() internal {
         mapleGlobals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
         mapleToken   = IMapleToken(address(new MapleTokenProxy(
             address(mapleGlobals),
@@ -43,7 +50,9 @@ contract InvariantTests is TestBase {
 
         emergencyModule = new EmergencyModule(address(mapleGlobals), address(mapleToken));
         inflationModule = new InflationModule(address(mapleToken), 1e18);
+    }
 
+    function configure() internal {
         vm.startPrank(governor);
 
         mapleGlobals.setMapleTreasury(treasury);
@@ -51,7 +60,7 @@ contract InvariantTests is TestBase {
         mapleGlobals.scheduleCall(
             address(mapleToken),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(MapleToken.addModule.selector, address(emergencyModule))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(emergencyModule))
         );
 
         mapleToken.addModule(address(emergencyModule));
@@ -59,7 +68,7 @@ contract InvariantTests is TestBase {
         mapleGlobals.scheduleCall(
             address(mapleToken),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(MapleToken.addModule.selector, address(inflationModule))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(inflationModule))
         );
 
         mapleToken.addModule(address(inflationModule));
@@ -67,11 +76,29 @@ contract InvariantTests is TestBase {
         vm.stopPrank();
     }
 
-    function statefulFuzz_assertInvariants() external {
-        // TODO: Configure contracts, functions, weights, etc.
+    function spec() internal {
+        Actions actions = new Actions();
 
-        targetContract(address(new Selector()));
+        bytes4[] memory selectors = new bytes4[](2);
 
+        selectors[0] = actions.doStuff.selector;
+        selectors[1] = actions.doOtherStuff.selector;
+
+        uint256[] memory weights = new uint256[](2);
+
+        weights[0] = 100;
+        weights[1] = 750;
+
+        Router router = new Router(address(actions), selectors, weights);
+
+        targetContract(address(router));
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Invariant Tests                                                                                                                ***/
+    /**************************************************************************************************************************************/
+
+    function invariant_assertInvariants() external view {
         Invariants.assert_inflationModule_invariant_A(inflationModule);
         Invariants.assert_inflationModule_invariant_B(inflationModule);
         Invariants.assert_inflationModule_invariant_C(inflationModule);
