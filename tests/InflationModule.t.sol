@@ -534,3 +534,62 @@ contract ScheduleTests is InflationModuleTestBase {
     }
 
 }
+
+contract CurrentIssuanceRateTests is InflationModuleTestBase {
+    
+    function setUp() public override {
+        super.setUp();
+        vm.stopPrank();
+
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+        windowStarts.push(start + 85 days);
+        windowStarts.push(start + 120 days);
+        windowStarts.push(start + 150 days);
+        windowStarts.push(start + 190 days);
+        windowStarts.push(start + 300 days);
+
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(0.96e18);
+        issuanceRates.push(0.97e18);
+        issuanceRates.push(0);
+        issuanceRates.push(1e18);
+        issuanceRates.push(0);
+        issuanceRates.push(0.98e18);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+    }
+
+    function test_currentIssuanceRate() external {
+        vm.warp(start + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.95e18);
+
+        vm.warp(start + 50 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.96e18);
+
+        vm.warp(start + 85 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.97e18);
+
+        vm.warp(start + 120 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0);
+
+        vm.warp(start + 150 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 1e18);
+
+        vm.warp(start + 190 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0);
+
+        vm.warp(start + 300 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.98e18);
+    }
+
+}
