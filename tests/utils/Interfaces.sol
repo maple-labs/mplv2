@@ -22,6 +22,8 @@ interface IGlobalsLike {
 
     function setMapleTreasury(address mapleTreasury_) external;
 
+    function setValidInstanceOf(bytes32 instanceKey_, address instance_, bool isValid_) external;
+
     function setTimelockWindow(address contract_, bytes32 functionId_, uint128 delay_, uint128 duration_) external;
 
     function timelockParametersOf(address contract_, bytes32 functionId_) external view returns (uint128 delay, uint128 duration);

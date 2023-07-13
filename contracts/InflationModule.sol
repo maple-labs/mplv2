@@ -48,6 +48,8 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     function claim() external returns (uint256 amountClaimed_) {
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+
         (
             uint16  lastClaimableWindowId_,
             uint256 claimableAmount_

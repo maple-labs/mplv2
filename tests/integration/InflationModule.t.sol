@@ -14,6 +14,7 @@ import { IGlobalsLike  } from "../utils/Interfaces.sol";
 
 contract InflationModuleIntegrationTest is TestBase {
 
+    address claimer  = makeAddr("claimer");
     address governor = makeAddr("governor");
     address treasury = makeAddr("treasury");
     address migrator = makeAddr("migrator");
@@ -34,6 +35,8 @@ contract InflationModuleIntegrationTest is TestBase {
         module = new InflationModule(address(token));
 
         vm.startPrank(governor);
+        globals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);
+
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
         token.addModule(address(module));
@@ -52,6 +55,11 @@ contract InflationModuleIntegrationTest is TestBase {
         start = block.timestamp;
     }
 
+    function test_inflationModule_claim_notClaimer() external {
+        vm.expectRevert("IM:C:NOT_CLAIMER");
+        module.claim();
+    }
+
     function test_inflationModule_claim_notMinter() external {
         vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:REMOVE_MODULE", abi.encodeWithSelector(IMapleToken.removeModule.selector, module));
@@ -60,6 +68,7 @@ contract InflationModuleIntegrationTest is TestBase {
 
         vm.warp(start + 1 seconds);
 
+        vm.prank(claimer);
         vm.expectRevert("MT:M:NOT_MODULE");
         module.claim();
     }
@@ -70,6 +79,7 @@ contract InflationModuleIntegrationTest is TestBase {
 
         vm.warp(start + 1000 seconds);
 
+        vm.prank(claimer);
         module.claim();
 
         assertEq(token.balanceOf(treasury), startingBalance + 1_000e18);
@@ -97,6 +107,7 @@ contract InflationModuleIntegrationTest is TestBase {
 
         vm.warp(start + 1000 seconds);
 
+        vm.prank(claimer);
         module.claim();
 
         assertEq(token.balanceOf(treasury), startingBalance + 750e18);

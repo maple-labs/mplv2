@@ -33,6 +33,7 @@ contract InflationModuleTestBase is TestBase {
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
         globals.__setIsValidScheduledCall(true);
+        globals.__setIsInstance(true);
 
         token = new MockToken();
         token.__setGlobals(address(globals));
@@ -89,6 +90,13 @@ contract ClaimTests is InflationModuleTestBase {
         super.setUp();
 
         vm.stopPrank();
+    }
+
+    function test_claim_noClaimer() external {
+        globals.__setIsInstance(false);
+        
+        vm.expectRevert("IM:C:NOT_CLAIMER");
+        module.claim();
     }
 
     function test_claim_zeroClaim_atomic() external {

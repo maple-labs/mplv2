@@ -15,6 +15,8 @@ interface IGlobalsLike {
 
     function governor() external view returns (address governor);
 
+    function isInstanceOf(bytes32 instanceKey, address instance) external view returns (bool isInstance);
+
     function isValidScheduledCall(
         address          caller,
         address          target,
