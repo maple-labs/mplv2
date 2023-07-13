@@ -37,7 +37,7 @@ contract InflationModuleTestBase is TestBase {
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModule(address(token), 1e18);
+        module = new InflationModule(address(token));
 
         start = uint32(block.timestamp);
 
@@ -72,8 +72,6 @@ contract ConstructorTests is InflationModuleTestBase {
 
     function test_inflationModule_constructor() external {
         assertEq(module.token(), address(token));
-
-        assertEq(module.maximumIssuanceRate(), 1e18);
 
         assertEq(module.lastClaimedTimestamp(),  0);
         assertEq(module.lastClaimedWindowId(),   0);
@@ -350,14 +348,6 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:OUT_OF_ORDER");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
-    function test_schedule_outOfBounds() external {
-        windowStarts.push(start + 10 days);
-        issuanceRates.push(1e18 + 1);
-
-        vm.expectRevert("IM:VW:OUT_OF_BOUNDS");
         module.schedule(windowStarts, issuanceRates);
     }
 

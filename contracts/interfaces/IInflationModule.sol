@@ -56,12 +56,6 @@ interface IInflationModule {
     function lastScheduledWindowId() external view returns (uint16 lastScheduledWindowId);
 
     /**
-     *  @dev    Returns the maximum issuance rate allowed for any window.
-     *  @return maximumIssuanceRate Maximum issuance rate allowed for any window.
-     */
-    function maximumIssuanceRate() external view returns (uint208 maximumIssuanceRate);
-
-    /**
      *  @dev   Schedules new windows that define when tokens will be issued.
      *  @param windowStarts  An array of window start times.
      *  @param issuanceRates An array of corresponding issuance rates.

@@ -15,8 +15,6 @@ contract InflationModule is IInflationModule {
 
     address public immutable token;
 
-    uint208 public immutable maximumIssuanceRate;
-
     uint16 public lastClaimedWindowId;
     uint16 public lastScheduledWindowId;
 
@@ -41,9 +39,8 @@ contract InflationModule is IInflationModule {
         _;
     }
 
-    constructor(address token_, uint208 maximumIssuanceRate_) {
-        token               = token_;
-        maximumIssuanceRate = maximumIssuanceRate_;
+    constructor(address token_) {
+        token = token_;
     }
 
     /**************************************************************************************************************************************/
@@ -170,11 +167,8 @@ contract InflationModule is IInflationModule {
         require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
         require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
 
-        for (uint256 index_ = 0; index_ < windowStarts_.length; ++index_) {
-            if (index_ < windowStarts_.length - 1) {
-                require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
-            }
-            require(issuanceRates_[index_] <= maximumIssuanceRate, "IM:VW:OUT_OF_BOUNDS");
+        for (uint256 index_ = 0; index_ < windowStarts_.length - 1; ++index_) {
+            require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
         }
     }
 

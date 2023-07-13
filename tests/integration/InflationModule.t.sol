@@ -31,7 +31,7 @@ contract InflationModuleIntegrationTest is TestBase {
         globals.setMapleTreasury(treasury);
 
         token  = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
-        module = new InflationModule(address(token), 1e18);
+        module = new InflationModule(address(token));
 
         vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
