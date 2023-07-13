@@ -40,6 +40,8 @@ contract MapleTokenTestsBase is TestBase {
 
 contract SetImplementationTests is MapleTokenTestsBase {
 
+    event ImplementationSet(address indexed implementation);
+
     function test_setImplementation_notAdmin() external {
         vm.expectRevert("MTP:SI:NOT_GOVERNOR");
         MapleTokenProxy(tokenAddress).setImplementation(address(0x1));
@@ -63,6 +65,9 @@ contract SetImplementationTests is MapleTokenTestsBase {
             abi.encodeWithSelector(MapleTokenProxy(tokenAddress).setImplementation.selector, newImplementation)
         );
 
+        vm.expectEmit();
+        emit ImplementationSet(newImplementation);
+
         vm.prank(governor);
         MapleTokenProxy(tokenAddress).setImplementation(newImplementation);
 
@@ -72,6 +77,9 @@ contract SetImplementationTests is MapleTokenTestsBase {
 }
 
 contract AddAndRemoveModuleTests is MapleTokenTestsBase {
+
+    event ModuleAdded(address indexed module);
+    event ModuleRemoved(address indexed module);
 
     function test_addModule_notGovernor() external {
         vm.expectRevert("MT:NOT_GOVERNOR");
@@ -93,6 +101,9 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
             bytes32("MT:ADD_MODULE"),
             abi.encodeWithSelector(token.addModule.selector, address(0x1))
         );
+
+        vm.expectEmit();
+        emit ModuleAdded(address(0x1));
 
         vm.prank(governor);
         token.addModule(address(0x1));
@@ -124,6 +135,9 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
             abi.encodeWithSelector(token.removeModule.selector, address(0x1))
         );
 
+        vm.expectEmit();
+        emit ModuleRemoved(address(0x1));
+
         vm.prank(governor);
         token.removeModule(address(0x1));
 
@@ -133,6 +147,9 @@ contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 }
 
 contract BurnTests is MapleTokenTestsBase {
+
+    event Burn(address indexed from, uint256 amount);
+    event Transfer(address indexed from, address indexed to, uint256 amount);
 
     address burner    = makeAddr("burner");
     address notBurner = makeAddr("notBurner");
@@ -162,6 +179,10 @@ contract BurnTests is MapleTokenTestsBase {
     }
 
     function test_burn_success() external {
+        vm.expectEmit();
+        emit Transfer(treasury, address(0), 1);
+        emit Burn(treasury, 1);
+
         vm.prank(burner);
         token.burn(treasury, 1);
 
@@ -171,6 +192,9 @@ contract BurnTests is MapleTokenTestsBase {
 }
 
 contract MintTests is MapleTokenTestsBase {
+
+    event Mint(address indexed to, uint256 amount);
+    event Transfer(address indexed from, address indexed to, uint256 amount);
 
     address minter =  makeAddr("minter");
 
@@ -187,6 +211,10 @@ contract MintTests is MapleTokenTestsBase {
     }
 
     function test_burn_success() external {
+        vm.expectEmit();
+        emit Transfer(address(0), address(0x2), 1);
+        emit Mint(address(0x2), 1);
+
         vm.prank(minter);
         token.mint(address(0x2), 1);
 
