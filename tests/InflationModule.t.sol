@@ -33,11 +33,12 @@ contract InflationModuleTestBase is TestBase {
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
         globals.__setIsValidScheduledCall(true);
+        globals.__setIsInstance(true);
 
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModule(address(token), 1e18);
+        module = new InflationModule(address(token));
 
         start = uint32(block.timestamp);
 
@@ -73,8 +74,6 @@ contract ConstructorTests is InflationModuleTestBase {
     function test_inflationModule_constructor() external {
         assertEq(module.token(), address(token));
 
-        assertEq(module.maximumIssuanceRate(), 1e18);
-
         assertEq(module.lastClaimedTimestamp(),  0);
         assertEq(module.lastClaimedWindowId(),   0);
         assertEq(module.lastScheduledWindowId(), 0);
@@ -91,6 +90,13 @@ contract ClaimTests is InflationModuleTestBase {
         super.setUp();
 
         vm.stopPrank();
+    }
+
+    function test_claim_noClaimer() external {
+        globals.__setIsInstance(false);
+        
+        vm.expectRevert("IM:C:NOT_CLAIMER");
+        module.claim();
     }
 
     function test_claim_zeroClaim_atomic() external {
@@ -350,14 +356,6 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(1e18);
 
         vm.expectRevert("IM:VW:OUT_OF_ORDER");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
-    function test_schedule_outOfBounds() external {
-        windowStarts.push(start + 10 days);
-        issuanceRates.push(1e18 + 1);
-
-        vm.expectRevert("IM:VW:OUT_OF_BOUNDS");
         module.schedule(windowStarts, issuanceRates);
     }
 
