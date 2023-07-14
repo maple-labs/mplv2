@@ -130,8 +130,24 @@ rule claimableAmountDoesNotChangeForABlock() {
     assert claimableBefore == claimableAfter;
 }
 
+rule windowIdIncreases() {
+    env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
+
+    require windowId > windowId2;
+
+    safeAssumptions(windowId);
+
+    f(e, args);
+
+    mathint currentWindowId = InflationModule.getNextWindowId(windowId);
+    mathint priorWindowId = InflationModule.getNextWindowId(windowId2);
+
+    require currentWindowId != 0;
+    require priorWindowId != 0;
+
+    assert currentWindowId > priorWindowId;
+}
+
 // Rules to add
-// No issuance rate can be greater then the maximumIssuanceRate
 // If issuance rate is non-zero in the current window then claimable should be non-zero
 // If lastclaimedTimestamp change that means lastClaimedWindowId changed
-// in the mapping next windowId and windowStart should be greater than the previous
