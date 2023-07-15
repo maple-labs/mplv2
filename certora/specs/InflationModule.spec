@@ -24,6 +24,8 @@ methods {
     function _.mint(address, uint256) external => DISPATCHER(true);
 }
 
+// NOTDET lets you make sure if works in all cases as you can check it always work no matter the value
+
 definition isWindowScheduled(uint16 windowId) returns bool =
     InflationModule.getWindowStart(windowId) != 0;
 
@@ -35,6 +37,9 @@ definition isNonZeroNextWindowId(uint16 windowId) returns bool =
 
 definition isWindowsEmpty(uint16 windowId) returns bool =
     !isWindowScheduled(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
+
+definition isWindowIdGtZero(uint16 windowId) returns bool =
+    windowId > 0;
 
 invariant zeroWindowsScheduled(uint16 windowId)
     isWindowsEmpty(windowId)
@@ -55,6 +60,9 @@ invariant zeroLastClaimedTimestamp()
 invariant zeroLastScheduledAndFirstWindow()
     isWindowsEmpty(0) && InflationModule.lastScheduledWindowId() == 0
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
+
+// Only put stuff yoou know is true in the preserve block otherwise it won't fail
+// Better to define parametric rules if filtering state changing function
 
 function safeAssumptions(uint16 windowId) {
     requireInvariant zeroWindowsScheduled(windowId);
@@ -130,6 +138,7 @@ rule claimableAmountDoesNotChangeForABlock() {
     assert claimableBefore == claimableAfter;
 }
 
+// Add a bug to try to break this to check its not vacuous
 rule windowIdIncreases() {
     env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
 
@@ -148,6 +157,21 @@ rule windowIdIncreases() {
     assert currentWindowId > priorWindowId;
 }
 
+// invariant windowIdIncreases(uint16 windowId1, uint16 windowId2)
+//     windowId1 > windowId2 && windowId1 != 0 && windowId2 != 0  =>
+//     isWindowIdGtZero(windowId1) &&
+//     isNonZeroNextWindowId(windowId1) &&
+//     isWindowIdGtZero(windowId2) &&
+//     isNonZeroNextWindowId(windowId2) &&
+//     InflationModule.getNextWindowId(windowId1) > InflationModule.getNextWindowId(windowId2);
+
+// invariant nullStateWindowIdwhenNotScheduled(uint16 windowId)
+//     windowId > InflationModule.lastScheduledWindowId() =>
+//     InflationModule.getNextWindowId(windowId) == 0;
+
+
 // Rules to add
+// No issuance rate can be greater then the maximumIssuanceRate
 // If issuance rate is non-zero in the current window then claimable should be non-zero
 // If lastclaimedTimestamp change that means lastClaimedWindowId changed
+// in the mapping next windowId and windowStart should be greater than the previous (monotonically increase)
