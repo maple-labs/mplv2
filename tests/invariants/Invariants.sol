@@ -77,7 +77,7 @@ library Invariants {
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_E(IInflationModule module) internal view {
-        ( , uint32 nextWindowId, ) = module.windows(module.lastScheduledWindowId());
+        ( uint16 nextWindowId, , ) = module.windows(module.lastScheduledWindowId());
 
         require(nextWindowId == 0, "Last scheduled window is not the last window.");
     }

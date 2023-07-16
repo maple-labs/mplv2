@@ -17,6 +17,9 @@ contract Handler is TestBase {
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
 
+    mapping(address => uint256) allowances;
+    mapping(address => uint256) balances;
+
     constructor(IGlobalsLike mapleGlobals_, IMapleToken mapleToken_, IEmergencyModule emergencyModule_, IInflationModule inflationModule_) {
         mapleGlobals    = mapleGlobals_;
         mapleToken      = mapleToken_;
@@ -34,6 +37,7 @@ contract Handler is TestBase {
         // Skip if nothing is claimable.
         if (inflationModule.claimable(uint32(block.timestamp)) == 0) return true;
 
+        // TODO: Update to always prank as governor?
         vm.prank(caller);
         inflationModule.claim();
     }
@@ -78,7 +82,35 @@ contract Handler is TestBase {
     }
 
     function schedule(uint256 seed) external returns (bool skip) {
-        // TODO
+        uint256 numberOfWindows = bound(seed, 1, 10);
+
+        uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
+        uint208[] memory issuanceRates = new uint208[](numberOfWindows);
+
+        uint32 minWindowStart = uint32(block.timestamp);
+
+        for (uint i; i < numberOfWindows; ++i) {
+            uint256 windowSeed = uint256(keccak256(abi.encode(seed, i)));
+
+            windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + 100 days));
+            issuanceRates[i] = uint208(bound(windowSeed, 0, 1e18));
+
+            minWindowStart = windowStarts[i] + 1 seconds;
+        }
+
+        address governor = mapleGlobals.governor();
+
+        vm.prank(governor);
+        mapleGlobals.scheduleCall(
+            address(inflationModule),
+            "IM:SCHEDULE",
+            abi.encodeWithSelector(inflationModule.schedule.selector, windowStarts, issuanceRates)
+        );
+
+        vm.prank(governor);
+        inflationModule.schedule(windowStarts, issuanceRates);
+
+        return false;
     }
 
     function transfer(uint256 seed) external returns (bool skip) {
@@ -90,7 +122,7 @@ contract Handler is TestBase {
     }
 
     function warp(uint256 seed) external returns (bool skip) {
-        uint256 time = bound(seed, 1 seconds, 30 days);
+        uint256 time = bound(seed, 1 seconds, 1000 days);
 
         vm.warp(block.timestamp + time);
 

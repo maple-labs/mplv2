@@ -95,16 +95,16 @@ contract InvariantTests is TestBase {
         uint256[] memory weights = new uint256[](11);
 
         weights[0]  = 1;
-        weights[1]  = 50;
+        weights[1]  = 100_000;
         weights[2]  = 1;
-        weights[3]  = 10;
-        weights[4]  = 10;
+        weights[3]  = 1;
+        weights[4]  = 1;
         weights[5]  = 1;
         weights[6]  = 1;
-        weights[7]  = 1;
+        weights[7]  = 100_000;
         weights[8]  = 1;
         weights[9]  = 1;
-        weights[10] = 100;
+        weights[10] = 100_000;
 
         Router router = new Router(address(handler), selectors, weights);
 
@@ -115,7 +115,7 @@ contract InvariantTests is TestBase {
     /*** Invariant Tests                                                                                                                ***/
     /**************************************************************************************************************************************/
 
-    function invariant_assertInvariants() external view {
+    function statefulFuzz_assertInvariants() external view {
         Invariants.assert_inflationModule_invariant_A(inflationModule);
         Invariants.assert_inflationModule_invariant_B(inflationModule);
         Invariants.assert_inflationModule_invariant_C(inflationModule);
