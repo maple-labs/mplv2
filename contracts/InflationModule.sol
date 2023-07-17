@@ -69,7 +69,7 @@ contract InflationModule is IInflationModule {
         uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
         uint16 lastClaimableWindowId_;
 
-        require(to_ > lastClaimedTimestamp_, "IM:C:OUT_OF_DATE");
+        require(to_ >= lastClaimedTimestamp_, "IM:C:OUT_OF_DATE");
 
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
     }

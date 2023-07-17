@@ -127,8 +127,8 @@ library Invariants {
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module) internal view {
-        require(module.lastClaimedTimestamp() <= block.timestamp, "Last claimed timestamp is greater than the current time.");
+    function assert_inflationModule_invariant_H(IInflationModule module, uint32 blockTimestamp) internal view {
+        require(module.lastClaimedTimestamp() <= blockTimestamp, "Last claimed timestamp is greater than the current time.");
     }
 
     /**

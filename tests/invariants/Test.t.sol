@@ -22,6 +22,7 @@ import { Router }     from "./Router.sol";
 
 contract InvariantTests is TestBase {
 
+    address claimer  = makeAddr("claimer");
     address governor = makeAddr("governor");
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
@@ -31,6 +32,8 @@ contract InvariantTests is TestBase {
 
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
+
+    Handler handler;
 
     function setUp() external {
         deploy();
@@ -55,6 +58,7 @@ contract InvariantTests is TestBase {
         vm.startPrank(governor);
 
         mapleGlobals.setMapleTreasury(treasury);
+        mapleGlobals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);
 
         mapleGlobals.scheduleCall(
             address(mapleToken),
@@ -76,7 +80,7 @@ contract InvariantTests is TestBase {
     }
 
     function spec() internal {
-        Handler handler = new Handler(mapleGlobals, mapleToken, emergencyModule, inflationModule);
+        handler = new Handler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
 
         bytes4[] memory selectors = new bytes4[](5);
 
@@ -88,11 +92,11 @@ contract InvariantTests is TestBase {
 
         uint256[] memory weights = new uint256[](5);
 
-        weights[0] = 1;
+        weights[0] = 100;
         weights[1] = 1;
         weights[2] = 1;
-        weights[3] = 1;
-        weights[4] = 1;
+        weights[3] = 10;
+        weights[4] = 100;
 
         Router router = new Router(address(handler), selectors, weights);
 
@@ -111,7 +115,7 @@ contract InvariantTests is TestBase {
         Invariants.assert_inflationModule_invariant_E(inflationModule);
         Invariants.assert_inflationModule_invariant_F(inflationModule);
         Invariants.assert_inflationModule_invariant_G(inflationModule);
-        Invariants.assert_inflationModule_invariant_H(inflationModule);
+        Invariants.assert_inflationModule_invariant_H(inflationModule, handler.blockTimestamp());
         Invariants.assert_inflationModule_invariant_I(inflationModule);
     }
 

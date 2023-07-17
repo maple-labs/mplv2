@@ -11,6 +11,10 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract Handler is TestBase {
 
+    address claimer;
+
+    uint32 public blockTimestamp;
+
     IGlobalsLike mapleGlobals;
     IMapleToken  mapleToken;
 
@@ -20,25 +24,39 @@ contract Handler is TestBase {
     mapping(address => uint256) allowances;
     mapping(address => uint256) balances;
 
-    constructor(IGlobalsLike mapleGlobals_, IMapleToken mapleToken_, IEmergencyModule emergencyModule_, IInflationModule inflationModule_) {
+    modifier useBlockTimestamp() {
+        vm.warp(blockTimestamp);
+
+        _;
+    }
+
+    constructor(
+        IGlobalsLike mapleGlobals_,
+        IMapleToken mapleToken_,
+        IEmergencyModule emergencyModule_,
+        IInflationModule inflationModule_,
+        address claimer_
+    )
+    {
         mapleGlobals    = mapleGlobals_;
         mapleToken      = mapleToken_;
         emergencyModule = emergencyModule_;
         inflationModule = inflationModule_;
+
+        claimer = claimer_;
+
+        blockTimestamp = uint32(block.timestamp);
     }
 
     function approve(uint256 seed) external returns (bool skip) {
         // TODO
     }
 
-    function claim(uint256 seed) external returns (bool skip) {
-        address caller = makeAddr(vm.toString(seed));
-
+    function claim(uint256) external useBlockTimestamp returns (bool skip) {
         // Skip if nothing is claimable.
-        if (inflationModule.claimable(uint32(block.timestamp)) == 0) return true;
+        if (inflationModule.claimable(blockTimestamp) == 0) return true;
 
-        // TODO: Update to always prank as governor?
-        vm.prank(caller);
+        vm.prank(claimer);
         inflationModule.claim();
     }
 
@@ -46,7 +64,7 @@ contract Handler is TestBase {
         // TODO
     }
 
-    function emergencyBurn(uint256 seed) external returns (bool skip) {
+    function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
         address treasury = mapleGlobals.mapleTreasury();
         uint256 balance  = mapleToken.balanceOf(treasury);
 
@@ -60,7 +78,7 @@ contract Handler is TestBase {
         emergencyModule.burn(treasury, amount);
     }
 
-    function emergencyMint(uint256 seed) external returns (bool skip) {
+    function emergencyMint(uint256 seed) external useBlockTimestamp returns (bool skip) {
         uint256 totalSupply = mapleToken.totalSupply();
 
         // Skip if no tokens can be minted.
@@ -81,13 +99,13 @@ contract Handler is TestBase {
         // TODO
     }
 
-    function schedule(uint256 seed) external returns (bool skip) {
+    function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
         uint256 numberOfWindows = bound(seed, 1, 10);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
 
-        uint32 minWindowStart = uint32(block.timestamp);
+        uint32 minWindowStart = uint32(blockTimestamp);
 
         for (uint i; i < numberOfWindows; ++i) {
             uint256 windowSeed = uint256(keccak256(abi.encode(seed, i)));
@@ -122,9 +140,7 @@ contract Handler is TestBase {
     }
 
     function warp(uint256 seed) external returns (bool skip) {
-        uint256 time = bound(seed, 1 seconds, 1000 days);
-
-        vm.warp(block.timestamp + time);
+        blockTimestamp += uint32(bound(seed, 1 seconds, 1000 days));
 
         return false;
     }
