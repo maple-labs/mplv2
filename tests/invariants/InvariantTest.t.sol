@@ -13,8 +13,8 @@ import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { IGlobalsLike }      from "../utils/Interfaces.sol";
-import { console, TestBase } from "../utils/TestBase.sol";
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+import { TestBase }     from "../utils/TestBase.sol";
 
 import { DistributionHandler }       from "./DistributionHandler.sol";
 import { InflationModuleInvariants } from "./InflationModuleInvariants.sol";
