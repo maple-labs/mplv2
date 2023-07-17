@@ -7,9 +7,9 @@ import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 
-import { TestBase } from "../utils/TestBase.sol";
+import { console, TestBase } from "../utils/TestBase.sol";
 
-contract Handler is TestBase {
+contract ModuleHandler is TestBase {
 
     address claimer;
 
@@ -48,20 +48,14 @@ contract Handler is TestBase {
         blockTimestamp = uint32(block.timestamp);
     }
 
-    function approve(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
     function claim(uint256) external useBlockTimestamp returns (bool skip) {
         // Skip if nothing is claimable.
         if (inflationModule.claimable(blockTimestamp) == 0) return true;
 
+        console.log("Claiming");
+
         vm.prank(claimer);
         inflationModule.claim();
-    }
-
-    function decreaseAllowance(uint256 seed) external returns (bool skip) {
-        // TODO
     }
 
     function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
@@ -73,6 +67,8 @@ contract Handler is TestBase {
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, balance);
+
+        console.log("Emergency burn:", treasury, amount);
 
         vm.prank(governor);
         emergencyModule.burn(treasury, amount);
@@ -87,20 +83,14 @@ contract Handler is TestBase {
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, type(uint256).max - totalSupply);
 
+        console.log("Emergency mint:", amount);
+
         vm.prank(governor);
         emergencyModule.mint(amount);
     }
 
-    function increaseAllowance(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
-    function permit(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
     function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        uint256 numberOfWindows = bound(seed, 1, 10);
+        uint256 numberOfWindows = bound(seed, 1, 5);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -113,7 +103,7 @@ contract Handler is TestBase {
             windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + 100 days));
             issuanceRates[i] = uint208(bound(windowSeed, 0, 1e18));
 
-            minWindowStart = windowStarts[i] + 1 seconds;
+            minWindowStart = windowStarts[i];
         }
 
         address governor = mapleGlobals.governor();
@@ -128,19 +118,15 @@ contract Handler is TestBase {
         vm.prank(governor);
         inflationModule.schedule(windowStarts, issuanceRates);
 
+        console.log("Scheduling");
+
         return false;
     }
 
-    function transfer(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
-    function transferFrom(uint256 seed) external returns (bool skip) {
-        // TODO
-    }
-
     function warp(uint256 seed) external returns (bool skip) {
-        blockTimestamp += uint32(bound(seed, 1 seconds, 1000 days));
+        blockTimestamp += uint32(bound(seed, 1 seconds, 100 days));
+
+        console.log("Warping to:", blockTimestamp);
 
         return false;
     }

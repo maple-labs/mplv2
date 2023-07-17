@@ -16,9 +16,9 @@ import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";
 
-import { Handler }    from "./Handler.sol";
-import { Invariants } from "./Invariants.sol";
-import { Router }     from "./Router.sol";
+import { DistributionHandler }       from "./DistributionHandler.sol";
+import { InflationModuleInvariants } from "./InflationModuleInvariants.sol";
+import { ModuleHandler }             from "./ModuleHandler.sol";
 
 contract InvariantTests is TestBase {
 
@@ -33,7 +33,8 @@ contract InvariantTests is TestBase {
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
 
-    Handler handler;
+    ModuleHandler             handler;
+    InflationModuleInvariants invariants;
 
     function setUp() external {
         deploy();
@@ -80,7 +81,8 @@ contract InvariantTests is TestBase {
     }
 
     function spec() internal {
-        handler = new Handler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
+        handler    = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
+        invariants = new InflationModuleInvariants();
 
         bytes4[] memory selectors = new bytes4[](5);
 
@@ -96,11 +98,9 @@ contract InvariantTests is TestBase {
         weights[1] = 1;
         weights[2] = 1;
         weights[3] = 10;
-        weights[4] = 100;
+        weights[4] = 50;
 
-        Router router = new Router(address(handler), selectors, weights);
-
-        targetContract(address(router));
+        targetContract(address(new DistributionHandler(address(handler), selectors, weights)));
     }
 
     /**************************************************************************************************************************************/
@@ -108,15 +108,15 @@ contract InvariantTests is TestBase {
     /**************************************************************************************************************************************/
 
     function statefulFuzz_assertInvariants() external view {
-        Invariants.assert_inflationModule_invariant_A(inflationModule);
-        Invariants.assert_inflationModule_invariant_B(inflationModule);
-        Invariants.assert_inflationModule_invariant_C(inflationModule);
-        Invariants.assert_inflationModule_invariant_D(inflationModule);
-        Invariants.assert_inflationModule_invariant_E(inflationModule);
-        Invariants.assert_inflationModule_invariant_F(inflationModule);
-        Invariants.assert_inflationModule_invariant_G(inflationModule);
-        Invariants.assert_inflationModule_invariant_H(inflationModule, handler.blockTimestamp());
-        Invariants.assert_inflationModule_invariant_I(inflationModule);
+        invariants.assert_inflationModule_invariant_A(inflationModule);
+        invariants.assert_inflationModule_invariant_B(inflationModule);
+        invariants.assert_inflationModule_invariant_C(inflationModule);
+        invariants.assert_inflationModule_invariant_D(inflationModule);
+        invariants.assert_inflationModule_invariant_E(inflationModule);
+        invariants.assert_inflationModule_invariant_F(inflationModule);
+        invariants.assert_inflationModule_invariant_G(inflationModule);
+        invariants.assert_inflationModule_invariant_H(inflationModule, handler.blockTimestamp());
+        invariants.assert_inflationModule_invariant_I(inflationModule);
     }
 
 }

@@ -3,7 +3,9 @@ pragma solidity 0.8.18;
 
 import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
 
-library Invariants {
+import { TestBase } from "../utils/TestBase.sol";
+
+contract InflationModuleInvariants is TestBase {
 
     /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/
@@ -14,7 +16,7 @@ library Invariants {
      *  @dev    Invariant: traverseFrom(zeroWindowId) == lastScheduledWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_A(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_A(IInflationModule module) external view {
         uint16 windowId;
 
         while (true) {
@@ -33,7 +35,7 @@ library Invariants {
      *  @dev    Invariant: windows.contains(lastClaimedWindow)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_B(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_B(IInflationModule module) external view {
         uint16 windowId;
 
         while (true) {
@@ -52,7 +54,7 @@ library Invariants {
      *  @dev    Invariant: zeroWindow.windowStart == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_C(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_C(IInflationModule module) external view {
         ( , uint32 windowStart, ) = module.windows(0);
 
         require(windowStart == 0, "Zero index window timestamp is invalid.");
@@ -63,7 +65,7 @@ library Invariants {
      *  @dev    Invariant: zeroWindow.issuanceRate == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_D(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_D(IInflationModule module) external view {
         ( , , uint208 issuanceRate ) = module.windows(0);
 
         require(issuanceRate == 0, "Zero index window issuance rate is invalid.");
@@ -74,7 +76,7 @@ library Invariants {
      *  @dev    Invariant: lastScheduledWindow.nextWindowId == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_E(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_E(IInflationModule module) external view {
         ( uint16 nextWindowId, , ) = module.windows(module.lastScheduledWindowId());
 
         require(nextWindowId == 0, "Last scheduled window is not the last window.");
@@ -85,7 +87,7 @@ library Invariants {
      *  @dev    Invariant: ∑window(windowId < window.nextWindowId)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_F(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_F(IInflationModule module) external view {
         uint16 windowId;
 
         while (true) {
@@ -104,7 +106,7 @@ library Invariants {
      *  @dev    Invariant: ∑window(window.windowStart < nextWindow.windowStart)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_G(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_G(IInflationModule module) external view {
         uint16 windowId;
 
         while (true) {
@@ -125,7 +127,7 @@ library Invariants {
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module, uint32 blockTimestamp) internal view {
+    function assert_inflationModule_invariant_H(IInflationModule module, uint32 blockTimestamp) external view {
         require(module.lastClaimedTimestamp() <= blockTimestamp, "Last claimed timestamp is greater than the current time.");
     }
 
@@ -134,7 +136,7 @@ library Invariants {
      *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_I(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_I(IInflationModule module) external view {
         ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
         require(module.lastClaimedTimestamp() >= windowStart, "Last claimed winow is invalid.");
