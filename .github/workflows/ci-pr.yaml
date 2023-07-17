@@ -23,11 +23,11 @@ jobs:
         env:
           ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
 
-      - name: Install lcov
-        run: sudo apt-get install lcov
-
-      - name: Remove Tests from coverage
-        run:  lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
+      - name: Generate code coverage report
+        run: |
+          forge coverage --report lcov
+          sudo apt-get install lcov
+          lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1
