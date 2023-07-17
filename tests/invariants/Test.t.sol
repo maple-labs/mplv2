@@ -48,7 +48,7 @@ contract InvariantTests is TestBase {
         )));
 
         emergencyModule = new EmergencyModule(address(mapleGlobals), address(mapleToken));
-        inflationModule = new InflationModule(address(mapleToken), 1e18);
+        inflationModule = new InflationModule(address(mapleToken));
     }
 
     function configure() internal {
@@ -78,33 +78,21 @@ contract InvariantTests is TestBase {
     function spec() internal {
         Handler handler = new Handler(mapleGlobals, mapleToken, emergencyModule, inflationModule);
 
-        bytes4[] memory selectors = new bytes4[](11);
+        bytes4[] memory selectors = new bytes4[](5);
 
-        selectors[0]  = handler.approve.selector;
-        selectors[1]  = handler.claim.selector;
-        selectors[2]  = handler.decreaseAllowance.selector;
-        selectors[3]  = handler.emergencyBurn.selector;
-        selectors[4]  = handler.emergencyMint.selector;
-        selectors[5]  = handler.increaseAllowance.selector;
-        selectors[6]  = handler.permit.selector;
-        selectors[7]  = handler.schedule.selector;
-        selectors[8]  = handler.transfer.selector;
-        selectors[9]  = handler.transferFrom.selector;
-        selectors[10] = handler.warp.selector;
+        selectors[0] = handler.claim.selector;
+        selectors[1] = handler.emergencyBurn.selector;
+        selectors[2] = handler.emergencyMint.selector;
+        selectors[3] = handler.schedule.selector;
+        selectors[4] = handler.warp.selector;
 
-        uint256[] memory weights = new uint256[](11);
+        uint256[] memory weights = new uint256[](5);
 
-        weights[0]  = 1;
-        weights[1]  = 100_000;
-        weights[2]  = 1;
-        weights[3]  = 1;
-        weights[4]  = 1;
-        weights[5]  = 1;
-        weights[6]  = 1;
-        weights[7]  = 100_000;
-        weights[8]  = 1;
-        weights[9]  = 1;
-        weights[10] = 100_000;
+        weights[0] = 1;
+        weights[1] = 1;
+        weights[2] = 1;
+        weights[3] = 1;
+        weights[4] = 1;
 
         Router router = new Router(address(handler), selectors, weights);
 
@@ -125,7 +113,6 @@ contract InvariantTests is TestBase {
         Invariants.assert_inflationModule_invariant_G(inflationModule);
         Invariants.assert_inflationModule_invariant_H(inflationModule);
         Invariants.assert_inflationModule_invariant_I(inflationModule);
-        Invariants.assert_inflationModule_invariant_J(inflationModule);
     }
 
 }

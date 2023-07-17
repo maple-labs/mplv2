@@ -123,30 +123,11 @@ library Invariants {
     }
 
     /**
-     *  @notice Asserts all window issuance rates are lower or equal than the maximum issuance rate.
-     *  @dev    Invariant: ∑window(window.issuanceRate <= maximumIssuanceRate)
-     *  @param  module Address of the inflation module.
-     */
-    function assert_inflationModule_invariant_H(IInflationModule module) internal view {
-        uint16 windowId;
-
-        while (true) {
-            ( uint16 nextWindowId, , uint208 issuanceRate ) = module.windows(windowId);
-
-            require(issuanceRate <= module.maximumIssuanceRate(), "Issuance rate is over the maximum limit.");
-
-            if (nextWindowId == 0) break;
-
-            windowId = nextWindowId;
-        }
-    }
-
-    /**
      *  @notice Asserts tokens can only be claimed up to the current time.
      *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_I(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_H(IInflationModule module) internal view {
         require(module.lastClaimedTimestamp() <= block.timestamp, "Last claimed timestamp is greater than the current time.");
     }
 
@@ -155,7 +136,7 @@ library Invariants {
      *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_J(IInflationModule module) internal view {
+    function assert_inflationModule_invariant_I(IInflationModule module) internal view {
         ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
         require(module.lastClaimedTimestamp() >= windowStart, "Last claimed winow is invalid.");
