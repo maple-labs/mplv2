@@ -7,7 +7,6 @@ methods {
     function InflationModule.lastClaimedTimestamp() external returns (uint32) envfree;
     function InflationModule.lastClaimedWindowId() external returns (uint16) envfree;
     function InflationModule.lastScheduledWindowId() external returns (uint16) envfree;
-    function InflationModule.maximumIssuanceRate() external returns (uint208) envfree;
     function InflationModule.windows(uint16 windowId) external returns (uint16, uint32, uint208) envfree;
 
     // InflationModule Methods added via patch
