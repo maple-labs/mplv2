@@ -49,48 +49,65 @@ contract ModuleHandler is TestBase {
     }
 
     function claim(uint256) external useBlockTimestamp returns (bool skip) {
-        // Skip if nothing is claimable.
-        if (inflationModule.claimable(blockTimestamp) == 0) return true;
+        console.log("Claiming available tokens...");
 
-        console.log("Claiming");
+        // Skip if nothing is claimable.
+        if (inflationModule.claimable(blockTimestamp) == 0) {
+            console.log("No tokens available for claiming, skipping...");
+            return true;
+        }
 
         vm.prank(claimer);
         inflationModule.claim();
     }
 
     function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
+        console.log("Performing an emergency burn...");
+
         address treasury = mapleGlobals.mapleTreasury();
         uint256 balance  = mapleToken.balanceOf(treasury);
 
         // Skip if no tokens can be burned.
-        if (balance == 0) return true;
+        if (balance == 0) {
+            console.log("Treasury is empty, skipping...");
+            return true;
+        }
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, balance);
 
-        console.log("Emergency burn:", treasury, amount);
-
         vm.prank(governor);
         emergencyModule.burn(treasury, amount);
+
+        console.log("Amounted burned:", amount);
     }
 
     function emergencyMint(uint256 seed) external useBlockTimestamp returns (bool skip) {
+        console.log("Performing an emergency mint...");
+
         uint256 totalSupply = mapleToken.totalSupply();
 
         // Skip if no tokens can be minted.
-        if (totalSupply == type(uint256).max) return true;
+        if (totalSupply == type(uint256).max) {
+            console.log("Total supply is already reached, skipping...");
+            return true;
+        }
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, type(uint256).max - totalSupply);
 
-        console.log("Emergency mint:", amount);
-
         vm.prank(governor);
         emergencyModule.mint(amount);
+
+        console.log("Amounted minted:", amount);
     }
 
     function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
+        console.log("Scheduling new windows...");
+
         uint256 numberOfWindows = bound(seed, 1, 5);
+
+        console.log("Number of new windows:", numberOfWindows);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -104,6 +121,10 @@ contract ModuleHandler is TestBase {
             issuanceRates[i] = uint208(bound(windowSeed, 0, 1e18));
 
             minWindowStart = windowStarts[i];
+
+            console.log("Window index:      ", i);
+            console.log("Starting timestamp:", windowStarts[i]);
+            console.log("Issuance rate:     ", issuanceRates[i]);
         }
 
         address governor = mapleGlobals.governor();
@@ -118,15 +139,17 @@ contract ModuleHandler is TestBase {
         vm.prank(governor);
         inflationModule.schedule(windowStarts, issuanceRates);
 
-        console.log("Scheduling");
-
         return false;
     }
 
     function warp(uint256 seed) external returns (bool skip) {
-        blockTimestamp += uint32(bound(seed, 1 seconds, 100 days));
+        uint32 time = uint32(bound(seed, 1 seconds, 100 days));
 
-        console.log("Warping to:", blockTimestamp);
+        console.log("Warping ahead by", time, "seconds...");
+
+        blockTimestamp += time;
+
+        console.log("Warped to timestamp:", blockTimestamp);
 
         return false;
     }
