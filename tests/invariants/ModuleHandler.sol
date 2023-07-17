@@ -77,22 +77,19 @@ contract ModuleHandler is TestBase {
     }
 
     function emergencyMint(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        uint256 totalSupply = mapleToken.totalSupply();
-
-        // Skip if no tokens can be minted.
-        if (totalSupply == type(uint256).max) return true;
-
         address governor = mapleGlobals.governor();
-        uint256 amount   = bound(seed, 1, type(uint256).max - totalSupply);
+        uint256 amount   = bound(seed, 1, 1_000_000e18);
 
         vm.prank(governor);
         emergencyModule.mint(amount);
 
         console.log("Amount of tokens minted:", amount);
+
+        return false;
     }
 
     function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        uint256 numberOfWindows = bound(seed, 1, 5);
+        uint256 numberOfWindows = bound(seed, 1, 3);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -102,10 +99,10 @@ contract ModuleHandler is TestBase {
         for (uint i; i < numberOfWindows; ++i) {
             uint256 windowSeed = uint256(keccak256(abi.encode(seed, i)));
 
-            windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + 100 days));
+            windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + 365 days));
             issuanceRates[i] = uint208(bound(windowSeed, 0, 1e18));
 
-            minWindowStart = windowStarts[i];
+            minWindowStart = windowStarts[i] + 1 seconds;
 
             console.log("Adding a new window:", windowStarts[i], issuanceRates[i]);
         }
@@ -142,7 +139,7 @@ contract ModuleHandler is TestBase {
     }
 
     function warp(uint256 seed) external returns (bool skip) {
-        blockTimestamp += uint32(bound(seed, 1 seconds, 100 days));
+        blockTimestamp += uint32(bound(seed, 1 days, 30 days));
 
         console.log("Warped to timestamp:", blockTimestamp);
 

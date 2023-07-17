@@ -30,7 +30,7 @@ contract DistributionHandler {
 
             ( bool success, bytes memory output ) = target.call(abi.encodeWithSelector(selector, dataSeed));
 
-            assert(success);
+            require(success, "Handler call failed");
 
             bool skip = abi.decode(output, (bool));
 

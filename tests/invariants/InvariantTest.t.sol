@@ -16,9 +16,9 @@ import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";
 
-import { DistributionHandler }       from "./DistributionHandler.sol";
-import { InflationModuleInvariants } from "./InflationModuleInvariants.sol";
-import { ModuleHandler }             from "./ModuleHandler.sol";
+import { DistributionHandler } from "./DistributionHandler.sol";
+import { ModuleHandler }       from "./ModuleHandler.sol";
+import { ModuleInvariants }    from "./ModuleInvariants.sol";
 
 contract InvariantTest is TestBase {
 
@@ -33,9 +33,9 @@ contract InvariantTest is TestBase {
     IEmergencyModule emergencyModule;
     IInflationModule inflationModule;
 
-    DistributionHandler       distributionHandler;
-    ModuleHandler             moduleHandler;
-    InflationModuleInvariants invariants;
+    DistributionHandler distributionHandler;
+    ModuleHandler       moduleHandler;
+    ModuleInvariants    moduleInvariants;
 
     function setUp() external {
         deploy();
@@ -84,21 +84,21 @@ contract InvariantTest is TestBase {
     function spec() internal {
         bytes4[] memory selectors = new bytes4[](5);
 
-        selectors[0] = ModuleHandler.claim.selector;
-        selectors[1] = ModuleHandler.emergencyBurn.selector;
-        selectors[2] = ModuleHandler.emergencyMint.selector;
-        selectors[3] = ModuleHandler.schedule.selector;
-        selectors[4] = ModuleHandler.warp.selector;
+        selectors[0] = ModuleHandler.warp.selector;
+        selectors[1] = ModuleHandler.claim.selector;
+        selectors[2] = ModuleHandler.schedule.selector;
+        selectors[3] = ModuleHandler.emergencyMint.selector;
+        selectors[4] = ModuleHandler.emergencyBurn.selector;
 
         uint256[] memory weights = new uint256[](5);
 
-        weights[0] = 100;
-        weights[1] = 1;
-        weights[2] = 1;
-        weights[3] = 10;
-        weights[4] = 50;
+        weights[0] = 120;
+        weights[1] = 60;
+        weights[2] = 10;
+        weights[3] = 5;
+        weights[4] = 5;
 
-        invariants = new InflationModuleInvariants();
+        moduleInvariants = new ModuleInvariants();
         moduleHandler = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
         distributionHandler = new DistributionHandler(address(moduleHandler), selectors, weights);
 
@@ -110,15 +110,15 @@ contract InvariantTest is TestBase {
     /**************************************************************************************************************************************/
 
     function statefulFuzz_assertInvariants() external view {
-        invariants.assert_inflationModule_invariant_A(inflationModule);
-        invariants.assert_inflationModule_invariant_B(inflationModule);
-        invariants.assert_inflationModule_invariant_C(inflationModule);
-        invariants.assert_inflationModule_invariant_D(inflationModule);
-        invariants.assert_inflationModule_invariant_E(inflationModule);
-        invariants.assert_inflationModule_invariant_F(inflationModule);
-        invariants.assert_inflationModule_invariant_G(inflationModule);
-        invariants.assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
-        invariants.assert_inflationModule_invariant_I(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_A(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_B(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_C(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_D(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_E(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_F(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_G(inflationModule);
+        moduleInvariants.assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
+        moduleInvariants.assert_inflationModule_invariant_I(inflationModule);
     }
 
 }

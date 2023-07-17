@@ -5,7 +5,7 @@ import { IInflationModule } from "../../contracts/interfaces/IInflationModule.so
 
 import { TestBase } from "../utils/TestBase.sol";
 
-contract InflationModuleInvariants is TestBase {
+contract ModuleInvariants is TestBase {
 
     /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/

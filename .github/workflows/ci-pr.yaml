@@ -1,9 +1,6 @@
-name: Forge Tests
+name: CI (PR)
 
-on:
-  push:
-    branches:
-      - main
+on: [pull_request]
 
 jobs:
   run-ci:
@@ -11,13 +8,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # Specify version when it becomes possible to do so.
       - name: Install Foundry
         uses: onbjerg/foundry-toolchain@v1
         with:
           version: nightly
 
-      # Add SSH keys where needed.
       - name: Install submodules
         run: |
           git config --global url."https://github.com/".insteadOf "git@github.com:"
@@ -26,27 +21,7 @@ jobs:
       - name: Run forge tests
         run: forge test
         env:
-          FOUNDRY_PROFILE: production
           ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-
-  coverage_report:
-    name: Generate coverage report
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Install Foundry
-        uses: onbjerg/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Install submodules
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          git submodule update --init --recursive
-      - name: Generate coverage report
-        run: |
-          forge coverage --report lcov
 
       - name: Install lcov
         run: sudo apt-get install lcov
