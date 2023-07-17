@@ -11,6 +11,8 @@ import { MockGlobals } from "./utils/Mocks.sol";
 
 contract MapleTokenInitializerTests is TestBase {
 
+    event Initialized(address tokenMigrator, address treasury);
+
     address governor = makeAddr("governor");
     address migrator = makeAddr("migrator");
     address treasury = makeAddr("treasury");
@@ -31,6 +33,9 @@ contract MapleTokenInitializerTests is TestBase {
     }
 
     function test_initialize() external {
+        vm.expectEmit();
+        emit Initialized(migrator, treasury);
+
         MapleToken token = MapleToken(address(new MapleTokenProxy(address(globals), implementation, initializer, migrator)));
 
         assertEq(token.governor(),       governor);

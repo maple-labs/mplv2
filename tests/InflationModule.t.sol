@@ -7,7 +7,6 @@ import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 import { TestBase }               from "./utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
-// TODO: Check if events are correctly emitted.
 // TODO: Check if function return values are correct (not just state changes).
 
 contract InflationModuleTestBase is TestBase {
@@ -34,11 +33,12 @@ contract InflationModuleTestBase is TestBase {
         globals.__setGovernor(governor);
         globals.__setMapleTreasury(treasury);
         globals.__setIsValidScheduledCall(true);
+        globals.__setIsInstance(true);
 
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModule(address(token), 1e18);
+        module = new InflationModule(address(token));
 
         start = uint32(block.timestamp);
 
@@ -74,8 +74,6 @@ contract ConstructorTests is InflationModuleTestBase {
     function test_inflationModule_constructor() external {
         assertEq(module.token(), address(token));
 
-        assertEq(module.maximumIssuanceRate(), 1e18);
-
         assertEq(module.lastClaimedTimestamp(),  0);
         assertEq(module.lastClaimedWindowId(),   0);
         assertEq(module.lastScheduledWindowId(), 0);
@@ -86,10 +84,19 @@ contract ConstructorTests is InflationModuleTestBase {
 
 contract ClaimTests is InflationModuleTestBase {
 
+    event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
+
     function setUp() public override {
         super.setUp();
 
         vm.stopPrank();
+    }
+
+    function test_claim_noClaimer() external {
+        globals.__setIsInstance(false);
+        
+        vm.expectRevert("IM:C:NOT_CLAIMER");
+        module.claim();
     }
 
     function test_claim_zeroClaim_atomic() external {
@@ -136,8 +143,15 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 40 days);
-        expectTreasuryMint(1e18 * 40 days);
-        module.claim();
+
+        uint256 expectedClaim = 1e18 * 40 days;
+
+        assertEq(module.claimable(start + 40 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 40 days);
         assertEq(module.lastClaimedWindowId(),  1);
@@ -155,8 +169,15 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 65 days);
-        expectTreasuryMint(1e18 * 50 days);
-        module.claim();
+
+        uint256 expectedClaim = 1e18 * 50 days;
+
+        assertEq(module.claimable(start + 65 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 65 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -174,8 +195,15 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 50 days);
-        expectTreasuryMint(1e18 * 50 days);
-        module.claim();
+
+        uint256 expectedClaim = 1e18 * 50 days;
+
+        assertEq(module.claimable(start + 50 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 50 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -195,8 +223,15 @@ contract ClaimTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 65 days);
-        expectTreasuryMint(0.95e18 * 50 days + 0.96e18 * 15 days);
-        module.claim();
+
+        uint256 expectedClaim =  0.95e18 * 50 days + 0.96e18 * 15 days;
+
+        assertEq(module.claimable(start + 65 days), expectedClaim);
+
+        expectTreasuryMint(expectedClaim);
+        uint256 actualClaim = module.claim();
+
+        assertEq(actualClaim, expectedClaim);
 
         assertEq(module.lastClaimedTimestamp(), start + 65 days);
         assertEq(module.lastClaimedWindowId(),  2);
@@ -258,13 +293,10 @@ contract ClaimTests is InflationModuleTestBase {
 
 }
 
-contract ClaimableTests is InflationModuleTestBase {
-
-    // TODO
-
-}
 
 contract ScheduleTests is InflationModuleTestBase {
+
+    event WindowScheduled(uint16 windowId, uint16 previousWindowId, uint32 windowStart, uint208 issuanceRate);
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();
@@ -327,19 +359,15 @@ contract ScheduleTests is InflationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
     }
 
-    function test_schedule_outOfBounds() external {
-        windowStarts.push(start + 10 days);
-        issuanceRates.push(1e18 + 1);
-
-        vm.expectRevert("IM:VW:OUT_OF_BOUNDS");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
     function test_schedule_basic() external {
         windowStarts.push(start + 10 days);
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days, 0.9e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 1);
@@ -356,6 +384,11 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -370,12 +403,20 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 100 days;
         issuanceRates[0] = 0.95e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -390,6 +431,10 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.9e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+
         vm.warp(start + 5 days);
         module.schedule(windowStarts, issuanceRates);
 
@@ -398,6 +443,10 @@ contract ScheduleTests is InflationModuleTestBase {
 
         expectUnscheduleCall();
         vm.warp(start + 95 days);
+
+        vm.expectEmit();
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 2);
@@ -415,6 +464,11 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 150 days;
@@ -424,6 +478,11 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates[1] = 0.99e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(2, 3, start + 150 days, 0.96e18);
+        emit WindowScheduled(3, 4, start + 200 days, 0.99e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 4);
@@ -443,6 +502,11 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates.push(0.95e18);
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts[0] = start + 50 days;
@@ -452,6 +516,11 @@ contract ScheduleTests is InflationModuleTestBase {
         issuanceRates[1] = 0.99e18;
 
         expectUnscheduleCall();
+
+        vm.expectEmit();
+        emit WindowScheduled(1, 3, start + 50 days,  0.96e18);
+        emit WindowScheduled(3, 4, start + 120 days, 0.99e18);
+
         module.schedule(windowStarts, issuanceRates);
 
         assertEq(module.lastScheduledWindowId(), 4);
@@ -460,6 +529,65 @@ contract ScheduleTests is InflationModuleTestBase {
         assertWindow(1, 3, start + 10 days,  0.9e18);
         assertWindow(3, 4, start + 50 days,  0.96e18);
         assertWindow(4, 0, start + 120 days, 0.99e18);
+    }
+
+}
+
+contract CurrentIssuanceRateTests is InflationModuleTestBase {
+    
+    function setUp() public override {
+        super.setUp();
+        vm.stopPrank();
+
+        windowStarts.push(start);
+        windowStarts.push(start + 50 days);
+        windowStarts.push(start + 85 days);
+        windowStarts.push(start + 120 days);
+        windowStarts.push(start + 150 days);
+        windowStarts.push(start + 190 days);
+        windowStarts.push(start + 300 days);
+
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(0.96e18);
+        issuanceRates.push(0.97e18);
+        issuanceRates.push(0);
+        issuanceRates.push(1e18);
+        issuanceRates.push(0);
+        issuanceRates.push(0.98e18);
+
+        vm.warp(start);
+        vm.prank(governor);
+        module.schedule(windowStarts, issuanceRates);
+    }
+
+    function test_currentIssuanceRate() external {
+        vm.warp(start + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.95e18);
+
+        vm.warp(start + 50 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.96e18);
+
+        vm.warp(start + 85 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.97e18);
+
+        vm.warp(start + 120 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0);
+
+        vm.warp(start + 150 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 1e18);
+
+        vm.warp(start + 190 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0);
+
+        vm.warp(start + 300 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.98e18);
     }
 
 }

@@ -5,6 +5,26 @@ pragma solidity 0.8.18;
 // TODO: Add a view function that returns the current schedule as an array of windows.
 interface IInflationModule {
 
+    /**************************************************************************************************************************************/
+    /*** Events                                                                                                                         ***/
+    /**************************************************************************************************************************************/
+
+    /**
+     * @dev    Emitted when tokens are claimed.
+     * @param  amountClaimed       The amount of tokens that were claimed.
+     * @param  lastClaimedWindowId The identifier of the window during which the tokens were claimed.
+     */
+    event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
+
+    /**
+     * @dev    Emitted when new windows are scheduled.
+     * @param previousWindowId The identifier of the window that comes before the scheduled window (zero if there is none).
+     * @param windowId         The identifier of the window that was scheduled.
+     * @param windowStart      The timestamps that mark when each windows starts.
+     * @param issuanceRate     The issuance rates that will be applied to each window.
+     */
+    event WindowScheduled(uint16 previousWindowId, uint16 windowId, uint32 windowStart, uint208 issuanceRate);
+
     /**
      *  @dev    Claims tokens from the time of the last claim up until the current time.
      *  @return claimedAmount The amount of tokens that were claimed.
@@ -34,12 +54,6 @@ interface IInflationModule {
      *  @return lastScheduledWindowId Identifier that was assigned to the last scheduled window.
      */
     function lastScheduledWindowId() external view returns (uint16 lastScheduledWindowId);
-
-    /**
-     *  @dev    Returns the maximum issuance rate allowed for any window.
-     *  @return maximumIssuanceRate Maximum issuance rate allowed for any window.
-     */
-    function maximumIssuanceRate() external view returns (uint208 maximumIssuanceRate);
 
     /**
      *  @dev   Schedules new windows that define when tokens will be issued.

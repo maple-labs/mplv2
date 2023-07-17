@@ -15,8 +15,6 @@ contract InflationModule is IInflationModule {
 
     address public immutable token;
 
-    uint208 public immutable maximumIssuanceRate;
-
     uint16 public lastClaimedWindowId;
     uint16 public lastScheduledWindowId;
 
@@ -41,9 +39,8 @@ contract InflationModule is IInflationModule {
         _;
     }
 
-    constructor(address token_, uint208 maximumIssuanceRate_) {
-        token               = token_;
-        maximumIssuanceRate = maximumIssuanceRate_;
+    constructor(address token_) {
+        token = token_;
     }
 
     /**************************************************************************************************************************************/
@@ -51,6 +48,8 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     function claim() external returns (uint256 amountClaimed_) {
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+
         (
             uint16  lastClaimableWindowId_,
             uint256 claimableAmount_
@@ -60,6 +59,8 @@ contract InflationModule is IInflationModule {
 
         lastClaimedTimestamp = uint32(block.timestamp);
         lastClaimedWindowId  = lastClaimableWindowId_;
+
+        emit Claimed(claimableAmount_, lastClaimableWindowId_);
 
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
     }
@@ -71,6 +72,12 @@ contract InflationModule is IInflationModule {
         require(to_ > lastClaimedTimestamp_, "IM:C:OUT_OF_DATE");
 
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
+    }
+
+    function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
+        uint16 currentWindow = _findInsertionPoint(uint32(block.timestamp));
+
+        issuanceRate_ = windows[currentWindow].issuanceRate;
     }
 
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
@@ -91,6 +98,7 @@ contract InflationModule is IInflationModule {
                 windowStart:  windowStarts_[index_],
                 issuanceRate: issuanceRates_[index_]
             });
+            emit WindowScheduled(insertionWindowId_ + index_, newWindowId_ + index_, windowStarts_[index_], issuanceRates_[index_]);
         }
 
         lastScheduledWindowId += newWindowCount_;
@@ -156,14 +164,6 @@ contract InflationModule is IInflationModule {
         globals_ = IMapleTokenLike(token).globals();
     }
 
-    function _max(uint32 a_, uint32 b_) internal pure returns (uint32 max_) {
-        max_ = a_ > b_ ? a_ : b_;
-    }
-
-    function _min(uint32 a_, uint32 b_) internal pure returns (uint32 min_) {
-        min_ = a_ < b_ ? a_ : b_;
-    }
-
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
         require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:VW:EMPTY_ARRAY");
         require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
@@ -171,10 +171,6 @@ contract InflationModule is IInflationModule {
 
         for (uint256 index_ = 0; index_ < windowStarts_.length - 1; ++index_) {
             require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
-        }
-
-        for (uint256 index_; index_ < issuanceRates_.length; ++index_) {
-            require(issuanceRates_[index_] <= maximumIssuanceRate, "IM:VW:OUT_OF_BOUNDS");
         }
     }
 
