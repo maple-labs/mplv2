@@ -10,9 +10,11 @@ out/
 
 broadcast/
 output/
+coverage/
 
 # Certora
 .certora*
 certora/munged-simple/*
 .zip*
 *.zip
+

@@ -1,66 +1,153 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
+import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+
 import { TestBase } from "../utils/TestBase.sol";
 
 contract Assertions is TestBase {
 
     /**************************************************************************************************************************************/
-    /*** Maple Token Invariants                                                                                                         ***/
-    /**************************************************************************************************************************************/
-
-    // TODO Are these invariants needed? Can we reuse existing ERC20 invariants?
-    // Invariant A: ∑balanceOf(account) == totalSupply
-    // etc.
-
-    /**************************************************************************************************************************************/
-    /*** Emergency Module Invariants                                                                                                    ***/
-    /**************************************************************************************************************************************/
-
-    // TODO: Is there any state to assert here?
-
-    /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/
     /**************************************************************************************************************************************/
 
-    // Verifies the integrity of the linked list of windows by traversing it from the start and ensuring the last window can be reached.
-    // Invariant A: traverseFrom(zeroWindowId) == lastScheduledWindowId
+    /**
+     *  @notice Asserts the linked list of windows can be traversed from start to end.
+     *  @dev    Invariant: traverseFrom(zeroWindowId) == lastScheduledWindowId
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_A(IInflationModule module) internal {
+        uint16 windowId;
 
-    // Verify the last claimed window is contained in the linked list.
-    // Invariant Z: windows.contains(lastClaimedWindow)
+        while (true) {
+            ( uint16 nextWindowId, , ) = module.windows(windowId);
 
-    // Verify the zero index window is the first window.
-    // Invariant B: zeroWindow.windowStart == 0
+            if (nextWindowId == 0) break;
 
-    // Verify the zero index window is not issuing any tokens.
-    // Invariant C: zeroWindow.issuanceRate == 0
+            windowId = nextWindowId;
+        }
 
-    // TODO: Discuss more.
-    // Verify the size of the linked list of windows is within limits.
-    // Invariant D (v1): countWindowsFrom(zeroWindowId) <= maximumWindows
-    // Invariant D (v2): countWindowsFrom(lastClaimedWindowId) <= maximumWindows
-    // Invariant D (v3): lastScheduledWindowId <= maximumWindows
+        assertEq(windowId, module.lastScheduledWindowId(), "Can't reach the last scheduled window.");
+    }
 
-    // Verify the last scheduled window is the last one in the linked list.
-    // Invariant E: lastScheduledWindow.nextWindowId == 0
+    /**
+     *  @notice Asserts the last claimed window is contained in the linked list.
+     *  @dev    Invariant: windows.contains(lastClaimedWindow)
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_B(IInflationModule module) internal {
+        uint16 windowId;
 
-    // Verify all windows are ordered in strictly ascending order by ids:
-    // Invariant F: ∑window(window.windowId < window.nextWindowId)
+        while (true) {
+            if (windowId == module.lastClaimedWindowId()) return;
 
-    // Verify all windows are ordered in strictly ascending order by timestamps:
-    // Invariant G: ∑window(window.windowStart < nextWindow.windowStart)
+            ( uint16 nextWindowId, , ) = module.windows(windowId);
 
-    // TODO: Should MAX_IR be defined at the level of the contract?
-    // Verify all window issuance rates are lower than the maximum issuance rate.
-    // Invariant H: ∑window(window.issuanceRate <= maximumIssuanceRate)
+            if (nextWindowId == 0) break;
 
-    // Verify tokens can only be claimed up to the current time.
-    // Invariant I: lastClaimedTimestamp <= block.timestamp
+            windowId = nextWindowId;
+        }
 
-    // Verify the window of the last claim is set correctly based on the timestamp of the last claim.
-    // Invariant J: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
+        assertTrue(false, "Last claimed window is unreachable.");
+    }
 
-    // Verify the calculation of how many tokens are claimable at the current time.
-    // Invariant K: claimable(block.timestamp) == manual calculation
+    /**
+     *  @notice Asserts the zero index window is the first starting window.
+     *  @dev    Invariant: zeroWindow.windowStart == 0
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_C(IInflationModule module) internal {
+        ( , uint32 windowStart, ) = module.windows(0);
+
+        assertEq(windowStart, 0, "Zero index window timestamp is invalid.");
+    }
+
+    /**
+     *  @notice Asserts the zero index window is not issuing any tokens.
+     *  @dev    Invariant: zeroWindow.issuanceRate == 0
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_D(IInflationModule module) internal {
+        ( , , uint208 issuanceRate ) = module.windows(0);
+
+        assertEq(issuanceRate, 0, "Zero index window issuance rate is invalid.");
+    }
+
+    /**
+     *  @notice Asserts the last scheduled window is the last one in the linked list.
+     *  @dev    Invariant: lastScheduledWindow.nextWindowId == 0
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_E(IInflationModule module) internal {
+        ( , uint32 nextWindowId, ) = module.windows(module.lastScheduledWindowId());
+
+        assertEq(nextWindowId, 0, "Last scheduled window is not the last window.");
+    }
+
+    /**
+     *  @notice Asserts all window identifiers are in strictly ascending order.
+     *  @dev    Invariant: ∑window(windowId < window.nextWindowId)
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_F(IInflationModule module) internal {
+        uint16 windowId;
+
+        while (true) {
+            ( uint16 nextWindowId, , ) = module.windows(windowId);
+
+            if (nextWindowId == 0) break;
+
+            assertLt(windowId, nextWindowId, "Window identifiers are not in strictly ascending order.");
+
+            windowId = nextWindowId;
+        }
+    }
+
+    /**
+     *  @notice Asserts all window timestamps are in strictly ascending order.
+     *  @dev    Invariant: ∑window(window.windowStart < nextWindow.windowStart)
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_G(IInflationModule module) internal {
+        uint16 windowId;
+
+        while (true) {
+            ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(windowId);
+
+            if (nextWindowId == 0) break;
+
+            ( , uint32 nextWindowStart, ) = module.windows(nextWindowId);
+
+            assertLt(windowStart, nextWindowStart, "Window timestamps are not in strictly ascending order.");
+
+            windowId = nextWindowId;
+        }
+    }
+
+    /**
+     *  @notice Asserts tokens can only be claimed up to the current time.
+     *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_H(IInflationModule module) internal {
+        assertLe(module.lastClaimedTimestamp(), block.timestamp, "Last claimed timestamp is greater than the current time.");
+    }
+
+    /**
+     *  @notice Asserts the window of the last claim is set correctly based on the timestamp of the last claim.
+     *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
+     *  @param  module Address of the inflation module.
+     */
+    function assert_inflationModule_invariant_I(IInflationModule module) internal {
+        ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
+
+        assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed winow is invalid.");
+
+        if (nextWindowId == 0) return;
+
+        ( , uint32 windowEnd, ) = module.windows(nextWindowId);
+
+        assertLt(module.lastClaimedTimestamp(), windowEnd, "Last claimed window is invalid.");
+    }
 
 }
