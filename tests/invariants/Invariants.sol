@@ -41,12 +41,10 @@ library Invariants {
 
             ( uint16 nextWindowId, , ) = module.windows(windowId);
 
-            if (nextWindowId == 0) break;
+            require(nextWindowId != 0, "Last claimed window is unreachable.");
 
             windowId = nextWindowId;
         }
-
-        require(false, "Last claimed window is unreachable.");
     }
 
     /**

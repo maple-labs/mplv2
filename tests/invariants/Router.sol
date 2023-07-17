@@ -15,7 +15,7 @@ contract Router {
         target = target_;
 
         for (uint i; i < selectors_.length; ++i) {
-            require(weights_[i] > 0, "S:C:ZERO_WEIGHT");
+            require(weights_[i] > 0, "R:C:ZERO_WEIGHT");
 
             selectors.push(selectors_[i]);
             weights.push(weights_[i]);
