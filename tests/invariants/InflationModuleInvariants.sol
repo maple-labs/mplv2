@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
 
-import { TestBase } from "../utils/TestBase.sol";
+import { console, TestBase } from "../utils/TestBase.sol";
 
 contract InflationModuleInvariants is TestBase {
 

@@ -49,29 +49,23 @@ contract ModuleHandler is TestBase {
     }
 
     function claim(uint256) external useBlockTimestamp returns (bool skip) {
-        console.log("Claiming available tokens...");
-
         // Skip if nothing is claimable.
-        if (inflationModule.claimable(blockTimestamp) == 0) {
-            console.log("No tokens available for claiming, skipping...");
-            return true;
-        }
+        if (inflationModule.claimable(blockTimestamp) == 0) return true;
 
         vm.prank(claimer);
-        inflationModule.claim();
+        uint256 amount = inflationModule.claim();
+
+        console.log("Amount of tokens claimed:", amount);
+        console.log("Last claimed window:     ", inflationModule.lastClaimedWindowId());
+        console.log("Last claimed timestamp:  ", inflationModule.lastClaimedTimestamp());
     }
 
     function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        console.log("Performing an emergency burn...");
-
         address treasury = mapleGlobals.mapleTreasury();
         uint256 balance  = mapleToken.balanceOf(treasury);
 
         // Skip if no tokens can be burned.
-        if (balance == 0) {
-            console.log("Treasury is empty, skipping...");
-            return true;
-        }
+        if (balance == 0) return true;
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, balance);
@@ -79,19 +73,14 @@ contract ModuleHandler is TestBase {
         vm.prank(governor);
         emergencyModule.burn(treasury, amount);
 
-        console.log("Amounted burned:", amount);
+        console.log("Amount of tokens burned:", amount);
     }
 
     function emergencyMint(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        console.log("Performing an emergency mint...");
-
         uint256 totalSupply = mapleToken.totalSupply();
 
         // Skip if no tokens can be minted.
-        if (totalSupply == type(uint256).max) {
-            console.log("Total supply is already reached, skipping...");
-            return true;
-        }
+        if (totalSupply == type(uint256).max) return true;
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, type(uint256).max - totalSupply);
@@ -99,15 +88,11 @@ contract ModuleHandler is TestBase {
         vm.prank(governor);
         emergencyModule.mint(amount);
 
-        console.log("Amounted minted:", amount);
+        console.log("Amount of tokens minted:", amount);
     }
 
     function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        console.log("Scheduling new windows...");
-
         uint256 numberOfWindows = bound(seed, 1, 5);
-
-        console.log("Number of new windows:", numberOfWindows);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -122,9 +107,7 @@ contract ModuleHandler is TestBase {
 
             minWindowStart = windowStarts[i];
 
-            console.log("Window index:      ", i);
-            console.log("Starting timestamp:", windowStarts[i]);
-            console.log("Issuance rate:     ", issuanceRates[i]);
+            console.log("Adding a new window:", windowStarts[i], issuanceRates[i]);
         }
 
         address governor = mapleGlobals.governor();
@@ -139,15 +122,27 @@ contract ModuleHandler is TestBase {
         vm.prank(governor);
         inflationModule.schedule(windowStarts, issuanceRates);
 
+        console.log("Last scheduled window: ", inflationModule.lastScheduledWindowId());
+
+        console.log("Current state of linked list:");
+
+        uint16 windowId;
+
+        while (true) {
+            ( uint16 nextWindowId, uint32 windowStart, ) = inflationModule.windows(windowId);
+
+            console.log(windowId, "-", windowStart);
+
+            if (nextWindowId == 0) break;
+
+            windowId = nextWindowId;
+        }
+
         return false;
     }
 
     function warp(uint256 seed) external returns (bool skip) {
-        uint32 time = uint32(bound(seed, 1 seconds, 100 days));
-
-        console.log("Warping ahead by", time, "seconds...");
-
-        blockTimestamp += time;
+        blockTimestamp += uint32(bound(seed, 1 seconds, 100 days));
 
         console.log("Warped to timestamp:", blockTimestamp);
 

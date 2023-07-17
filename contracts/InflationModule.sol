@@ -145,7 +145,9 @@ contract InflationModule is IInflationModule {
     }
 
     function _findInsertionPoint(uint32 windowStart_) internal view returns (uint16 windowId_) {
-        Window memory window_ = windows[lastClaimedWindowId];
+        windowId_ = lastClaimedWindowId;
+
+        Window memory window_ = windows[windowId_];
 
         while (true) {
             uint16 nextWindowId_ = window_.nextWindowId;
@@ -160,7 +162,7 @@ contract InflationModule is IInflationModule {
         }
     }
 
-    function _globals() public view returns (address globals_) {
+    function _globals() internal view returns (address globals_) {
         globals_ = IMapleTokenLike(token).globals();
     }
 
