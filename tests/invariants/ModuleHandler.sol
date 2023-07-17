@@ -56,8 +56,6 @@ contract ModuleHandler is TestBase {
         uint256 amount = inflationModule.claim();
 
         console.log("Amount of tokens claimed:", amount);
-        console.log("Last claimed window:     ", inflationModule.lastClaimedWindowId());
-        console.log("Last claimed timestamp:  ", inflationModule.lastClaimedTimestamp());
     }
 
     function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
@@ -89,7 +87,7 @@ contract ModuleHandler is TestBase {
     }
 
     function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        uint256 numberOfWindows = bound(seed, 1, 3);
+        uint256 numberOfWindows = bound(seed, 1, 5);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -104,7 +102,7 @@ contract ModuleHandler is TestBase {
 
             minWindowStart = windowStarts[i] + 1 seconds;
 
-            console.log("Adding a new window:", windowStarts[i], issuanceRates[i]);
+            console.log("Added a new window:", windowStarts[i], issuanceRates[i]);
         }
 
         address governor = mapleGlobals.governor();
@@ -118,22 +116,6 @@ contract ModuleHandler is TestBase {
 
         vm.prank(governor);
         inflationModule.schedule(windowStarts, issuanceRates);
-
-        console.log("Last scheduled window: ", inflationModule.lastScheduledWindowId());
-
-        console.log("Current state of linked list:");
-
-        uint16 windowId;
-
-        while (true) {
-            ( uint16 nextWindowId, uint32 windowStart, ) = inflationModule.windows(windowId);
-
-            console.log(windowId, "-", windowStart);
-
-            if (nextWindowId == 0) break;
-
-            windowId = nextWindowId;
-        }
 
         return false;
     }

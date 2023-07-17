@@ -22,6 +22,20 @@ contract InflationModule is IInflationModule {
 
     mapping(uint16 => Window) public windows;
 
+    constructor(address token_) {
+        token = token_;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Modifiers                                                                                                                      ***/
+    /**************************************************************************************************************************************/
+
+    modifier onlyClaimer {
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+
+        _;
+    }
+
     modifier onlyGovernor {
         require(msg.sender == IGlobalsLike(_globals()).governor(), "IM:NOT_GOVERNOR");
 
@@ -39,22 +53,18 @@ contract InflationModule is IInflationModule {
         _;
     }
 
-    constructor(address token_) {
-        token = token_;
-    }
-
     /**************************************************************************************************************************************/
     /*** External Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function claim() external returns (uint256 amountClaimed_) {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+    function claim() external onlyClaimer returns (uint256 amountClaimed_) {
 
         (
             uint16  lastClaimableWindowId_,
             uint256 claimableAmount_
         ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, uint32(block.timestamp));
 
+        // TODO: Should this revert if there is nothing to claim? It would update the timestamp and window id otherwise.
         require(claimableAmount_ > 0, "IM:C:ZERO_CLAIM");
 
         lastClaimedTimestamp = uint32(block.timestamp);
@@ -69,7 +79,8 @@ contract InflationModule is IInflationModule {
         uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
         uint16 lastClaimableWindowId_;
 
-        require(to_ >= lastClaimedTimestamp_, "IM:C:OUT_OF_DATE");
+        // TODO: Should the call revert instead if no time has elapsed since the last claim?
+        if (to_ <= lastClaimedTimestamp_) return 0;
 
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
     }
@@ -80,6 +91,7 @@ contract InflationModule is IInflationModule {
         issuanceRate_ = windows[currentWindow].issuanceRate;
     }
 
+    // TODO: Move parts of this into internal functions to improve readability.
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
