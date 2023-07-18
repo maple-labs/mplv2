@@ -38,6 +38,24 @@ interface IInflationModule {
     function claimable(uint32 to) external view returns (uint256 claimableAmount);
 
     /**
+     * @dev    Returns the amount of tokens issue per second for the current window.
+     * @return issuanceRate The amount of tokens issued per second for the current window.
+     */
+    function currentIssuanceRate() external view returns (uint256 issuanceRate);
+
+    /** 
+     * @dev    Returns the identifier of the current window.
+     * @return windowId The identifier of the current window.
+     */
+    function currentWindowId() external view returns (uint16 windowId);
+
+    /**
+     * @dev    Returns the timestamp of the start of the current window.
+     * @return windowStart The timestamp of the start of the current window.
+     */
+    function currentWindowStart() external view returns (uint32 windowStart);
+
+    /**
      *  @dev    Returns the timestamp of the last time tokens were claimed.
      *  @return lastClaimedTimestamp Timestamp of the last time tokens were claimed.
      */
