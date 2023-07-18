@@ -13,7 +13,9 @@ contract DeployToken is Script {
         address ETH_SENDER = vm.envAddress("ETH_SENDER");
 
         address mapleGlobals = 0x804a6F5F667170F545Bf14e5DDB48C70B788390C;
-        address migrator     = 0xce830DA8667097BB491A70da268b76a081211814;
+
+        // Derived by using sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266. Needs to be computed with correct sender.
+        address migrator = 0xce830DA8667097BB491A70da268b76a081211814;
 
         vm.startBroadcast(ETH_SENDER);
 
