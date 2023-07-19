@@ -32,7 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -44,10 +46,10 @@ jobs:
           forge install
 
       - name: Run forge tests
-        run: forge test
+        run: forge test --match-test unit
         env:
-          FOUNDRY_PROFILE: production
-          ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
 
   # Run fuzz tests.
   fuzz-tests:
