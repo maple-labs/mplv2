@@ -30,12 +30,6 @@ contract ModuleHandler is TestBase {
     mapping(address => uint256) allowances;
     mapping(address => uint256) balances;
 
-    modifier useBlockTimestamp() {
-        vm.warp(blockTimestamp);
-
-        _;
-    }
-
     constructor(
         IGlobalsLike mapleGlobals_,
         IMapleToken mapleToken_,
@@ -53,6 +47,20 @@ contract ModuleHandler is TestBase {
 
         blockTimestamp = uint32(block.timestamp);
     }
+
+    /**************************************************************************************************************************************/
+    /*** Modifiers                                                                                                                      ***/
+    /**************************************************************************************************************************************/
+
+    modifier useBlockTimestamp() {
+        vm.warp(blockTimestamp);
+
+        _;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Actions                                                                                                                        ***/
+    /**************************************************************************************************************************************/
 
     function claim(uint256 seed) external useBlockTimestamp {
         seed;  // Unused parameter
