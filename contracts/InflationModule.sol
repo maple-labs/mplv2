@@ -79,7 +79,6 @@ contract InflationModule is IInflationModule {
         uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
         uint16 lastClaimableWindowId_;
 
-        // TODO: Should the call revert instead if no time has elapsed since the last claim?
         if (to_ <= lastClaimedTimestamp_) return 0;
 
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);

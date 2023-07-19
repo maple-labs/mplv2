@@ -20,7 +20,7 @@ import { DistributionHandler } from "./DistributionHandler.sol";
 import { ModuleHandler }       from "./ModuleHandler.sol";
 import { ModuleInvariants }    from "./ModuleInvariants.sol";
 
-contract InvariantTest is TestBase {
+contract InvariantTest is ModuleInvariants {
 
     address claimer  = makeAddr("claimer");
     address governor = makeAddr("governor");
@@ -35,15 +35,14 @@ contract InvariantTest is TestBase {
 
     DistributionHandler distributionHandler;
     ModuleHandler       moduleHandler;
-    ModuleInvariants    moduleInvariants;
 
     function setUp() external {
-        deploy();
-        configure();
-        spec();
+        deployContracts();
+        configureContracts();
+        setupHandlers();
     }
 
-    function deploy() internal {
+    function deployContracts() internal {
         mapleGlobals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
         mapleToken   = IMapleToken(address(new MapleTokenProxy(
             address(mapleGlobals),
@@ -56,7 +55,7 @@ contract InvariantTest is TestBase {
         inflationModule = new InflationModule(address(mapleToken));
     }
 
-    function configure() internal {
+    function configureContracts() internal {
         vm.startPrank(governor);
 
         mapleGlobals.setMapleTreasury(treasury);
@@ -81,7 +80,7 @@ contract InvariantTest is TestBase {
         vm.stopPrank();
     }
 
-    function spec() internal {
+    function setupHandlers() internal {
         bytes4[] memory selectors = new bytes4[](5);
 
         selectors[0] = ModuleHandler.warp.selector;
@@ -98,8 +97,7 @@ contract InvariantTest is TestBase {
         weights[3] = 5;
         weights[4] = 5;
 
-        moduleInvariants = new ModuleInvariants();
-        moduleHandler = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
+        moduleHandler       = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
         distributionHandler = new DistributionHandler(address(moduleHandler), selectors, weights);
 
         targetContract(address(distributionHandler));
@@ -109,16 +107,16 @@ contract InvariantTest is TestBase {
     /*** Invariant Tests                                                                                                                ***/
     /**************************************************************************************************************************************/
 
-    function statefulFuzz_assertInvariants() external view {
-        moduleInvariants.assert_inflationModule_invariant_A(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_B(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_C(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_D(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_E(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_F(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_G(inflationModule);
-        moduleInvariants.assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
-        moduleInvariants.assert_inflationModule_invariant_I(inflationModule);
+    function statefulFuzz_assertInvariants() external {
+        assert_inflationModule_invariant_A(inflationModule);
+        assert_inflationModule_invariant_B(inflationModule);
+        assert_inflationModule_invariant_C(inflationModule);
+        assert_inflationModule_invariant_D(inflationModule);
+        assert_inflationModule_invariant_E(inflationModule);
+        assert_inflationModule_invariant_F(inflationModule);
+        assert_inflationModule_invariant_G(inflationModule);
+        assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
+        assert_inflationModule_invariant_I(inflationModule);
     }
 
 }

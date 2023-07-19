@@ -11,6 +11,12 @@ import { console, TestBase } from "../utils/TestBase.sol";
 
 contract ModuleHandler is TestBase {
 
+    uint256 constant MAX_IR      = 1e18;
+    uint256 constant MAX_MINT    = 1_000_000e18;
+    uint256 constant MAX_START   = 365 days;
+    uint256 constant MAX_WARP    = 30 days;
+    uint256 constant MAX_WINDOWS = 5;
+
     address claimer;
 
     uint32 public blockTimestamp;
@@ -48,9 +54,13 @@ contract ModuleHandler is TestBase {
         blockTimestamp = uint32(block.timestamp);
     }
 
-    function claim(uint256) external useBlockTimestamp returns (bool skip) {
+    function claim(uint256 seed) external useBlockTimestamp {
+        seed;  // Unused parameter
+
+        console.log("claim(%s)", seed);
+
         // Skip if nothing is claimable.
-        if (inflationModule.claimable(blockTimestamp) == 0) return true;
+        if (inflationModule.claimable(blockTimestamp) == 0) return;
 
         vm.prank(claimer);
         uint256 amount = inflationModule.claim();
@@ -58,12 +68,14 @@ contract ModuleHandler is TestBase {
         console.log("Amount of tokens claimed:", amount);
     }
 
-    function emergencyBurn(uint256 seed) external useBlockTimestamp returns (bool skip) {
+    function emergencyBurn(uint256 seed) external useBlockTimestamp {
+        console.log("emergencyBurn(%s)", seed);
+
         address treasury = mapleGlobals.mapleTreasury();
         uint256 balance  = mapleToken.balanceOf(treasury);
 
         // Skip if no tokens can be burned.
-        if (balance == 0) return true;
+        if (balance == 0) return;
 
         address governor = mapleGlobals.governor();
         uint256 amount   = bound(seed, 1, balance);
@@ -74,20 +86,22 @@ contract ModuleHandler is TestBase {
         console.log("Amount of tokens burned:", amount);
     }
 
-    function emergencyMint(uint256 seed) external useBlockTimestamp returns (bool skip) {
+    function emergencyMint(uint256 seed) external useBlockTimestamp {
+        console.log("emergencyMint(%s)", seed);
+
         address governor = mapleGlobals.governor();
-        uint256 amount   = bound(seed, 1, 1_000_000e18);
+        uint256 amount   = bound(seed, 1, MAX_MINT);
 
         vm.prank(governor);
         emergencyModule.mint(amount);
 
         console.log("Amount of tokens minted:", amount);
-
-        return false;
     }
 
-    function schedule(uint256 seed) external useBlockTimestamp returns (bool skip) {
-        uint256 numberOfWindows = bound(seed, 1, 5);
+    function schedule(uint256 seed) external useBlockTimestamp {
+        console.log("schedule(%s)", seed);
+
+        uint256 numberOfWindows = bound(seed, 1, MAX_WINDOWS);
 
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
@@ -97,8 +111,8 @@ contract ModuleHandler is TestBase {
         for (uint i; i < numberOfWindows; ++i) {
             uint256 windowSeed = uint256(keccak256(abi.encode(seed, i)));
 
-            windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + 365 days));
-            issuanceRates[i] = uint208(bound(windowSeed, 0, 1e18));
+            windowStarts[i]  = uint32(bound(windowSeed, minWindowStart, minWindowStart + MAX_START));
+            issuanceRates[i] = uint208(bound(windowSeed, 0, MAX_IR));
 
             minWindowStart = windowStarts[i] + 1 seconds;
 
@@ -116,16 +130,14 @@ contract ModuleHandler is TestBase {
 
         vm.prank(governor);
         inflationModule.schedule(windowStarts, issuanceRates);
-
-        return false;
     }
 
-    function warp(uint256 seed) external returns (bool skip) {
-        blockTimestamp += uint32(bound(seed, 1 days, 30 days));
+    function warp(uint256 seed) external {
+        console.log("warp(%d)", seed);
+
+        blockTimestamp += uint32(bound(seed, 1 seconds, MAX_WARP));
 
         console.log("Warped to timestamp:", blockTimestamp);
-
-        return false;
     }
 
 }

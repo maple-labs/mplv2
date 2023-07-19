@@ -24,20 +24,12 @@ contract DistributionHandler {
         }
     }
 
-    function call(uint256 weightSeed, uint256 dataSeed) external {
-        while (true) {
-            bytes4 selector = findSelector(weightSeed % totalWeight);
+    function entryPoint(uint256 weightSeed, uint256 dataSeed) external {
+        bytes4 selector = findSelector(weightSeed % totalWeight);
 
-            ( bool success, bytes memory output ) = target.call(abi.encodeWithSelector(selector, dataSeed));
+        ( bool success, ) = target.call(abi.encodeWithSelector(selector, dataSeed));
 
-            require(success, "Handler call failed");
-
-            bool skip = abi.decode(output, (bool));
-
-            if (!skip) break;
-
-            weightSeed = uint256(keccak256(abi.encode(weightSeed)));
-        }
+        require(success, "Handler call failed");
     }
 
     function findSelector(uint256 weight) internal view returns (bytes4 selector) {
