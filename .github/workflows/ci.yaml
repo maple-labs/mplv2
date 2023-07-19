@@ -46,22 +46,22 @@ jobs:
           forge install
 
       - name: Run forge tests
-        run: forge test --no-match-test statefulFuzz*
+        run: forge test
         env:
-          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+          FOUNDRY_PROFILE: ${{ github.event_name != 'push' && 'ci' || '' }}
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
 
   # Run formal verification.
   verify:
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
     steps:
       - run: echo TODO
 
   # Check and generate code coverage report.
   coverage:
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [test, verify]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -83,6 +83,8 @@ jobs:
         run: |
           forge coverage --report lcov
           lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
+        env:
+          FOUNDRY_PROFILE: ${{ github.event_name != 'push' && 'ci' || '' }}
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1
@@ -96,21 +98,21 @@ jobs:
   # Generate gas usage report.
   gas:
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [test, verify]
     steps:
       - run: echo TODO
 
   # Generate slither report.
   slither:
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [test, verify]
     steps:
       - run: echo TODO
 
   # Generate NatSpec documentation.
   docs:
     runs-on: ubuntu-latest
-    needs: verify
+    needs: [test, verify]
     steps:
       - run: echo TODO
 
