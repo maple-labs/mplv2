@@ -1,24 +1,33 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
 
   # Check code is formatted correctly.
   format:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Check all linter rules are satisfied.
   lint:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Build contracts.
   build:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Run unit tests.
   test:
@@ -44,24 +53,36 @@ jobs:
 
   # Run fuzz tests.
   fuzz:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Run integration tests.
   integration:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Run invariant tests.
   invariants:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Run formal verification.
   verify:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Generate code coverage report.
   coverage:
-    needs: test
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Generate code coverage report
         run: |
@@ -80,16 +101,28 @@ jobs:
 
   # Generate gas usage report.
   gas:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Generate documentation from NatSpec.
   docs:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Run static analysis.
   slither:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
 
   # Package artifacts for publishing.
   package:
+    runs-on: ubuntu-latest
     needs:
+    steps:
+      - run: echo TODO
