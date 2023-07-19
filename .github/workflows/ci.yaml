@@ -48,7 +48,7 @@ jobs:
       - name: Run forge tests
         run: forge test
         env:
-          FOUNDRY_PROFILE: ${{ github.event_name != 'push' && 'ci' || '' }}
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
 
   # Run formal verification.
@@ -84,7 +84,7 @@ jobs:
           forge coverage --report lcov
           lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
         env:
-          FOUNDRY_PROFILE: ${{ github.event_name != 'push' && 'ci' || '' }}
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1
