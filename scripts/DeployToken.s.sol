@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import { console2 as console, Script } from "../modules/forge-std/src/Script.sol";
 
+import { InflationModule }       from "../contracts/InflationModule.sol";
 import { MapleToken }            from "../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../contracts/MapleTokenProxy.sol";
@@ -13,9 +14,7 @@ contract DeployToken is Script {
         address ETH_SENDER = vm.envAddress("ETH_SENDER");
 
         address mapleGlobals = 0x804a6F5F667170F545Bf14e5DDB48C70B788390C;
-
-        // Derived by using sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266. Needs to be computed with correct sender.
-        address migrator = 0xce830DA8667097BB491A70da268b76a081211814;
+        address migrator = computeCreateAddress(ETH_SENDER, 4); // 0x7b0267C13B994cdb58b8ED3a65b7A09a07432A76,
 
         vm.startBroadcast(ETH_SENDER);
 
@@ -28,6 +27,10 @@ contract DeployToken is Script {
         address tokenProxy = address(new MapleTokenProxy(mapleGlobals, tokenImplementation, tokenInitializer, migrator));
 
         console.log("Token Proxy:          %s", tokenProxy);
+
+        address inflationModule = address(new InflationModule(tokenProxy));
+
+        console.log("Inflation Module:     %s", inflationModule);
 
         vm.stopBroadcast();
     }
