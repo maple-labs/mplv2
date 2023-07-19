@@ -90,7 +90,6 @@ contract InflationModule is IInflationModule {
         issuanceRate_ = windows[currentWindow].issuanceRate;
     }
 
-    // TODO: Move parts of this into internal functions to improve readability.
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
