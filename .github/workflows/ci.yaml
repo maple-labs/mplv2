@@ -8,31 +8,29 @@ on:
 
 jobs:
 
-  # Check code is formatted correctly.
+  # Check all formatting rules are satisfied.
   format:
     runs-on: ubuntu-latest
-    needs:
     steps:
       - run: echo TODO
 
   # Check all linter rules are satisfied.
   lint:
     runs-on: ubuntu-latest
-    needs:
     steps:
       - run: echo TODO
 
   # Build contracts.
   build:
     runs-on: ubuntu-latest
-    needs:
+    needs: [format, lint]
     steps:
       - run: echo TODO
 
   # Run unit tests.
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
-    needs:
+    needs: build
     steps:
       - uses: actions/checkout@v2
       - name: Install Foundry
@@ -52,42 +50,42 @@ jobs:
           ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
 
   # Run fuzz tests.
-  fuzz:
+  fuzz-tests:
     runs-on: ubuntu-latest
-    needs:
+    needs: build
     steps:
       - run: echo TODO
 
   # Run integration tests.
-  integration:
+  integration-tests:
     runs-on: ubuntu-latest
-    needs:
+    needs: build
     steps:
       - run: echo TODO
 
-  # Run invariant tests.
-  invariants:
+  # Run stateful fuzz tests.
+  stateful-fuzz-tests:
     runs-on: ubuntu-latest
-    needs:
+    needs: build
     steps:
       - run: echo TODO
 
   # Run formal verification.
-  verify:
+  formal-verification:
     runs-on: ubuntu-latest
-    needs:
+    needs: [unit-tests, fuzz-tests, integration-tests, stateful-fuzz-tests]
     steps:
       - run: echo TODO
 
-  # Generate code coverage report.
-  coverage:
+  # Check and generate code coverage report.
+  code-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: formal-verification
     steps:
       - name: Generate code coverage report
         run: |
-          forge coverage --report lcov
           sudo apt-get install lcov
+          forge coverage --report lcov
           lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
 
       - name: Report code coverage
@@ -100,29 +98,29 @@ jobs:
           working-directory: ./
 
   # Generate gas usage report.
-  gas:
+  gas-report:
     runs-on: ubuntu-latest
-    needs:
+    needs: formal-verification
+    steps:
+      - run: echo TODO
+
+  # Generate slither report.
+  static-analysis:
+    runs-on: ubuntu-latest
+    needs: formal-verification
     steps:
       - run: echo TODO
 
   # Generate documentation from NatSpec.
-  docs:
+  natspec-docs:
     runs-on: ubuntu-latest
-    needs:
-    steps:
-      - run: echo TODO
-
-  # Run static analysis.
-  slither:
-    runs-on: ubuntu-latest
-    needs:
+    needs: formal-verification
     steps:
       - run: echo TODO
 
   # Package artifacts for publishing.
   package:
     runs-on: ubuntu-latest
-    needs:
+    needs: [code-coverage, gas-report, static-analysis, natspec-docs]
     steps:
       - run: echo TODO
