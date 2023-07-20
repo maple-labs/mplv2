@@ -5,7 +5,18 @@ import { IInflationModule } from "../../contracts/interfaces/IInflationModule.so
 
 import { TestBase } from "../utils/TestBase.sol";
 
-contract Assertions is TestBase {
+contract ModuleInvariants is TestBase {
+
+    // Inflation Module:
+    // - Invariant A: traverseFrom(zeroWindowId) == lastScheduledWindowId
+    // - Invariant B: windows.contains(lastClaimedWindow)
+    // - Invariant C: zeroWindow.windowStart == 0
+    // - Invariant D: zeroWindow.issuanceRate == 0
+    // - Invariant E: lastScheduledWindow.nextWindowId == 0
+    // - Invariant F: ∑window(windowId < window.nextWindowId)
+    // - Invariant G: ∑window(window.windowStart < nextWindow.windowStart)
+    // - Invariant H: lastClaimedTimestamp <= block.timestamp
+    // - Invariant I: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
 
     /**************************************************************************************************************************************/
     /*** Inflation Module Invariants                                                                                                    ***/
@@ -13,7 +24,7 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts the linked list of windows can be traversed from start to end.
-     *  @dev    Invariant: traverseFrom(zeroWindowId) == lastScheduledWindowId
+     *  @dev    Invariant A: traverseFrom(zeroWindowId) == lastScheduledWindowId
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_A(IInflationModule module) internal {
@@ -32,7 +43,7 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts the last claimed window is contained in the linked list.
-     *  @dev    Invariant: windows.contains(lastClaimedWindow)
+     *  @dev    Invariant B: windows.contains(lastClaimedWindow)
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_B(IInflationModule module) internal {
@@ -43,17 +54,15 @@ contract Assertions is TestBase {
 
             ( uint16 nextWindowId, , ) = module.windows(windowId);
 
-            if (nextWindowId == 0) break;
+            assertTrue(nextWindowId != 0, "Last claimed window is unreachable.");
 
             windowId = nextWindowId;
         }
-
-        assertTrue(false, "Last claimed window is unreachable.");
     }
 
     /**
      *  @notice Asserts the zero index window is the first starting window.
-     *  @dev    Invariant: zeroWindow.windowStart == 0
+     *  @dev    Invariant C: zeroWindow.windowStart == 0
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_C(IInflationModule module) internal {
@@ -64,7 +73,7 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts the zero index window is not issuing any tokens.
-     *  @dev    Invariant: zeroWindow.issuanceRate == 0
+     *  @dev    Invariant D: zeroWindow.issuanceRate == 0
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_D(IInflationModule module) internal {
@@ -75,18 +84,18 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts the last scheduled window is the last one in the linked list.
-     *  @dev    Invariant: lastScheduledWindow.nextWindowId == 0
+     *  @dev    Invariant E: lastScheduledWindow.nextWindowId == 0
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_E(IInflationModule module) internal {
-        ( , uint32 nextWindowId, ) = module.windows(module.lastScheduledWindowId());
+        ( uint16 nextWindowId, , ) = module.windows(module.lastScheduledWindowId());
 
         assertEq(nextWindowId, 0, "Last scheduled window is not the last window.");
     }
 
     /**
      *  @notice Asserts all window identifiers are in strictly ascending order.
-     *  @dev    Invariant: ∑window(windowId < window.nextWindowId)
+     *  @dev    Invariant F: ∑window(windowId < window.nextWindowId)
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_F(IInflationModule module) internal {
@@ -105,7 +114,7 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts all window timestamps are in strictly ascending order.
-     *  @dev    Invariant: ∑window(window.windowStart < nextWindow.windowStart)
+     *  @dev    Invariant G: ∑window(window.windowStart < nextWindow.windowStart)
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_G(IInflationModule module) internal {
@@ -126,22 +135,22 @@ contract Assertions is TestBase {
 
     /**
      *  @notice Asserts tokens can only be claimed up to the current time.
-     *  @dev    Invariant: lastClaimedTimestamp <= block.timestamp
+     *  @dev    Invariant H: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module) internal {
-        assertLe(module.lastClaimedTimestamp(), block.timestamp, "Last claimed timestamp is greater than the current time.");
+    function assert_inflationModule_invariant_H(IInflationModule module, uint32 blockTimestamp) internal {
+        assertLe(module.lastClaimedTimestamp(), blockTimestamp, "Last claimed timestamp is greater than the current time.");
     }
 
     /**
      *  @notice Asserts the window of the last claim is set correctly based on the timestamp of the last claim.
-     *  @dev    Invariant: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
+     *  @dev    Invariant I: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
     function assert_inflationModule_invariant_I(IInflationModule module) internal {
         ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
-        assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed winow is invalid.");
+        assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed window is invalid.");
 
         if (nextWindowId == 0) return;
 

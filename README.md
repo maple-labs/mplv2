@@ -1,6 +1,6 @@
 # Maple V2 Token
 
-![Foundry CI](https://github.com/maple-labs/mplv2/actions/workflows/forge.yaml/badge.svg)
+![CI](https://github.com/maple-labs/mplv2/actions/workflows/ci.yaml/badge.svg)
 [![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/maple-for-developers/protocol-overview)
 [![Foundry][foundry-badge]][foundry]
 [![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/mplv2/blob/main/LICENSE)
@@ -32,17 +32,7 @@ cd mplv2
 forge install
 ```
 
-## Commands
-To make it easier to perform some tasks within the repo, a few commands are available through a makefile:
-
-### Build Commands
-
-
-### Test Commands
-
-
 ## Audit Reports
-
 
 ## Bug Bounty
 

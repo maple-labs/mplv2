@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  # Check all formatting rules are satisfied.
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo TODO
+
+  # Check all linter rules are satisfied.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo TODO
+
+  # Build contracts.
+  build:
+    runs-on: ubuntu-latest
+    needs: [format, lint]
+    steps:
+      - run: echo TODO
+
+  # Run all tests.
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
+
+      - name: Run forge tests
+        run: forge test
+        env:
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+
+  # Run formal verification.
+  verify:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - run: echo TODO
+
+  # Check and generate code coverage report.
+  coverage:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
+
+      - name: Install lcov
+        run: sudo apt-get install lcov
+
+      - name: Generate code coverage report
+        run: |
+          forge coverage --report lcov
+          lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
+        env:
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+
+      - name: Report code coverage
+        uses: zgosalvez/github-actions-report-lcov@v1
+        with:
+          coverage-files: lcov.info.pruned
+          minimum-coverage: 90
+          artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: ./
+
+  # Generate gas usage report.
+  gas:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - run: echo TODO
+
+  # Generate slither report.
+  slither:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - run: echo TODO
+
+  # Generate NatSpec documentation.
+  docs:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - run: echo TODO
+
+  # Package artifacts for publishing.
+  package:
+    runs-on: ubuntu-latest
+    needs: [coverage, gas, slither, docs]
+    steps:
+      - run: echo TODO
