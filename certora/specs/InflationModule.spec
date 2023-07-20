@@ -2,7 +2,6 @@ using InflationModule as InflationModule;
 
 methods {
     // InflationModule Methods
-    function InflationModule._globals() external returns (address) envfree;
     function InflationModule.token() external returns (address) envfree;
     function InflationModule.lastClaimedTimestamp() external returns (uint32) envfree;
     function InflationModule.lastClaimedWindowId() external returns (uint16) envfree;
