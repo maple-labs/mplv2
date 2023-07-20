@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { InflationModule } from "../contracts/InflationModule.sol";
+import { InflationModule } from "../../contracts/InflationModule.sol";
 
-import { MockGlobals, MockToken } from "./utils/Mocks.sol";
-import { TestBase }               from "./utils/TestBase.sol";
+import { MockGlobals, MockToken } from "../utils/Mocks.sol";
+import { TestBase }               from "../utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
 // TODO: Check if function return values are correct (not just state changes).
