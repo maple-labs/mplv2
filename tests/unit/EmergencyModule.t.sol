@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { EmergencyModule } from "../contracts/EmergencyModule.sol";
+import { EmergencyModule } from "../../contracts/EmergencyModule.sol";
 
-import { MockGlobals, MockToken } from "./utils/Mocks.sol";
-import { TestBase }               from "./utils/TestBase.sol";
+import { MockGlobals, MockToken } from "../utils/Mocks.sol";
+import { TestBase }               from "../utils/TestBase.sol";
 
 contract EmergencyModuleTets is TestBase {
 

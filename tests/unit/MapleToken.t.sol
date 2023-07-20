@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { TestBase } from "./utils/TestBase.sol";
+import { MapleToken }            from "../../contracts/MapleToken.sol";
+import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 
-import { MapleToken }            from "../contracts/MapleToken.sol";
-import { MapleTokenInitializer } from "../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }       from "../contracts/MapleTokenProxy.sol";
-
-import { MockGlobals } from "./utils/Mocks.sol";
+import { TestBase }    from "../utils/TestBase.sol";
+import { MockGlobals } from "../utils/Mocks.sol";
 
 contract MapleTokenTestsBase is TestBase {
 
