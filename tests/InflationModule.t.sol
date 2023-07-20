@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { InflationModule } from "../contracts/InflationModule.sol";
+import { InflationModuleHarness } from "./utils/Harnesses.sol";
 
 import { MockGlobals, MockToken } from "./utils/Mocks.sol";
 import { TestBase }               from "./utils/TestBase.sol";
@@ -23,7 +23,7 @@ contract InflationModuleTestBase is TestBase {
     MockGlobals globals;
     MockToken   token;
 
-    InflationModule module;
+    InflationModuleHarness module;
 
     function setUp() public virtual {
         governor = makeAddr("governor");
@@ -38,7 +38,7 @@ contract InflationModuleTestBase is TestBase {
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModule(address(token));
+        module = new InflationModuleHarness(address(token));
 
         start = uint32(block.timestamp);
 
@@ -94,7 +94,7 @@ contract ClaimTests is InflationModuleTestBase {
 
     function test_claim_noClaimer() external {
         globals.__setIsInstance(false);
-        
+
         vm.expectRevert("IM:C:NOT_CLAIMER");
         module.claim();
     }
@@ -293,6 +293,53 @@ contract ClaimTests is InflationModuleTestBase {
 
 }
 
+contract FindInsertionPointTests is InflationModuleTestBase {
+
+    function setUp() public override {
+        super.setUp();
+
+        windowStarts.push(start + 50 days);
+        windowStarts.push(start + 160 days);
+        windowStarts.push(start + 365 days);
+
+        issuanceRates.push(0.94e18);
+        issuanceRates.push(0.95e18);
+        issuanceRates.push(0.96e18);
+
+        vm.warp(start);
+        module.schedule(windowStarts, issuanceRates);
+    }
+
+    function test_findInsertionPoint_noClaim() external {
+        assertEq(module.lastClaimedWindowId(), 0);
+
+        assertEq(module.findInsertionPoint(start + 365 days - 1 seconds), 2);
+        assertEq(module.findInsertionPoint(start + 365 days),             2);
+        assertEq(module.findInsertionPoint(start + 365 days + 1 seconds), 3);
+    }
+
+    function test_findInsertionPoint_previousToLastWindowClaimed() external {
+        vm.warp(start + 160 days);
+        module.claim();
+
+        assertEq(module.lastClaimedWindowId(), 2);
+
+        assertEq(module.findInsertionPoint(start + 365 days - 1 seconds), 2);
+        assertEq(module.findInsertionPoint(start + 365 days),             2);
+        assertEq(module.findInsertionPoint(start + 365 days + 1 seconds), 3);
+    }
+
+    function test_findInsertionPoint_lastWindowClaimed() external {
+        vm.warp(start + 365 days);
+        module.claim();
+
+        assertEq(module.lastClaimedWindowId(), 3);
+
+        assertEq(module.findInsertionPoint(start + 365 days),             3);
+        assertEq(module.findInsertionPoint(start + 365 days + 1 seconds), 3);
+    }
+
+}
 
 contract ScheduleTests is InflationModuleTestBase {
 
@@ -534,7 +581,7 @@ contract ScheduleTests is InflationModuleTestBase {
 }
 
 contract CurrentIssuanceRateTests is InflationModuleTestBase {
-    
+
     function setUp() public override {
         super.setUp();
         vm.stopPrank();
