@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { InflationModuleHarness } from "./utils/Harnesses.sol";
-
-import { MockGlobals, MockToken } from "./utils/Mocks.sol";
-import { TestBase }               from "./utils/TestBase.sol";
+import { InflationModuleHarness } from "../utils/Harnesses.sol";
+import { MockGlobals, MockToken } from "../utils/Mocks.sol";
+import { TestBase }               from "../utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
 // TODO: Check if function return values are correct (not just state changes).
@@ -581,7 +580,7 @@ contract ScheduleTests is InflationModuleTestBase {
 
 }
 
-contract CurrentIssuanceRateTests is InflationModuleTestBase {
+contract ViewFunctionTests is InflationModuleTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -612,30 +611,44 @@ contract CurrentIssuanceRateTests is InflationModuleTestBase {
         vm.warp(start + 1);
 
         assertEq(module.currentIssuanceRate(), 0.95e18);
+        assertEq(module.currentWindowId(),     1);
+        assertEq(module.currentWindowStart(),  start);
 
         vm.warp(start + 50 days + 1);
 
         assertEq(module.currentIssuanceRate(), 0.96e18);
+        assertEq(module.currentWindowId(),     2);
+        assertEq(module.currentWindowStart(),  start + 50 days);
 
         vm.warp(start + 85 days + 1);
 
         assertEq(module.currentIssuanceRate(), 0.97e18);
+        assertEq(module.currentWindowId(),     3);
+        assertEq(module.currentWindowStart(),  start + 85 days);
 
         vm.warp(start + 120 days + 1);
 
         assertEq(module.currentIssuanceRate(), 0);
+        assertEq(module.currentWindowId(),     4);
+        assertEq(module.currentWindowStart(),  start + 120 days);
 
         vm.warp(start + 150 days + 1);
 
         assertEq(module.currentIssuanceRate(), 1e18);
+        assertEq(module.currentWindowId(),     5);
+        assertEq(module.currentWindowStart(),  start + 150 days);
 
         vm.warp(start + 190 days + 1);
 
         assertEq(module.currentIssuanceRate(), 0);
+        assertEq(module.currentWindowId(),     6);
+        assertEq(module.currentWindowStart(),  start + 190 days);
 
         vm.warp(start + 300 days + 1);
 
         assertEq(module.currentIssuanceRate(), 0.98e18);
+        assertEq(module.currentWindowId(),     7);
+        assertEq(module.currentWindowStart(),  start + 300 days);
     }
 
 }

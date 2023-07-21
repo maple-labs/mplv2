@@ -85,9 +85,15 @@ contract InflationModule is IInflationModule {
     }
 
     function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
-        uint16 currentWindow = _findInsertionPoint(uint32(block.timestamp));
+        issuanceRate_ = windows[currentWindowId()].issuanceRate;
+    }
 
-        issuanceRate_ = windows[currentWindow].issuanceRate;
+    function currentWindowId() public view returns (uint16 windowId_) {
+        windowId_ = _findInsertionPoint(uint32(block.timestamp));
+    }
+
+    function currentWindowStart() public view returns (uint32 windowStart_) {
+        windowStart_ = windows[currentWindowId()].windowStart;
     }
 
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
