@@ -111,7 +111,7 @@ contract InflationModule is IInflationModule {
         ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
     }
 
-    function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
+    function currentIssuanceRate() external view returns (uint208 issuanceRate_) {
         issuanceRate_ = windows[currentWindowId()].issuanceRate;
     }
 

@@ -39,7 +39,7 @@ interface IInflationModule {
      * @dev    Returns the amount of tokens issue per second for the current window.
      * @return issuanceRate The amount of tokens issued per second for the current window.
      */
-    function currentIssuanceRate() external view returns (uint256 issuanceRate);
+    function currentIssuanceRate() external view returns (uint208 issuanceRate);
 
     /**
      * @dev    Returns the identifier of the current window.
