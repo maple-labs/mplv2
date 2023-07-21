@@ -5,6 +5,39 @@ import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
 import { IInflationModule } from "./interfaces/IInflationModule.sol";
 
+/*
+ * The inflation module has a defined schedule of inflation that defines how new tokens will be issued over time.
+ * Here is an example of an inflation schedule with three windows, the first two windows have a defined start and end.
+ * The last window has a defined start but lasts indefinitely after it starts since it is the last window in the schedule.
+ *
+ * |--------|------|---------------->
+ *     W1      W2          W3
+ *
+ * Each window has a separate issuance rate, which defines how many tokens per second will be issued during it's duration.
+ * The issuance rate generally increases over time and is used to simulate the effect of compounding (for example on a yearly basis).
+ * However the issuance rate can also be zero to indicate that no tokens should be issued.
+ *
+ * |----|==============|________|≡≡≡≡≡≡≡≡≡≡≡≡>
+ *   W1        W2          W3         W4
+ *
+ * New windows can be scheduled, but only from the current time, retroactive scheduling is not possible.
+ * When new windows are scheduled after the last window in the schedule starts, they will be appened to the schedule.
+ *
+ * |--------|----------|----------------->
+ *     W1        W2         ^  W3
+ *                          |
+ * |--------|----------|----|------------>
+ *     W1        W2      W3       W4
+ *
+ * When new windows are scheduled before any of the existing windows in the schedule start, they will replace them instead.
+ *
+ * |--------|----------|--------------->
+ *     W1        W2 ^         W3
+ *                  |
+ * |--------|-------|------------------>
+ *     W1        W2          W4
+ */
+
 contract InflationModule is IInflationModule {
 
     struct Window {
@@ -31,7 +64,7 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
 
         _;
     }
@@ -64,7 +97,6 @@ contract InflationModule is IInflationModule {
             uint256 claimableAmount_
         ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, uint32(block.timestamp));
 
-        // TODO: Should this revert if there is nothing to claim? It would update the timestamp and window id otherwise.
         require(claimableAmount_ > 0, "IM:C:ZERO_CLAIM");
 
         lastClaimedTimestamp = uint32(block.timestamp);
@@ -73,27 +105,6 @@ contract InflationModule is IInflationModule {
         emit Claimed(claimableAmount_, lastClaimableWindowId_);
 
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
-    }
-
-    function claimable(uint32 to_) external view returns (uint256 claimableAmount_) {
-        uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
-        uint16 lastClaimableWindowId_;
-
-        if (to_ <= lastClaimedTimestamp_) return 0;
-
-        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
-    }
-
-    function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
-        issuanceRate_ = windows[currentWindowId()].issuanceRate;
-    }
-
-    function currentWindowId() public view returns (uint16 windowId_) {
-        windowId_ = _findInsertionPoint(uint32(block.timestamp));
-    }
-
-    function currentWindowStart() public view returns (uint32 windowStart_) {
-        windowStart_ = windows[currentWindowId()].windowStart;
     }
 
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
@@ -118,6 +129,35 @@ contract InflationModule is IInflationModule {
         }
 
         lastScheduledWindowId += newWindowCount_;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** View Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
+
+    function claimable(uint32 to_) external view returns (uint256 claimableAmount_) {
+        uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
+        uint16 lastClaimableWindowId_;
+
+        if (to_ <= lastClaimedTimestamp_) return 0;
+
+        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
+    }
+
+    function currentIssuanceRate() external view returns (uint208 issuanceRate_) {
+        issuanceRate_ = windows[currentWindowId()].issuanceRate;
+    }
+
+    function currentWindowId() public view returns (uint16 windowId_) {
+        windowId_ = _findInsertionPoint(uint32(block.timestamp));
+
+        uint16 nextWindowId_ = windows[windowId_].nextWindowId;
+
+        if (block.timestamp == windows[nextWindowId_].windowStart) windowId_ = nextWindowId_;
+    }
+
+    function currentWindowStart() external view returns (uint32 windowStart_) {
+        windowStart_ = windows[currentWindowId()].windowStart;
     }
 
     /**************************************************************************************************************************************/

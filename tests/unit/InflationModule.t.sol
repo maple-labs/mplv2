@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { InflationModule } from "../contracts/InflationModule.sol";
+import { InflationModule } from "../../contracts/InflationModule.sol";
 
-import { MockGlobals, MockToken } from "./utils/Mocks.sol";
-import { TestBase }               from "./utils/TestBase.sol";
+import { MockGlobals, MockToken } from "../utils/Mocks.sol";
+import { TestBase }               from "../utils/TestBase.sol";
 
 // TODO: Add fuzz tests.
 // TODO: Check if function return values are correct (not just state changes).
@@ -94,8 +94,8 @@ contract ClaimTests is InflationModuleTestBase {
 
     function test_claim_noClaimer() external {
         globals.__setIsInstance(false);
-        
-        vm.expectRevert("IM:C:NOT_CLAIMER");
+
+        vm.expectRevert("IM:NOT_CLAIMER");
         module.claim();
     }
 
@@ -534,7 +534,7 @@ contract ScheduleTests is InflationModuleTestBase {
 }
 
 contract ViewFunctionTests is InflationModuleTestBase {
-    
+
     function setUp() public override {
         super.setUp();
         vm.stopPrank();
