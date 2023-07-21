@@ -64,7 +64,6 @@ contract InflationModule is IInflationModule {
             uint256 claimableAmount_
         ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, uint32(block.timestamp));
 
-        // TODO: Should this revert if there is nothing to claim? It would update the timestamp and window id otherwise.
         require(claimableAmount_ > 0, "IM:C:ZERO_CLAIM");
 
         lastClaimedTimestamp = uint32(block.timestamp);
