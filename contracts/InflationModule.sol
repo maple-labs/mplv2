@@ -5,6 +5,39 @@ import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
 import { IInflationModule } from "./interfaces/IInflationModule.sol";
 
+/*
+ * The inflation module has a defined schedule of inflation that defines how new tokens will be issued over time.
+ * Here is an example of an inflation schedule with three windows, the first two windows have a defined start and end.
+ * The last window has a defined start but lasts indefinitely after it starts since it is the last window in the schedule.
+ *
+ * |--------|------|---------------->
+ *     W1      W2          W3
+ *
+ * Each window has a separate issuance rate, which defines how many tokens per second will be issued during it's duration.
+ * The issuance rate generally increases over time and is used to simulate the effect of compounding (for example on a yearly basis).
+ * However the issuance rate can also be zero to indicate that no tokens should be issued.
+ *
+ * |----|==============|________|≡≡≡≡≡≡≡≡≡≡≡≡>
+ *   W1        W2          W3         W4
+ *
+ * New windows can be scheduled, but only from the current time, retroactive scheduling is not possible.
+ * When new windows are scheduled after the last window in the schedule starts, they will be appened to the schedule.
+ *
+ * |--------|----------|----------------->
+ *     W1        W2         ^  W3
+ *                          |
+ * |--------|----------|----|------------>
+ *     W1        W2      W3       W4
+ *
+ * When new windows are scheduled before any of the existing windows in the schedule start, they will replace them instead.
+ *
+ * |--------|----------|--------------->
+ *     W1        W2 ^         W3
+ *                  |
+ * |--------|-------|------------------>
+ *     W1        W2          W4
+ */
+
 contract InflationModule is IInflationModule {
 
     struct Window {
