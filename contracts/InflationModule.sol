@@ -31,7 +31,7 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
 
         _;
     }
@@ -64,7 +64,6 @@ contract InflationModule is IInflationModule {
             uint256 claimableAmount_
         ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, uint32(block.timestamp));
 
-        // TODO: Should this revert if there is nothing to claim? It would update the timestamp and window id otherwise.
         require(claimableAmount_ > 0, "IM:C:ZERO_CLAIM");
 
         lastClaimedTimestamp = uint32(block.timestamp);
@@ -73,27 +72,6 @@ contract InflationModule is IInflationModule {
         emit Claimed(claimableAmount_, lastClaimableWindowId_);
 
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
-    }
-
-    function claimable(uint32 to_) external view returns (uint256 claimableAmount_) {
-        uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
-        uint16 lastClaimableWindowId_;
-
-        if (to_ <= lastClaimedTimestamp_) return 0;
-
-        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
-    }
-
-    function currentIssuanceRate() external view returns (uint256 issuanceRate_) {
-        issuanceRate_ = windows[currentWindowId()].issuanceRate;
-    }
-
-    function currentWindowId() public view returns (uint16 windowId_) {
-        windowId_ = _findInsertionPoint(uint32(block.timestamp));
-    }
-
-    function currentWindowStart() public view returns (uint32 windowStart_) {
-        windowStart_ = windows[currentWindowId()].windowStart;
     }
 
     function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
@@ -118,6 +96,35 @@ contract InflationModule is IInflationModule {
         }
 
         lastScheduledWindowId += newWindowCount_;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** View Functions                                                                                                                 ***/
+    /**************************************************************************************************************************************/
+
+    function claimable(uint32 to_) external view returns (uint256 claimableAmount_) {
+        uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
+        uint16 lastClaimableWindowId_;
+
+        if (to_ <= lastClaimedTimestamp_) return 0;
+
+        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
+    }
+
+    function currentIssuanceRate() external view returns (uint208 issuanceRate_) {
+        issuanceRate_ = windows[currentWindowId()].issuanceRate;
+    }
+
+    function currentWindowId() public view returns (uint16 windowId_) {
+        windowId_ = _findInsertionPoint(uint32(block.timestamp));
+
+        uint16 nextWindowId_ = windows[windowId_].nextWindowId;
+
+        if (block.timestamp == windows[nextWindowId_].windowStart) windowId_ = nextWindowId_;
+    }
+
+    function currentWindowStart() external view returns (uint32 windowStart_) {
+        windowStart_ = windows[currentWindowId()].windowStart;
     }
 
     /**************************************************************************************************************************************/
