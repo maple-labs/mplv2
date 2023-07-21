@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 import { IERC20 } from "../../modules/erc20/contracts/interfaces/IERC20.sol";
 
 interface IMapleTokenInitializer is IERC20 {
+
     /**
      *  @dev    Contract was initialized
      *  @param  tokenMigrator Address of the Maple token migrator contract.
