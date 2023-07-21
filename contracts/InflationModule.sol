@@ -31,7 +31,7 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:C:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
 
         _;
     }
