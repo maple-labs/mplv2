@@ -94,8 +94,8 @@ contract ClaimTests is InflationModuleTestBase {
 
     function test_claim_noClaimer() external {
         globals.__setIsInstance(false);
-        
-        vm.expectRevert("IM:C:NOT_CLAIMER");
+
+        vm.expectRevert("IM:NOT_CLAIMER");
         module.claim();
     }
 
@@ -534,7 +534,7 @@ contract ScheduleTests is InflationModuleTestBase {
 }
 
 contract ViewFunctionTests is InflationModuleTestBase {
-    
+
     function setUp() public override {
         super.setUp();
         vm.stopPrank();
