@@ -117,9 +117,13 @@ contract InflationModule is IInflationModule {
 
     function currentWindowId() public view returns (uint16 windowId_) {
         windowId_ = _findInsertionPoint(uint32(block.timestamp));
+
+        uint16 nextWindowId_ = windows[windowId_].nextWindowId;
+
+        if (block.timestamp == windows[nextWindowId_].windowStart) windowId_ = nextWindowId_;
     }
 
-    function currentWindowStart() public view returns (uint32 windowStart_) {
+    function currentWindowStart() external view returns (uint32 windowStart_) {
         windowStart_ = windows[currentWindowId()].windowStart;
     }
 
