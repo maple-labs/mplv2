@@ -114,7 +114,7 @@ rule lastScheduledWindowIdRule() {
 
     mathint lastScheduledWindowIdAfter = InflationModule.lastScheduledWindowId();
 
-    assert lastScheduledWindowIdAfter >= lastScheduledWindowIdBefore;
+    assert lastScheduledWindowIdAfter > lastScheduledWindowIdBefore;
 }
 
 rule claimableAmountDoesNotChangeForABlock() {
@@ -169,7 +169,6 @@ rule windowIdIncreases() {
 
 
 // Rules to add
-// No issuance rate can be greater then the maximumIssuanceRate
 // If issuance rate is non-zero in the current window then claimable should be non-zero
 // If lastclaimedTimestamp change that means lastClaimedWindowId changed
 // in the mapping next windowId and windowStart should be greater than the previous (monotonically increase)
