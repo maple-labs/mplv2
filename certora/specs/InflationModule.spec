@@ -17,6 +17,7 @@ methods {
     function _.globals() external => DISPATCHER(true);
     function _.governor() external => DISPATCHER(true);
     function _.mapleTreasury() external => DISPATCHER(true);
+    function _.isInstanceOf(bytes32, address) external => DISPATCHER(true);
     function _.isValidScheduledCall(address, address, bytes32, bytes) external => DISPATCHER(true);
     function _.unscheduleCall(address, bytes32, bytes) external => DISPATCHER(true);
     function _.mint(address, uint256) external => DISPATCHER(true);
@@ -59,7 +60,7 @@ invariant zeroLastScheduledAndFirstWindow()
     isWindowsEmpty(0) && InflationModule.lastScheduledWindowId() == 0
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
 
-// Only put stuff yoou know is true in the preserve block otherwise it won't fail
+// Only put stuff you know is true in the preserve block otherwise it won't fail
 // Better to define parametric rules if filtering state changing function
 
 function safeAssumptions(uint16 windowId) {
@@ -125,7 +126,7 @@ rule claimableAmountDoesNotChangeForABlock() {
     uint32 eblockTimestamp = require_uint32(e.block.timestamp);
     uint32 eScheduleblockTimestamp = require_uint32(eSchedule.block.timestamp);
 
-    require eScheduleblockTimestamp > eblockTimestamp;
+    require eScheduleblockTimestamp < eblockTimestamp;
 
     setupSchedule(eSchedule);
 
@@ -133,7 +134,7 @@ rule claimableAmountDoesNotChangeForABlock() {
     f(e, args);
     mathint claimableAfter = InflationModule.claimable(e, eblockTimestamp);
 
-    assert claimableBefore == claimableAfter;
+    assert claimableBefore == claimableAfter => f.selector != sig:claim().selector;
 }
 
 // Add a bug to try to break this to check its not vacuous

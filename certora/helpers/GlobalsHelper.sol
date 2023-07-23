@@ -7,6 +7,10 @@ contract GlobalsHelper {
         return address(0xd6d4Bcde6c816F17889f1Dd3000aF0261B03a196);
     }
 
+    function isInstanceOf(bytes32 instanceKey, address instance) external view returns (bool isInstance) {
+        return true;
+    }
+
     function isValidScheduledCall(
         address          caller,
         address          target,
