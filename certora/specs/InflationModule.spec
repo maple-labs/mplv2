@@ -60,10 +60,13 @@ invariant zeroLastScheduledAndFirstWindow()
     isWindowsEmpty(0) && InflationModule.lastScheduledWindowId() == 0
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
 
+invariant nullStateZeroWindow()
+    InflationModule.getWindowStart(0) == 0 && InflationModule.getIssuanceRate(0) == 0;
+
 // Only put stuff you know is true in the preserve block otherwise it won't fail
 // Better to define parametric rules if filtering state changing function
-
 function safeAssumptions(uint16 windowId) {
+    requireInvariant nullStateZeroWindow();
     requireInvariant zeroWindowsScheduled(windowId);
     requireInvariant zeroLastScheduledWindowId();
     requireInvariant zeroLastClaimedWindowId();
@@ -163,11 +166,6 @@ rule windowIdIncreases() {
 //     isWindowIdGtZero(windowId2) &&
 //     isNonZeroNextWindowId(windowId2) &&
 //     InflationModule.getNextWindowId(windowId1) > InflationModule.getNextWindowId(windowId2);
-
-// invariant nullStateWindowIdwhenNotScheduled(uint16 windowId)
-//     windowId > InflationModule.lastScheduledWindowId() =>
-//     InflationModule.getNextWindowId(windowId) == 0;
-
 
 // Rules to add
 // If issuance rate is non-zero in the current window then claimable should be non-zero
