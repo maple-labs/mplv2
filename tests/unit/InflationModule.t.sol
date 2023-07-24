@@ -334,7 +334,6 @@ contract FindInsertionPointTests is InflationModuleTestBase {
 
         assertEq(module.lastClaimedWindowId(), 3);
 
-        // TODO: Check logic for insertion point between window borders (same for `currentIssuanceRate`)
         assertEq(module.findInsertionPoint(start + 365 days),             3);
         assertEq(module.findInsertionPoint(start + 365 days + 1 seconds), 3);
     }
