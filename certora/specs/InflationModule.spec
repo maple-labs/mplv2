@@ -1,5 +1,9 @@
 using InflationModule as InflationModule;
 
+/******************************************************************************************************************************************/
+/*** Methods                                                                                                                            ***/
+/******************************************************************************************************************************************/
+
 methods {
     // InflationModule Methods
     function InflationModule.token() external returns (address) envfree;
@@ -23,18 +27,9 @@ methods {
     function _.mint(address, uint256) external => DISPATCHER(true);
 }
 
-// NOTDET lets you make sure if works in all cases as you can check it always work no matter the value
-
-// // GHOSTS
-// ghost uint16 ghostLastScheduledWindowId {
-//     init_state axiom ghostLastScheduledWindowId == 0;
-// }
-
-// // HOOKS
-// hook Sstore lastScheduledWindowId uint16 new_value STORAGE {
-//     // when lastScheduledWindowId changes, update ghost
-//     ghostLastScheduledWindowId = new_value;
-// }
+/******************************************************************************************************************************************/
+/*** Definitions                                                                                                                        ***/
+/******************************************************************************************************************************************/
 
 definition isWindowScheduled(uint16 windowId) returns bool =
     InflationModule.getWindowStart(windowId) != 0;
@@ -48,8 +43,9 @@ definition isNonZeroNextWindowId(uint16 windowId) returns bool =
 definition isWindowsEmpty(uint16 windowId) returns bool =
     !isWindowScheduled(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
 
-definition isWindowIdGtZero(uint16 windowId) returns bool =
-    windowId > 0;
+/******************************************************************************************************************************************/
+/*** Invariants                                                                                                                         ***/
+/******************************************************************************************************************************************/
 
 invariant zeroWindowsScheduled(uint16 windowId)
     isWindowsEmpty(windowId)
@@ -77,8 +73,11 @@ invariant nullStateZeroWindow()
 invariant validTailForWindowsLL()
     InflationModule.getNextWindowId(InflationModule.lastScheduledWindowId()) == 0;
 
+/******************************************************************************************************************************************/
+/*** CVL Helper Functions                                                                                                               ***/
+/******************************************************************************************************************************************/
+
 // Only put stuff you know is true in the preserve block otherwise it won't fail
-// Better to define parametric rules if filtering state changing function
 function safeAssumptions(uint16 windowId) {
     requireInvariant nullStateZeroWindow();
     requireInvariant validTailForWindowsLL();
@@ -93,6 +92,10 @@ function setupSchedule(env e) {
     calldataarg args;
     schedule(e, args);
 }
+
+/******************************************************************************************************************************************/
+/*** Rules                                                                                                                              ***/
+/******************************************************************************************************************************************/
 
 rule LastClaimedTimestampGtePriorLastClaimedTimestamp() {
     env eClaim; uint16 windowId;
@@ -141,7 +144,7 @@ rule claimableAmountDoesNotChangeForABlock() {
 
     safeAssumptions(windowId);
 
-    uint32 eblockTimestamp = require_uint32(e.block.timestamp);
+    uint32 eblockTimestamp         = require_uint32(e.block.timestamp);
     uint32 eScheduleblockTimestamp = require_uint32(eSchedule.block.timestamp);
 
     require eScheduleblockTimestamp < eblockTimestamp;
@@ -149,13 +152,14 @@ rule claimableAmountDoesNotChangeForABlock() {
     setupSchedule(eSchedule);
 
     mathint claimableBefore = InflationModule.claimable(e, eblockTimestamp);
+
     f(e, args);
+
     mathint claimableAfter = InflationModule.claimable(e, eblockTimestamp);
 
     assert claimableBefore == claimableAfter => f.selector != sig:claim().selector;
 }
 
-// Add a bug to try to break this to check its not vacuous
 rule nextWindowIdOnlyIncreases() {
     env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
 
@@ -166,10 +170,10 @@ rule nextWindowIdOnlyIncreases() {
     f(e, args);
 
     mathint currentWindowId = InflationModule.getNextWindowId(windowId);
-    mathint priorWindowId = InflationModule.getNextWindowId(windowId2);
+    mathint priorWindowId   = InflationModule.getNextWindowId(windowId2);
 
     require currentWindowId != 0;
-    require priorWindowId != 0;
+    require priorWindowId   != 0;
 
     assert currentWindowId > priorWindowId;
 }
