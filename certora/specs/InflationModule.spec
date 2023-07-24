@@ -172,10 +172,22 @@ rule nextWindowIdOnlyIncreases() {
     mathint currentWindowId = InflationModule.getNextWindowId(windowId);
     mathint priorWindowId   = InflationModule.getNextWindowId(windowId2);
 
-    require currentWindowId != 0;
-    require priorWindowId   != 0;
+    assert isNonZeroNextWindowId(windowId) && isNonZeroNextWindowId(windowId2) => currentWindowId > priorWindowId;
+}
 
-    assert currentWindowId > priorWindowId;
+rule nextWindowStartOnlyIncreases() {
+    env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
+
+    require windowId > windowId2;
+
+    safeAssumptions(windowId);
+
+    f(e, args);
+
+    mathint currentWindowStart = InflationModule.getWindowStart(windowId);
+    mathint priorWindowStart   = InflationModule.getWindowStart(windowId2);
+
+    assert isWindowScheduled(windowId) && isWindowScheduled(windowId2) => currentWindowStart > priorWindowStart;
 }
 
 rule lastClaimedTimestampLteBlockTimestamp() {
