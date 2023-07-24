@@ -31,7 +31,7 @@ methods {
 /*** Definitions                                                                                                                        ***/
 /******************************************************************************************************************************************/
 
-definition isWindowScheduled(uint16 windowId) returns bool =
+definition isNonZeroWindowStart(uint16 windowId) returns bool =
     InflationModule.getWindowStart(windowId) != 0;
 
 definition isNonZeroIssuanceRate(uint16 windowId) returns bool =
@@ -41,7 +41,7 @@ definition isNonZeroNextWindowId(uint16 windowId) returns bool =
     InflationModule.getNextWindowId(windowId) != 0;
 
 definition isWindowsEmpty(uint16 windowId) returns bool =
-    !isWindowScheduled(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
+    !isNonZeroWindowStart(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
 
 /******************************************************************************************************************************************/
 /*** Invariants                                                                                                                         ***/
@@ -187,7 +187,7 @@ rule nextWindowStartOnlyIncreases() {
     mathint currentWindowStart = InflationModule.getWindowStart(windowId);
     mathint priorWindowStart   = InflationModule.getWindowStart(windowId2);
 
-    assert isWindowScheduled(windowId) && isWindowScheduled(windowId2) => currentWindowStart > priorWindowStart;
+    assert isNonZeroWindowStart(windowId) && isNonZeroWindowStart(windowId2) => currentWindowStart > priorWindowStart;
 }
 
 rule lastClaimedTimestampLteBlockTimestamp() {
@@ -200,4 +200,26 @@ rule lastClaimedTimestampLteBlockTimestamp() {
     f(e, args);
 
     assert InflationModule.lastClaimedTimestamp() <= eblockTimestamp;
+}
+
+rule validLastClaimedTimestamp() {
+    env e; env eSchedule; method f; calldataarg args; uint16 windowId;
+
+    safeAssumptions(windowId);
+
+    uint32 eblockTimestamp         = require_uint32(e.block.timestamp);
+    uint32 eScheduleblockTimestamp = require_uint32(eSchedule.block.timestamp);
+
+    require eScheduleblockTimestamp < eblockTimestamp;
+    require eScheduleblockTimestamp > 0;  // Safe to assume as block.timestamp is always > 0
+
+    setupSchedule(eSchedule);
+
+    f(e, args);
+
+    uint32 lastClaimedTimestamp = InflationModule.lastClaimedTimestamp();
+    uint16 nextWindowId         = require_uint16(InflationModule.getNextWindowId(InflationModule.lastClaimedWindowId()));
+
+    assert (lastClaimedTimestamp >= require_uint32(InflationModule.getWindowStart(InflationModule.lastClaimedWindowId()))) &&
+        (nextWindowId != 0 => lastClaimedTimestamp < require_uint32(InflationModule.getWindowStart(nextWindowId)));
 }
