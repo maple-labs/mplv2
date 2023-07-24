@@ -25,6 +25,17 @@ methods {
 
 // NOTDET lets you make sure if works in all cases as you can check it always work no matter the value
 
+// // GHOSTS
+// ghost uint16 ghostLastScheduledWindowId {
+//     init_state axiom ghostLastScheduledWindowId == 0;
+// }
+
+// // HOOKS
+// hook Sstore lastScheduledWindowId uint16 new_value STORAGE {
+//     // when lastScheduledWindowId changes, update ghost
+//     ghostLastScheduledWindowId = new_value;
+// }
+
 definition isWindowScheduled(uint16 windowId) returns bool =
     InflationModule.getWindowStart(windowId) != 0;
 
@@ -63,10 +74,14 @@ invariant zeroLastScheduledAndFirstWindow()
 invariant nullStateZeroWindow()
     InflationModule.getWindowStart(0) == 0 && InflationModule.getIssuanceRate(0) == 0;
 
+invariant validTailForWindowsLL()
+    InflationModule.getNextWindowId(InflationModule.lastScheduledWindowId()) == 0;
+
 // Only put stuff you know is true in the preserve block otherwise it won't fail
 // Better to define parametric rules if filtering state changing function
 function safeAssumptions(uint16 windowId) {
     requireInvariant nullStateZeroWindow();
+    requireInvariant validTailForWindowsLL();
     requireInvariant zeroWindowsScheduled(windowId);
     requireInvariant zeroLastScheduledWindowId();
     requireInvariant zeroLastClaimedWindowId();
@@ -79,7 +94,7 @@ function setupSchedule(env e) {
     schedule(e, args);
 }
 
-rule LastClaimedTimestampRule() {
+rule LastClaimedTimestampGtePriorLastClaimedTimestamp() {
     env eClaim; uint16 windowId;
 
     safeAssumptions(windowId);
@@ -93,7 +108,7 @@ rule LastClaimedTimestampRule() {
     assert lastClaimedTimestampAfter >= lastClaimedTimestampBefore;
 }
 
-rule LastClaimedWindowIdRule() {
+rule LastClaimedWindowIdGtePriorLastClaimedWindowId() {
     env eSchedule; env eClaim; calldataarg args; uint16 windowId;
 
     safeAssumptions(windowId);
@@ -107,7 +122,7 @@ rule LastClaimedWindowIdRule() {
     assert lastClaimedWindowIdAfter >= lastClaimedWindowIdBefore;
 }
 
-rule lastScheduledWindowIdRule() {
+rule lastScheduledWindowIdOnlyIncreases() {
     env eSchedule; calldataarg args; uint16 windowId;
 
     safeAssumptions(windowId);
@@ -141,7 +156,7 @@ rule claimableAmountDoesNotChangeForABlock() {
 }
 
 // Add a bug to try to break this to check its not vacuous
-rule windowIdIncreases() {
+rule nextWindowIdOnlyIncreases() {
     env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
 
     require windowId > windowId2;
@@ -159,15 +174,14 @@ rule windowIdIncreases() {
     assert currentWindowId > priorWindowId;
 }
 
-// invariant windowIdIncreases(uint16 windowId1, uint16 windowId2)
-//     windowId1 > windowId2 && windowId1 != 0 && windowId2 != 0  =>
-//     isWindowIdGtZero(windowId1) &&
-//     isNonZeroNextWindowId(windowId1) &&
-//     isWindowIdGtZero(windowId2) &&
-//     isNonZeroNextWindowId(windowId2) &&
-//     InflationModule.getNextWindowId(windowId1) > InflationModule.getNextWindowId(windowId2);
+rule lastClaimedTimestampLteBlockTimestamp() {
+    env e; method f; calldataarg args; uint16 windowId;
 
-// Rules to add
-// If issuance rate is non-zero in the current window then claimable should be non-zero
-// If lastclaimedTimestamp change that means lastClaimedWindowId changed
-// in the mapping next windowId and windowStart should be greater than the previous (monotonically increase)
+    safeAssumptions(windowId);
+
+    uint32 eblockTimestamp = require_uint32(e.block.timestamp);
+
+    f(e, args);
+
+    assert InflationModule.lastClaimedTimestamp() <= eblockTimestamp;
+}
