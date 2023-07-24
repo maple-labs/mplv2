@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-// TODO: Add relevant events.
-// TODO: Add a view function that returns the current schedule as an array of windows.
 interface IInflationModule {
 
     /**************************************************************************************************************************************/
@@ -41,9 +39,9 @@ interface IInflationModule {
      * @dev    Returns the amount of tokens issue per second for the current window.
      * @return issuanceRate The amount of tokens issued per second for the current window.
      */
-    function currentIssuanceRate() external view returns (uint256 issuanceRate);
+    function currentIssuanceRate() external view returns (uint208 issuanceRate);
 
-    /** 
+    /**
      * @dev    Returns the identifier of the current window.
      * @return windowId The identifier of the current window.
      */

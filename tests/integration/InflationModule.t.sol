@@ -56,7 +56,7 @@ contract InflationModuleIntegrationTest is TestBase {
     }
 
     function test_inflationModule_claim_notClaimer() external {
-        vm.expectRevert("IM:C:NOT_CLAIMER");
+        vm.expectRevert("IM:NOT_CLAIMER");
         module.claim();
     }
 
