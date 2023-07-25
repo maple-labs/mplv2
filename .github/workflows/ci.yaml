@@ -46,10 +46,17 @@ jobs:
           forge install
 
       - name: Run forge tests
-        run: forge test
+        run: forge test | tee gas.txt
         env:
-          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+          FORGE_GAS_REPORT: true
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+
+      # TODO: Remove test output and keep only the gas table.
+      - uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: gas.txt
 
   # Run formal verification.
   verify:
@@ -95,12 +102,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           working-directory: ./
 
-  # Generate gas usage report.
+  # Post gas report.
   gas:
     runs-on: ubuntu-latest
     needs: [test, verify]
     steps:
-      - run: echo TODO
+      - uses: actions/download-artifact@v3
+        with:
+          name: gas-report
+          path: gas.txt
+
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message: "Testing PR comment..."
 
   # Generate slither report.
   slither:
