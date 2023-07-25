@@ -114,7 +114,7 @@ jobs:
 
       - uses: mshick/add-pr-comment@v2
         with:
-          message: "Testing PR comment..."
+          message-path: gas.txt
 
   # Generate slither report.
   slither:
