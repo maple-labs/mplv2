@@ -114,6 +114,7 @@ jobs:
 
       - uses: mshick/add-pr-comment@v2
         with:
+          message-id: ${{ github.run_id }}
           message-path: gas.txt
 
   # Generate slither report.
