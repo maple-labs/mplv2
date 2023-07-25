@@ -112,7 +112,7 @@ rule LastClaimedTimestampGtePriorLastClaimedTimestamp() {
 }
 
 rule LastClaimedWindowIdGtePriorLastClaimedWindowId() {
-    env eSchedule; env eClaim; calldataarg args; uint16 windowId;
+    env eClaim; uint16 windowId;
 
     safeAssumptions(windowId);
 
@@ -161,7 +161,7 @@ rule claimableAmountDoesNotChangeForABlock() {
 }
 
 rule nextWindowIdOnlyIncreases() {
-    env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
+    env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
 
     require windowId > windowId2;
 
@@ -176,7 +176,7 @@ rule nextWindowIdOnlyIncreases() {
 }
 
 rule nextWindowStartOnlyIncreases() {
-    env eSchedule; env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
+    env e; method f; calldataarg args; uint16 windowId; uint16 windowId2;
 
     require windowId > windowId2;
 
