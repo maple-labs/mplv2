@@ -132,7 +132,7 @@ rule lastScheduledWindowIdOnlyIncreases() {
 
     mathint lastScheduledWindowIdBefore = InflationModule.lastScheduledWindowId();
 
-    schedule(eSchedule, args);
+    setupSchedule(eSchedule);
 
     mathint lastScheduledWindowIdAfter = InflationModule.lastScheduledWindowId();
 
@@ -169,10 +169,10 @@ rule nextWindowIdOnlyIncreases() {
 
     f(e, args);
 
-    mathint currentWindowId = InflationModule.getNextWindowId(windowId);
-    mathint priorWindowId   = InflationModule.getNextWindowId(windowId2);
+    mathint nextWindowId  = InflationModule.getNextWindowId(windowId);
+    mathint nextWindowId2 = InflationModule.getNextWindowId(windowId2);
 
-    assert isNonZeroNextWindowId(windowId) && isNonZeroNextWindowId(windowId2) => currentWindowId > priorWindowId;
+    assert isNonZeroNextWindowId(windowId) && isNonZeroNextWindowId(windowId2) => nextWindowId > nextWindowId2;
 }
 
 rule nextWindowStartOnlyIncreases() {
@@ -184,10 +184,10 @@ rule nextWindowStartOnlyIncreases() {
 
     f(e, args);
 
-    mathint currentWindowStart = InflationModule.getWindowStart(windowId);
-    mathint priorWindowStart   = InflationModule.getWindowStart(windowId2);
+    mathint nextWindowStart  = InflationModule.getWindowStart(windowId);
+    mathint nextWindowStart2 = InflationModule.getWindowStart(windowId2);
 
-    assert isNonZeroWindowStart(windowId) && isNonZeroWindowStart(windowId2) => currentWindowStart > priorWindowStart;
+    assert isNonZeroWindowStart(windowId) && isNonZeroWindowStart(windowId2) => nextWindowStart > nextWindowStart2;
 }
 
 rule lastClaimedTimestampLteBlockTimestamp() {
