@@ -45,8 +45,10 @@ jobs:
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           forge install
 
-      - name: Run forge tests
-        run: forge test | tee gas.txt
+      - name: Run forge tests and create gas report.
+        run: |
+          forge test | tee output.txt
+          sed -n -e '/^|/p' output.txt > gas.txt
         env:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
           FORGE_GAS_REPORT: true
