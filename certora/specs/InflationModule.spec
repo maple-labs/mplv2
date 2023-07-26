@@ -77,7 +77,6 @@ invariant validTailForWindowsLL()
 /*** CVL Helper Functions                                                                                                               ***/
 /******************************************************************************************************************************************/
 
-// Only put stuff you know is true in the preserve block otherwise it won't fail
 function safeAssumptions(uint16 windowId) {
     requireInvariant nullStateZeroWindow();
     requireInvariant validTailForWindowsLL();
