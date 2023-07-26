@@ -30,9 +30,10 @@ contract xMPLMigration is ModuleInvariants {
     address constant XMPL      = 0x4937A209D4cDbD3ecD48857277cfd4dA4D82914c;
     address constant OLD_TOKEN = 0x33349B282065b0284d756F0577FB39c158F935e6;
 
-    address claimer  = makeAddr("claimer");
-    address governor = makeAddr("governor");
-    address treasury = makeAddr("treasury");
+    address claimer         = makeAddr("claimer");
+    address governor        = makeAddr("governor");
+    address migratorAddress = makeAddr("migrator");
+    address treasury        = makeAddr("treasury");
 
     uint256 start;
 
@@ -47,8 +48,6 @@ contract xMPLMigration is ModuleInvariants {
 
     IMapleToken oldToken = IMapleToken(OLD_TOKEN);
     IXmplLike   xmpl     = IXmplLike(XMPL);
-
-    address migratorAddress = makeAddr("migrator");
 
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 17622100);
@@ -95,7 +94,7 @@ contract xMPLMigration is ModuleInvariants {
         vm.prank(owner);
         xmpl.scheduleMigration(address(migrator), address(token));
 
-        vm.warp(start + 864000 + 1);
+        vm.warp(start + 864000 + 1 seconds);
         
         vm.prank(owner);
         xmpl.performMigration();
