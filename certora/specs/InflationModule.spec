@@ -125,7 +125,7 @@ rule LastClaimedWindowIdGtePriorLastClaimedWindowId() {
 }
 
 rule lastScheduledWindowIdOnlyIncreases() {
-    env eSchedule; calldataarg args; uint16 windowId;
+    env eSchedule; uint16 windowId;
 
     safeAssumptions(windowId);
 
