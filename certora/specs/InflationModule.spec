@@ -63,11 +63,7 @@ invariant zeroLastClaimedTimestamp()
     InflationModule.lastClaimedTimestamp() == 0
     filtered { f -> f.selector != sig:claim().selector }
 
-invariant zeroLastScheduledAndFirstWindow()
-    isWindowsEmpty(0) && InflationModule.lastScheduledWindowId() == 0
-    filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
-
-invariant nullStateZeroWindow()
+invariant zeroWindowState()
     InflationModule.getWindowStart(0) == 0 && InflationModule.getIssuanceRate(0) == 0;
 
 invariant validTailForWindowsLL()
@@ -78,13 +74,12 @@ invariant validTailForWindowsLL()
 /******************************************************************************************************************************************/
 
 function safeAssumptions(uint16 windowId) {
-    requireInvariant nullStateZeroWindow();
     requireInvariant validTailForWindowsLL();
-    requireInvariant zeroWindowsScheduled(windowId);
     requireInvariant zeroLastScheduledWindowId();
     requireInvariant zeroLastClaimedWindowId();
     requireInvariant zeroLastClaimedTimestamp();
-    requireInvariant zeroLastScheduledAndFirstWindow();
+    requireInvariant zeroWindowState();
+    requireInvariant zeroWindowsScheduled(windowId);
 }
 
 function setupSchedule(env e) {
