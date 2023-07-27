@@ -45,11 +45,19 @@ jobs:
           git config --global url."https://github.com/".insteadOf "git@github.com:"
           forge install
 
-      - name: Run forge tests
-        run: forge test
+      - name: Run forge tests and create gas report.
+        run: |
+          forge test | tee output.txt
+          sed -n -e '/^|/p' output.txt > gas.txt
         env:
-          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
+          FORGE_GAS_REPORT: true
+          FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: gas.txt
 
   # Run formal verification.
   verify:
@@ -57,6 +65,28 @@ jobs:
     needs: build
     steps:
       - run: echo TODO
+
+  # Check contract sizes.
+  size:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
+
+      - run: scripts/size.sh
+        env:
+          FOUNDRY_PROFILE: ci
 
   # Check and generate code coverage report.
   coverage:
@@ -94,13 +124,22 @@ jobs:
           artifact-name: code-coverage-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
           working-directory: ./
+          update-comment: true
 
-  # Generate gas usage report.
+  # Post gas report.
   gas:
     runs-on: ubuntu-latest
     needs: [test, verify]
     steps:
-      - run: echo TODO
+      - uses: actions/download-artifact@v3
+        with:
+          name: gas-report
+          path: gas.txt
+
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-path: gas.txt
+          preformatted: true
 
   # Generate slither report.
   slither:
