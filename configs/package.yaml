@@ -2,6 +2,16 @@ name: mplv2
 version: 1.0.0
 source: contracts
 packages:
+  - path: contracts/EmergencyModule.sol
+    contractName: EmergencyModule
+  - path: contracts/InflationModule.sol
+    contractName: InflationModule
   - path: contracts/MapleToken.sol
     contractName: MapleToken
+  - path: contracts/MapleTokenInitializer.sol
+    contractName: MapleTokenInitializer
+  - path: contracts/MapleTokenProxy.sol
+    contractName: MapleTokenInitializer
+  - path: contract/OversizedContract.sol
+    contractName: OversizedContract
 customDescription: Maple V2 Token Artifacts and ABIs

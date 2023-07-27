@@ -67,6 +67,15 @@ jobs:
     steps:
       - run: echo TODO
 
+  # Check contract sizes.
+  verify:
+    runs-on: ubuntu-latest
+    needs: [test, verify]
+    steps:
+      - run: ./scripts/size.sh
+      - env:
+          FOUNDRY_PROFILE: ci
+
   # Check and generate code coverage report.
   coverage:
     runs-on: ubuntu-latest
