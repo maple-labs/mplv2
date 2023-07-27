@@ -8,10 +8,10 @@ packages:
     contractName: InflationModule
   - path: contracts/MapleToken.sol
     contractName: MapleToken
+  - path: contract/OversizedContract.sol
+    contractName: OversizedContract
   - path: contracts/MapleTokenInitializer.sol
     contractName: MapleTokenInitializer
   - path: contracts/MapleTokenProxy.sol
     contractName: MapleTokenInitializer
-  - path: contract/OversizedContract.sol
-    contractName: OversizedContract
 customDescription: Maple V2 Token Artifacts and ABIs
