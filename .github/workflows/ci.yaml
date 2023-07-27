@@ -73,7 +73,7 @@ jobs:
     needs: [test, verify]
     steps:
       - run: ./scripts/size.sh
-      - env:
+        env:
           FOUNDRY_PROFILE: ci
 
   # Check and generate code coverage report.
