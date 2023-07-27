@@ -68,7 +68,7 @@ jobs:
       - run: echo TODO
 
   # Check contract sizes.
-  verify:
+  size:
     runs-on: ubuntu-latest
     needs: [test, verify]
     steps:
