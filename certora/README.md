@@ -13,6 +13,7 @@ Steps include:
 - Adding the solc binary to your PATH (optional)
 - Installing the certora VS code extensions (optional)
 
+Note a key is obtained via signing up with Certora directly but you can also run without a premium key, however, the compute resources are limited.
 
 ## Run the spec
 
