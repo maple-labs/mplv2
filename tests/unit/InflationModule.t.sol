@@ -5,9 +5,6 @@ import { InflationModuleHarness } from "../utils/Harnesses.sol";
 import { MockGlobals, MockToken } from "../utils/Mocks.sol";
 import { TestBase }               from "../utils/TestBase.sol";
 
-// TODO: Add fuzz tests.
-// TODO: Check if function return values are correct (not just state changes).
-
 contract InflationModuleTestBase is TestBase {
 
     address governor;
@@ -288,6 +285,56 @@ contract ClaimTests is InflationModuleTestBase {
 
     function test_claim_afterReschedule() external {
         // TODO
+    }
+
+}
+
+contract ClaimableTests is InflationModuleTestBase {
+
+    uint256 constant MAX_IR      = 1e18;
+    uint256 constant MAX_OFFSET  = 365 days;
+    uint256 constant MAX_WINDOWS = 10;
+
+    function claimable() internal view returns (uint256 claimableAmount) {
+        uint16 windowId;
+
+        while (true) {
+            ( uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate ) = module.windows(windowId);
+
+            if (nextWindowId == 0) break;
+
+            windowId = nextWindowId;
+
+            ( , uint32 windowEnd, ) = module.windows(windowId);
+
+            claimableAmount += issuanceRate * (windowEnd - windowStart);
+        }
+    }
+
+    function schedule(uint16 windowCount, uint32 minWindowStart, uint256 windowSeed) internal returns (uint32 lastWindowStart) {
+        uint32[]  memory windowStarts_  = new uint32[](windowCount);
+        uint208[] memory issuanceRates_ = new uint208[](windowCount);
+
+        for (uint i; i < windowCount; ++i) {
+            uint256 seed = uint256(keccak256(abi.encode(windowSeed, i)));
+
+            windowStarts_[i]  = uint32(bound(seed, minWindowStart, minWindowStart + MAX_OFFSET));
+            issuanceRates_[i] = uint208(bound(seed, 0, MAX_IR));
+
+            minWindowStart = windowStarts_[i] + 1 seconds;
+        }
+
+        module.schedule(windowStarts_, issuanceRates_);
+
+        lastWindowStart = minWindowStart - 1 seconds;
+    }
+
+    function testFuzz_claimable(uint16 windowCount, uint256 windowSeed) external {
+        windowCount = uint16(bound(windowCount, 1, MAX_WINDOWS));
+
+        uint32 to = schedule(windowCount, start, windowSeed);
+
+        assertEq(module.claimable(to), claimable());
     }
 
 }
