@@ -54,7 +54,6 @@ jobs:
           FORGE_GAS_REPORT: true
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
 
-      # TODO: Remove test output and keep only the gas table.
       - uses: actions/upload-artifact@v3
         with:
           name: gas-report
@@ -140,6 +139,7 @@ jobs:
         with:
           message-id: ${{ github.run_id }}
           message-path: gas.txt
+          preformatted: true
 
   # Generate slither report.
   slither:
