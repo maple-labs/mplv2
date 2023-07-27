@@ -1,6 +1,6 @@
 # Certora Guide
 
-This README describes how to run the Certora Prover on the specification files defined in this repository.
+This README describes how to run the specification defined in this repository via Certora.
 
 ## Setup
 
