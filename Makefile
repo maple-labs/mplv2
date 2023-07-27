@@ -12,3 +12,9 @@ release:
 
 test:
 	@scripts/test.sh -p default
+
+verify:
+	@certora/scripts/verify.sh
+
+verify-sanity:
+	@certora/scripts/verify-sanity.sh
