@@ -2,8 +2,8 @@
 pragma solidity 0.8.18;
 
 import { RecapitalizationModuleHarness } from "../utils/Harnesses.sol";
-import { MockGlobals, MockToken } from "../utils/Mocks.sol";
-import { TestBase }               from "../utils/TestBase.sol";
+import { MockGlobals, MockToken }        from "../utils/Mocks.sol";
+import { TestBase }                      from "../utils/TestBase.sol";
 
 contract RecapitalizationModuleTestBase is TestBase {
 
@@ -67,7 +67,7 @@ contract RecapitalizationModuleTestBase is TestBase {
 
 contract ConstructorTests is RecapitalizationModuleTestBase {
 
-    function test_inflationModule_constructor() external {
+    function test_recapitalizationModule_constructor() external {
         assertEq(module.token(), address(token));
 
         assertEq(module.lastClaimedTimestamp(),  0);

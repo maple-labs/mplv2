@@ -3,11 +3,11 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { RecapitalizationModule }       from "../../contracts/RecapitalizationModule.sol";
-import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
-import { MapleToken }            from "../../contracts/MapleToken.sol";
-import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
+import { IMapleToken }            from "../../contracts/interfaces/IMapleToken.sol";
+import { MapleToken }             from "../../contracts/MapleToken.sol";
+import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
 
 import { TestBase }      from "../utils/TestBase.sol";
 import { IGlobalsLike  } from "../utils/Interfaces.sol";
@@ -21,9 +21,9 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
 
     uint256 start;
 
+    IGlobalsLike           globals;
+    IMapleToken            token;
     RecapitalizationModule module;
-    IGlobalsLike    globals;
-    IMapleToken     token;
 
     function setUp() public virtual {
         globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
@@ -35,7 +35,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         module = new RecapitalizationModule(address(token));
 
         vm.startPrank(governor);
-        globals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);
+        globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer, true);
 
         globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
 
@@ -55,12 +55,12 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         start = block.timestamp;
     }
 
-    function test_inflationModule_claim_notClaimer() external {
+    function test_recapitalizationModule_claim_notClaimer() external {
         vm.expectRevert("IM:NOT_CLAIMER");
         module.claim();
     }
 
-    function test_inflationModule_claim_notMinter() external {
+    function test_recapitalizationModule_claim_notMinter() external {
         vm.startPrank(governor);
         globals.scheduleCall(address(token), "MT:REMOVE_MODULE", abi.encodeWithSelector(IMapleToken.removeModule.selector, module));
 
@@ -73,7 +73,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         module.claim();
     }
 
-    function test_inflationModule_claim_success_sameWindow() external {
+    function test_recapitalizationModule_claim_success_sameWindow() external {
         uint256 startingBalance = token.balanceOf(treasury);
         uint256 supply          = token.totalSupply();
 
@@ -89,7 +89,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         assertEq(module.lastClaimedWindowId(),  1);
     }
 
-    function test_inflationModule_claim_success_multiWindow() external {
+    function test_recapitalizationModule_claim_success_multiWindow() external {
         // Schedule another window
         uint32[] memory times = new uint32[](1);
         times[0] = uint32(start + 500 seconds);

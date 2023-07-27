@@ -3,10 +3,10 @@ pragma solidity 0.8.18;
 
 import { console2 as console, Script } from "../modules/forge-std/src/Script.sol";
 
-import { RecapitalizationModule }       from "../contracts/RecapitalizationModule.sol";
-import { MapleToken }            from "../contracts/MapleToken.sol";
-import { MapleTokenInitializer } from "../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }       from "../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../contracts/RecapitalizationModule.sol";
+import { MapleToken }             from "../contracts/MapleToken.sol";
+import { MapleTokenInitializer }  from "../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }        from "../contracts/MapleTokenProxy.sol";
 
 contract DeployToken is Script {
 
@@ -28,9 +28,9 @@ contract DeployToken is Script {
 
         console.log("Token Proxy:          %s", tokenProxy);
 
-        address inflationModule = address(new RecapitalizationModule(tokenProxy));
+        address recapitalizationModule = address(new RecapitalizationModule(tokenProxy));
 
-        console.log("Inflation Module:     %s", inflationModule);
+        console.log("Recapitalization Module:     %s", recapitalizationModule);
 
         vm.stopBroadcast();
     }

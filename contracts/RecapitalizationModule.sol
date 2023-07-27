@@ -6,8 +6,8 @@ import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 import { IRecapitalizationModule } from "./interfaces/IRecapitalizationModule.sol";
 
 /*
- * The inflation module has a defined schedule of inflation that defines how new tokens will be issued over time.
- * Here is an example of an inflation schedule with three windows, the first two windows have a defined start and end.
+ * The recapitalization module has a defined schedule of recapitalization that defines how new tokens will be issued over time.
+ * Here is an example of an recapitalization schedule with three windows, the first two windows have a defined start and end.
  * The last window has a defined start but lasts indefinitely after it starts since it is the last window in the schedule.
  *
  * |--------|------|---------------->
@@ -64,7 +64,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("RECAPITALIZATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
 
         _;
     }
