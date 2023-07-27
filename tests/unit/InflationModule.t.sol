@@ -295,14 +295,6 @@ contract ClaimableTests is InflationModuleTestBase {
     uint256 constant MAX_OFFSET  = 365 days;
     uint256 constant MAX_WINDOWS = 10;
 
-    function testFuzz_claimable(uint16 windowCount, uint256 windowSeed) external {
-        windowCount = uint16(bound(windowCount, 1, MAX_WINDOWS));
-
-        uint32 to = schedule(windowCount, start, windowSeed);
-
-        assertEq(module.claimable(to), claimable());
-    }
-
     function claimable() internal view returns (uint256 claimableAmount) {
         uint16 windowId;
 
@@ -319,22 +311,30 @@ contract ClaimableTests is InflationModuleTestBase {
         }
     }
 
-    function schedule(uint16 windowCount, uint32 minWindowStart, uint256 windowSeed) internal returns (uint32) {
-        uint32[]  memory windowStarts  = new uint32[](windowCount);
-        uint208[] memory issuanceRates = new uint208[](windowCount);
+    function schedule(uint16 windowCount, uint32 minWindowStart, uint256 windowSeed) internal returns (uint32 lastWindowStart) {
+        uint32[]  memory windowStarts_  = new uint32[](windowCount);
+        uint208[] memory issuanceRates_ = new uint208[](windowCount);
 
         for (uint i; i < windowCount; ++i) {
             uint256 seed = uint256(keccak256(abi.encode(windowSeed, i)));
 
-            windowStarts[i]  = uint32(bound(seed, minWindowStart, minWindowStart + MAX_OFFSET));
-            issuanceRates[i] = uint208(bound(seed, 0, MAX_IR));
+            windowStarts_[i]  = uint32(bound(seed, minWindowStart, minWindowStart + MAX_OFFSET));
+            issuanceRates_[i] = uint208(bound(seed, 0, MAX_IR));
 
-            minWindowStart = windowStarts[i];
+            minWindowStart = windowStarts_[i] + 1 seconds;
         }
 
-        module.schedule(windowStarts, issuanceRates);
+        module.schedule(windowStarts_, issuanceRates_);
 
-        return minWindowStart;
+        lastWindowStart = minWindowStart - 1 seconds;
+    }
+
+    function testFuzz_claimable(uint16 windowCount, uint256 windowSeed) external {
+        windowCount = uint16(bound(windowCount, 1, MAX_WINDOWS));
+
+        uint32 to = schedule(windowCount, start, windowSeed);
+
+        assertEq(module.claimable(to), claimable());
     }
 
 }
