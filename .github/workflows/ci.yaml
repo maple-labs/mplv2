@@ -72,7 +72,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, verify]
     steps:
-      - run: ./scripts/size.sh
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install submodules
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          forge install
+
+      - run: scripts/size.sh
         env:
           FOUNDRY_PROFILE: ci
 
