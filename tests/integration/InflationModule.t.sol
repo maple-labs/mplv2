@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { InflationModule }       from "../../contracts/InflationModule.sol";
+import { RecapitalizationModule }       from "../../contracts/RecapitalizationModule.sol";
 import { IMapleToken }           from "../../contracts/interfaces/IMapleToken.sol";
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
@@ -12,7 +12,7 @@ import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
 import { TestBase }      from "../utils/TestBase.sol";
 import { IGlobalsLike  } from "../utils/Interfaces.sol";
 
-contract InflationModuleIntegrationTest is TestBase {
+contract RecapitalizationModuleIntegrationTest is TestBase {
 
     address claimer  = makeAddr("claimer");
     address governor = makeAddr("governor");
@@ -21,7 +21,7 @@ contract InflationModuleIntegrationTest is TestBase {
 
     uint256 start;
 
-    InflationModule module;
+    RecapitalizationModule module;
     IGlobalsLike    globals;
     IMapleToken     token;
 
@@ -32,7 +32,7 @@ contract InflationModuleIntegrationTest is TestBase {
         globals.setMapleTreasury(treasury);
 
         token  = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
-        module = new InflationModule(address(token));
+        module = new RecapitalizationModule(address(token));
 
         vm.startPrank(governor);
         globals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { TestBase } from "../utils/TestBase.sol";
 
@@ -27,7 +27,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant A: traverseFrom(zeroWindowId) == lastScheduledWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_A(IInflationModule module) internal {
+    function assert_inflationModule_invariant_A(IRecapitalizationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -46,7 +46,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant B: windows.contains(lastClaimedWindow)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_B(IInflationModule module) internal {
+    function assert_inflationModule_invariant_B(IRecapitalizationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -65,7 +65,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant C: zeroWindow.windowStart == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_C(IInflationModule module) internal {
+    function assert_inflationModule_invariant_C(IRecapitalizationModule module) internal {
         ( , uint32 windowStart, ) = module.windows(0);
 
         assertEq(windowStart, 0, "Zero index window timestamp is invalid.");
@@ -76,7 +76,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant D: zeroWindow.issuanceRate == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_D(IInflationModule module) internal {
+    function assert_inflationModule_invariant_D(IRecapitalizationModule module) internal {
         ( , , uint208 issuanceRate ) = module.windows(0);
 
         assertEq(issuanceRate, 0, "Zero index window issuance rate is invalid.");
@@ -87,7 +87,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant E: lastScheduledWindow.nextWindowId == 0
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_E(IInflationModule module) internal {
+    function assert_inflationModule_invariant_E(IRecapitalizationModule module) internal {
         ( uint16 nextWindowId, , ) = module.windows(module.lastScheduledWindowId());
 
         assertEq(nextWindowId, 0, "Last scheduled window is not the last window.");
@@ -98,7 +98,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant F: ∑window(windowId < window.nextWindowId)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_F(IInflationModule module) internal {
+    function assert_inflationModule_invariant_F(IRecapitalizationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -117,7 +117,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant G: ∑window(window.windowStart < nextWindow.windowStart)
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_G(IInflationModule module) internal {
+    function assert_inflationModule_invariant_G(IRecapitalizationModule module) internal {
         uint16 windowId;
 
         while (true) {
@@ -138,7 +138,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant H: lastClaimedTimestamp <= block.timestamp
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_H(IInflationModule module, uint32 blockTimestamp) internal {
+    function assert_inflationModule_invariant_H(IRecapitalizationModule module, uint32 blockTimestamp) internal {
         assertLe(module.lastClaimedTimestamp(), blockTimestamp, "Last claimed timestamp is greater than the current time.");
     }
 
@@ -147,7 +147,7 @@ contract ModuleInvariants is TestBase {
      *  @dev    Invariant I: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
      *  @param  module Address of the inflation module.
      */
-    function assert_inflationModule_invariant_I(IInflationModule module) internal {
+    function assert_inflationModule_invariant_I(IRecapitalizationModule module) internal {
         ( uint16 nextWindowId, uint32 windowStart, ) = module.windows(module.lastClaimedWindowId());
 
         assertGe(module.lastClaimedTimestamp(), windowStart, "Last claimed window is invalid.");

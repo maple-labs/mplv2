@@ -7,10 +7,10 @@ import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentP
 
 import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
 import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { EmergencyModule }       from "../../contracts/EmergencyModule.sol";
-import { InflationModule }       from "../../contracts/InflationModule.sol";
+import { RecapitalizationModule }       from "../../contracts/RecapitalizationModule.sol";
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
@@ -41,7 +41,7 @@ contract xMPLMigration is ModuleInvariants {
     IMapleToken      token;
     IMigrator        migrator;
     IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IRecapitalizationModule inflationModule;
 
     DistributionHandler distributionHandler;
     ModuleHandler       moduleHandler;
@@ -57,7 +57,7 @@ contract xMPLMigration is ModuleInvariants {
         migrator = IMigrator(deployMigrator(address(oldToken), address(token)));
 
         emergencyModule = new EmergencyModule(address(globals), address(token));
-        inflationModule = new InflationModule(address(token));
+        inflationModule = new RecapitalizationModule(address(token));
 
         configureContracts();
         setupHandlers();

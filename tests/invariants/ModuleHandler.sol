@@ -2,7 +2,7 @@
 pragma solidity 0.8.18;
 
 import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
@@ -25,7 +25,7 @@ contract ModuleHandler is TestBase {
     IMapleToken  mapleToken;
 
     IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IRecapitalizationModule inflationModule;
 
     mapping(address => uint256) allowances;
     mapping(address => uint256) balances;
@@ -34,7 +34,7 @@ contract ModuleHandler is TestBase {
         IGlobalsLike mapleGlobals_,
         IMapleToken mapleToken_,
         IEmergencyModule emergencyModule_,
-        IInflationModule inflationModule_,
+        IRecapitalizationModule inflationModule_,
         address claimer_
     )
     {

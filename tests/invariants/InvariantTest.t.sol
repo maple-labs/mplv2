@@ -4,11 +4,11 @@ pragma solidity 0.8.18;
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
 import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
 
 import { EmergencyModule }       from "../../contracts/EmergencyModule.sol";
-import { InflationModule }       from "../../contracts/InflationModule.sol";
+import { RecapitalizationModule }       from "../../contracts/RecapitalizationModule.sol";
 import { MapleToken }            from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
@@ -31,7 +31,7 @@ contract InvariantTest is ModuleInvariants {
     IMapleToken  mapleToken;
 
     IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IRecapitalizationModule inflationModule;
 
     DistributionHandler distributionHandler;
     ModuleHandler       moduleHandler;
@@ -52,7 +52,7 @@ contract InvariantTest is ModuleInvariants {
         )));
 
         emergencyModule = new EmergencyModule(address(mapleGlobals), address(mapleToken));
-        inflationModule = new InflationModule(address(mapleToken));
+        inflationModule = new RecapitalizationModule(address(mapleToken));
     }
 
     function configureContracts() internal {

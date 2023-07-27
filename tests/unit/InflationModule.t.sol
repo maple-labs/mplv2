@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { InflationModuleHarness } from "../utils/Harnesses.sol";
+import { RecapitalizationModuleHarness } from "../utils/Harnesses.sol";
 import { MockGlobals, MockToken } from "../utils/Mocks.sol";
 import { TestBase }               from "../utils/TestBase.sol";
 
-contract InflationModuleTestBase is TestBase {
+contract RecapitalizationModuleTestBase is TestBase {
 
     address governor;
     address treasury;
@@ -19,7 +19,7 @@ contract InflationModuleTestBase is TestBase {
     MockGlobals globals;
     MockToken   token;
 
-    InflationModuleHarness module;
+    RecapitalizationModuleHarness module;
 
     function setUp() public virtual {
         governor = makeAddr("governor");
@@ -34,7 +34,7 @@ contract InflationModuleTestBase is TestBase {
         token = new MockToken();
         token.__setGlobals(address(globals));
 
-        module = new InflationModuleHarness(address(token));
+        module = new RecapitalizationModuleHarness(address(token));
 
         start = uint32(block.timestamp);
 
@@ -65,7 +65,7 @@ contract InflationModuleTestBase is TestBase {
 
 }
 
-contract ConstructorTests is InflationModuleTestBase {
+contract ConstructorTests is RecapitalizationModuleTestBase {
 
     function test_inflationModule_constructor() external {
         assertEq(module.token(), address(token));
@@ -78,7 +78,7 @@ contract ConstructorTests is InflationModuleTestBase {
     }
 }
 
-contract ClaimTests is InflationModuleTestBase {
+contract ClaimTests is RecapitalizationModuleTestBase {
 
     event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
 
@@ -289,7 +289,7 @@ contract ClaimTests is InflationModuleTestBase {
 
 }
 
-contract ClaimableTests is InflationModuleTestBase {
+contract ClaimableTests is RecapitalizationModuleTestBase {
 
     uint256 constant MAX_IR      = 1e18;
     uint256 constant MAX_OFFSET  = 365 days;
@@ -339,7 +339,7 @@ contract ClaimableTests is InflationModuleTestBase {
 
 }
 
-contract FindInsertionPointTests is InflationModuleTestBase {
+contract FindInsertionPointTests is RecapitalizationModuleTestBase {
 
     function setUp() public override {
         super.setUp();
@@ -387,7 +387,7 @@ contract FindInsertionPointTests is InflationModuleTestBase {
 
 }
 
-contract ScheduleTests is InflationModuleTestBase {
+contract ScheduleTests is RecapitalizationModuleTestBase {
 
     event WindowScheduled(uint16 windowId, uint16 previousWindowId, uint32 windowStart, uint208 issuanceRate);
 
@@ -626,7 +626,7 @@ contract ScheduleTests is InflationModuleTestBase {
 
 }
 
-contract ViewFunctionTests is InflationModuleTestBase {
+contract ViewFunctionTests is RecapitalizationModuleTestBase {
 
     function setUp() public override {
         super.setUp();

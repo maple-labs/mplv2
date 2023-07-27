@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
-import { IInflationModule } from "./interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "./interfaces/IRecapitalizationModule.sol";
 
 /*
  * The inflation module has a defined schedule of inflation that defines how new tokens will be issued over time.
@@ -38,7 +38,7 @@ import { IInflationModule } from "./interfaces/IInflationModule.sol";
  *     W1        W2          W4
  */
 
-contract InflationModule is IInflationModule {
+contract RecapitalizationModule is IRecapitalizationModule {
 
     struct Window {
         uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
