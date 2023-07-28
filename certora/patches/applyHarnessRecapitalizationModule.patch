@@ -1,8 +1,8 @@
-diff --git a/contracts/InflationModule.sol b/contracts/InflationModule.sol
+diff --git a/contracts/RecapitalizationModule.sol b/contracts/RecapitalizationModule.sol
 index d26dcd9..1dd682c 100644
---- a/contracts/InflationModule.sol
-+++ b/contracts/InflationModule.sol
-@@ -46,6 +46,22 @@ contract InflationModule is IInflationModule {
+--- a/contracts/RecapitalizationModule.sol
++++ b/contracts/RecapitalizationModule.sol
+@@ -46,6 +46,22 @@ contract RecapitalizationModule is IRecapitalizationModule {
          maximumIssuanceRate = maximumIssuanceRate_;
      }
  

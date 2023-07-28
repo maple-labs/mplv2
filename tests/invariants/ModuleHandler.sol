@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
-import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
+import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
+import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 
@@ -24,24 +24,24 @@ contract ModuleHandler is TestBase {
     IGlobalsLike mapleGlobals;
     IMapleToken  mapleToken;
 
-    IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IEmergencyModule        emergencyModule;
+    IRecapitalizationModule recapitalizationModule;
 
     mapping(address => uint256) allowances;
     mapping(address => uint256) balances;
 
     constructor(
-        IGlobalsLike mapleGlobals_,
-        IMapleToken mapleToken_,
-        IEmergencyModule emergencyModule_,
-        IInflationModule inflationModule_,
-        address claimer_
+        IGlobalsLike            mapleGlobals_,
+        IMapleToken             mapleToken_,
+        IEmergencyModule        emergencyModule_,
+        IRecapitalizationModule recapitalizationModule_,
+        address                 claimer_
     )
     {
-        mapleGlobals    = mapleGlobals_;
-        mapleToken      = mapleToken_;
-        emergencyModule = emergencyModule_;
-        inflationModule = inflationModule_;
+        mapleGlobals           = mapleGlobals_;
+        mapleToken             = mapleToken_;
+        emergencyModule        = emergencyModule_;
+        recapitalizationModule = recapitalizationModule_;
 
         claimer = claimer_;
 
@@ -68,10 +68,10 @@ contract ModuleHandler is TestBase {
         console.log("claim(%s)", seed);
 
         // Skip if nothing is claimable.
-        if (inflationModule.claimable(blockTimestamp) == 0) return;
+        if (recapitalizationModule.claimable(blockTimestamp) == 0) return;
 
         vm.prank(claimer);
-        uint256 amount = inflationModule.claim();
+        uint256 amount = recapitalizationModule.claim();
 
         console.log("Amount of tokens claimed:", amount);
     }
@@ -131,13 +131,13 @@ contract ModuleHandler is TestBase {
 
         vm.prank(governor);
         mapleGlobals.scheduleCall(
-            address(inflationModule),
+            address(recapitalizationModule),
             "IM:SCHEDULE",
-            abi.encodeWithSelector(inflationModule.schedule.selector, windowStarts, issuanceRates)
+            abi.encodeWithSelector(recapitalizationModule.schedule.selector, windowStarts, issuanceRates)
         );
 
         vm.prank(governor);
-        inflationModule.schedule(windowStarts, issuanceRates);
+        recapitalizationModule.schedule(windowStarts, issuanceRates);
     }
 
     function warp(uint256 seed) external {

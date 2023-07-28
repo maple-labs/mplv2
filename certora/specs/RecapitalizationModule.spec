@@ -1,21 +1,21 @@
-using InflationModule as InflationModule;
+using RecapitalizationModule as RecapitalizationModule;
 
 /******************************************************************************************************************************************/
 /*** Methods                                                                                                                            ***/
 /******************************************************************************************************************************************/
 
 methods {
-    // InflationModule Methods
-    function InflationModule.token() external returns (address) envfree;
-    function InflationModule.lastClaimedTimestamp() external returns (uint32) envfree;
-    function InflationModule.lastClaimedWindowId() external returns (uint16) envfree;
-    function InflationModule.lastScheduledWindowId() external returns (uint16) envfree;
-    function InflationModule.windows(uint16 windowId) external returns (uint16, uint32, uint208) envfree;
+    // RecapitalizationModule Methods
+    function RecapitalizationModule.token() external returns (address) envfree;
+    function RecapitalizationModule.lastClaimedTimestamp() external returns (uint32) envfree;
+    function RecapitalizationModule.lastClaimedWindowId() external returns (uint16) envfree;
+    function RecapitalizationModule.lastScheduledWindowId() external returns (uint16) envfree;
+    function RecapitalizationModule.windows(uint16 windowId) external returns (uint16, uint32, uint208) envfree;
 
-    // InflationModule Methods added via patch
-    function InflationModule.getNextWindowId(uint16 windowId) external returns (uint256) envfree;
-    function InflationModule.getWindowStart(uint16 windowId) external returns (uint256) envfree;
-    function InflationModule.getIssuanceRate(uint16 windowId) external returns (uint256) envfree;
+    // RecapitalizationModule Methods added via patch
+    function RecapitalizationModule.getNextWindowId(uint16 windowId) external returns (uint256) envfree;
+    function RecapitalizationModule.getWindowStart(uint16 windowId) external returns (uint256) envfree;
+    function RecapitalizationModule.getIssuanceRate(uint16 windowId) external returns (uint256) envfree;
 
     // External Calls Summerized
     function _.globals() external => DISPATCHER(true);
@@ -32,13 +32,13 @@ methods {
 /******************************************************************************************************************************************/
 
 definition isNonZeroWindowStart(uint16 windowId) returns bool =
-    InflationModule.getWindowStart(windowId) != 0;
+    RecapitalizationModule.getWindowStart(windowId) != 0;
 
 definition isNonZeroIssuanceRate(uint16 windowId) returns bool =
-    InflationModule.getIssuanceRate(windowId) != 0;
+    RecapitalizationModule.getIssuanceRate(windowId) != 0;
 
 definition isNonZeroNextWindowId(uint16 windowId) returns bool =
-    InflationModule.getNextWindowId(windowId) != 0;
+    RecapitalizationModule.getNextWindowId(windowId) != 0;
 
 definition isWindowsEmpty(uint16 windowId) returns bool =
     !isNonZeroWindowStart(windowId) && !isNonZeroIssuanceRate(windowId) && !isNonZeroNextWindowId(windowId);
@@ -52,22 +52,22 @@ invariant zeroWindowsScheduled(uint16 windowId)
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
 
 invariant zeroLastScheduledWindowId()
-    InflationModule.lastScheduledWindowId() == 0
+    RecapitalizationModule.lastScheduledWindowId() == 0
     filtered { f -> f.selector != sig:schedule(uint32[], uint208[]).selector }
 
 invariant zeroLastClaimedWindowId()
-    InflationModule.lastClaimedWindowId() == 0
+    RecapitalizationModule.lastClaimedWindowId() == 0
     filtered { f -> f.selector != sig:claim().selector }
 
 invariant zeroLastClaimedTimestamp()
-    InflationModule.lastClaimedTimestamp() == 0
+    RecapitalizationModule.lastClaimedTimestamp() == 0
     filtered { f -> f.selector != sig:claim().selector }
 
 invariant zeroWindowState()
-    InflationModule.getWindowStart(0) == 0 && InflationModule.getIssuanceRate(0) == 0;
+    RecapitalizationModule.getWindowStart(0) == 0 && RecapitalizationModule.getIssuanceRate(0) == 0;
 
 invariant validTailForWindowsLL()
-    InflationModule.getNextWindowId(InflationModule.lastScheduledWindowId()) == 0;
+    RecapitalizationModule.getNextWindowId(RecapitalizationModule.lastScheduledWindowId()) == 0;
 
 /******************************************************************************************************************************************/
 /*** CVL Helper Functions                                                                                                               ***/
@@ -96,11 +96,11 @@ rule LastClaimedTimestampGtePriorLastClaimedTimestamp() {
 
     safeAssumptions(windowId);
 
-    mathint lastClaimedTimestampBefore = InflationModule.lastClaimedTimestamp();
+    mathint lastClaimedTimestampBefore = RecapitalizationModule.lastClaimedTimestamp();
 
     claim(eClaim);
 
-    mathint lastClaimedTimestampAfter = InflationModule.lastClaimedTimestamp();
+    mathint lastClaimedTimestampAfter = RecapitalizationModule.lastClaimedTimestamp();
 
     assert lastClaimedTimestampAfter >= lastClaimedTimestampBefore;
 }
@@ -110,11 +110,11 @@ rule LastClaimedWindowIdGtePriorLastClaimedWindowId() {
 
     safeAssumptions(windowId);
 
-    mathint lastClaimedWindowIdBefore = InflationModule.lastClaimedWindowId();
+    mathint lastClaimedWindowIdBefore = RecapitalizationModule.lastClaimedWindowId();
 
     claim(eClaim);
 
-    mathint lastClaimedWindowIdAfter = InflationModule.lastClaimedWindowId();
+    mathint lastClaimedWindowIdAfter = RecapitalizationModule.lastClaimedWindowId();
 
     assert lastClaimedWindowIdAfter >= lastClaimedWindowIdBefore;
 }
@@ -124,11 +124,11 @@ rule lastScheduledWindowIdOnlyIncreases() {
 
     safeAssumptions(windowId);
 
-    mathint lastScheduledWindowIdBefore = InflationModule.lastScheduledWindowId();
+    mathint lastScheduledWindowIdBefore = RecapitalizationModule.lastScheduledWindowId();
 
     setupSchedule(eSchedule);
 
-    mathint lastScheduledWindowIdAfter = InflationModule.lastScheduledWindowId();
+    mathint lastScheduledWindowIdAfter = RecapitalizationModule.lastScheduledWindowId();
 
     assert lastScheduledWindowIdAfter > lastScheduledWindowIdBefore;
 }
@@ -145,11 +145,11 @@ rule claimableAmountDoesNotChangeForABlock() {
 
     setupSchedule(eSchedule);
 
-    mathint claimableBefore = InflationModule.claimable(e, eblockTimestamp);
+    mathint claimableBefore = RecapitalizationModule.claimable(e, eblockTimestamp);
 
     f(e, args);
 
-    mathint claimableAfter = InflationModule.claimable(e, eblockTimestamp);
+    mathint claimableAfter = RecapitalizationModule.claimable(e, eblockTimestamp);
 
     assert claimableBefore == claimableAfter => f.selector != sig:claim().selector;
 }
@@ -163,8 +163,8 @@ rule nextWindowIdOnlyIncreases() {
 
     f(e, args);
 
-    mathint nextWindowId  = InflationModule.getNextWindowId(windowId);
-    mathint nextWindowId2 = InflationModule.getNextWindowId(windowId2);
+    mathint nextWindowId  = RecapitalizationModule.getNextWindowId(windowId);
+    mathint nextWindowId2 = RecapitalizationModule.getNextWindowId(windowId2);
 
     assert isNonZeroNextWindowId(windowId) && isNonZeroNextWindowId(windowId2) => nextWindowId > nextWindowId2;
 }
@@ -178,8 +178,8 @@ rule nextWindowStartOnlyIncreases() {
 
     f(e, args);
 
-    mathint nextWindowStart  = InflationModule.getWindowStart(windowId);
-    mathint nextWindowStart2 = InflationModule.getWindowStart(windowId2);
+    mathint nextWindowStart  = RecapitalizationModule.getWindowStart(windowId);
+    mathint nextWindowStart2 = RecapitalizationModule.getWindowStart(windowId2);
 
     assert isNonZeroWindowStart(windowId) && isNonZeroWindowStart(windowId2) => nextWindowStart > nextWindowStart2;
 }
@@ -193,7 +193,7 @@ rule lastClaimedTimestampLteBlockTimestamp() {
 
     f(e, args);
 
-    assert InflationModule.lastClaimedTimestamp() <= eblockTimestamp;
+    assert RecapitalizationModule.lastClaimedTimestamp() <= eblockTimestamp;
 }
 
 rule validLastClaimedTimestamp() {
@@ -211,9 +211,9 @@ rule validLastClaimedTimestamp() {
 
     f(e, args);
 
-    uint32 lastClaimedTimestamp = InflationModule.lastClaimedTimestamp();
-    uint16 nextWindowId         = require_uint16(InflationModule.getNextWindowId(InflationModule.lastClaimedWindowId()));
+    uint32 lastClaimedTimestamp = RecapitalizationModule.lastClaimedTimestamp();
+    uint16 nextWindowId         = require_uint16(RecapitalizationModule.getNextWindowId(RecapitalizationModule.lastClaimedWindowId()));
 
-    assert (lastClaimedTimestamp >= require_uint32(InflationModule.getWindowStart(InflationModule.lastClaimedWindowId()))) &&
-        (nextWindowId != 0 => lastClaimedTimestamp < require_uint32(InflationModule.getWindowStart(nextWindowId)));
+    assert (lastClaimedTimestamp >= require_uint32(RecapitalizationModule.getWindowStart(RecapitalizationModule.lastClaimedWindowId()))) &&
+        (nextWindowId != 0 => lastClaimedTimestamp < require_uint32(RecapitalizationModule.getWindowStart(nextWindowId)));
 }

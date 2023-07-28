@@ -5,15 +5,15 @@ import { IMigrator } from "../../modules/migrator/contracts/interfaces/IMigrator
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
-import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
+import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
+import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
-import { EmergencyModule }       from "../../contracts/EmergencyModule.sol";
-import { InflationModule }       from "../../contracts/InflationModule.sol";
-import { MapleToken }            from "../../contracts/MapleToken.sol";
-import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
+import { EmergencyModule }        from "../../contracts/EmergencyModule.sol";
+import { MapleToken }             from "../../contracts/MapleToken.sol";
+import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
 import { DistributionHandler } from "../invariants/DistributionHandler.sol";
 import { ModuleHandler }       from "../invariants/ModuleHandler.sol";
@@ -37,11 +37,11 @@ contract xMPLMigration is ModuleInvariants {
 
     uint256 start;
 
-    IGlobalsLike     globals;
-    IMapleToken      token;
-    IMigrator        migrator;
-    IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IGlobalsLike            globals;
+    IMapleToken             token;
+    IMigrator               migrator;
+    IEmergencyModule        emergencyModule;
+    IRecapitalizationModule recapitalizationModule;
 
     DistributionHandler distributionHandler;
     ModuleHandler       moduleHandler;
@@ -56,8 +56,8 @@ contract xMPLMigration is ModuleInvariants {
         token    = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
         migrator = IMigrator(deployMigrator(address(oldToken), address(token)));
 
-        emergencyModule = new EmergencyModule(address(globals), address(token));
-        inflationModule = new InflationModule(address(token));
+        emergencyModule        = new EmergencyModule(address(globals), address(token));
+        recapitalizationModule = new RecapitalizationModule(address(token));
 
         configureContracts();
         setupHandlers();
@@ -73,15 +73,15 @@ contract xMPLMigration is ModuleInvariants {
             distributionHandler.entryPoint(uint256(keccak256(abi.encode(seed, i, "weight"))), uint256(keccak256(abi.encode(seed, i))));
         }
 
-        assert_inflationModule_invariant_A(inflationModule);
-        assert_inflationModule_invariant_B(inflationModule);
-        assert_inflationModule_invariant_C(inflationModule);
-        assert_inflationModule_invariant_D(inflationModule);
-        assert_inflationModule_invariant_E(inflationModule);
-        assert_inflationModule_invariant_F(inflationModule);
-        assert_inflationModule_invariant_G(inflationModule);
-        assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
-        assert_inflationModule_invariant_I(inflationModule);
+        assert_recapitalizationModule_invariant_A(recapitalizationModule);
+        assert_recapitalizationModule_invariant_B(recapitalizationModule);
+        assert_recapitalizationModule_invariant_C(recapitalizationModule);
+        assert_recapitalizationModule_invariant_D(recapitalizationModule);
+        assert_recapitalizationModule_invariant_E(recapitalizationModule);
+        assert_recapitalizationModule_invariant_F(recapitalizationModule);
+        assert_recapitalizationModule_invariant_G(recapitalizationModule);
+        assert_recapitalizationModule_invariant_H(recapitalizationModule, moduleHandler.blockTimestamp());
+        assert_recapitalizationModule_invariant_I(recapitalizationModule);
     }
 
     /**************************************************************************************************************************************/
@@ -95,7 +95,7 @@ contract xMPLMigration is ModuleInvariants {
         xmpl.scheduleMigration(address(migrator), address(token));
 
         vm.warp(start + 864000 + 1 seconds);
-        
+
         vm.prank(owner);
         xmpl.performMigration();
     }
@@ -112,7 +112,7 @@ contract xMPLMigration is ModuleInvariants {
         vm.startPrank(governor);
 
         globals.setMapleTreasury(treasury);
-        globals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);
+        globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer, true);
 
         globals.scheduleCall(
             address(token),
@@ -125,10 +125,10 @@ contract xMPLMigration is ModuleInvariants {
         globals.scheduleCall(
             address(token),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(inflationModule))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(recapitalizationModule))
         );
 
-        token.addModule(address(inflationModule));
+        token.addModule(address(recapitalizationModule));
 
         vm.stopPrank();
     }
@@ -150,7 +150,7 @@ contract xMPLMigration is ModuleInvariants {
         weights[3] = 5;
         weights[4] = 5;
 
-        moduleHandler       = new ModuleHandler(globals, token, emergencyModule, inflationModule, claimer);
+        moduleHandler       = new ModuleHandler(globals, token, emergencyModule, recapitalizationModule, claimer);
         distributionHandler = new DistributionHandler(address(moduleHandler), selectors, weights);
     }
 

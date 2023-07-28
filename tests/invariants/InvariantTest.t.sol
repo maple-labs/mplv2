@@ -3,15 +3,15 @@ pragma solidity 0.8.18;
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { IEmergencyModule } from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IInflationModule } from "../../contracts/interfaces/IInflationModule.sol";
-import { IMapleToken }      from "../../contracts/interfaces/IMapleToken.sol";
+import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
+import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
-import { EmergencyModule }       from "../../contracts/EmergencyModule.sol";
-import { InflationModule }       from "../../contracts/InflationModule.sol";
-import { MapleToken }            from "../../contracts/MapleToken.sol";
-import { MapleTokenInitializer } from "../../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }       from "../../contracts/MapleTokenProxy.sol";
+import { EmergencyModule }        from "../../contracts/EmergencyModule.sol";
+import { MapleToken }             from "../../contracts/MapleToken.sol";
+import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
+import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";
@@ -30,8 +30,8 @@ contract InvariantTest is ModuleInvariants {
     IGlobalsLike mapleGlobals;
     IMapleToken  mapleToken;
 
-    IEmergencyModule emergencyModule;
-    IInflationModule inflationModule;
+    IEmergencyModule        emergencyModule;
+    IRecapitalizationModule recapitalizationModule;
 
     DistributionHandler distributionHandler;
     ModuleHandler       moduleHandler;
@@ -51,15 +51,15 @@ contract InvariantTest is ModuleInvariants {
             migrator
         )));
 
-        emergencyModule = new EmergencyModule(address(mapleGlobals), address(mapleToken));
-        inflationModule = new InflationModule(address(mapleToken));
+        emergencyModule        = new EmergencyModule(address(mapleGlobals), address(mapleToken));
+        recapitalizationModule = new RecapitalizationModule(address(mapleToken));
     }
 
     function configureContracts() internal {
         vm.startPrank(governor);
 
         mapleGlobals.setMapleTreasury(treasury);
-        mapleGlobals.setValidInstanceOf("INFLATION_CLAIMER", claimer, true);
+        mapleGlobals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer, true);
 
         mapleGlobals.scheduleCall(
             address(mapleToken),
@@ -72,10 +72,10 @@ contract InvariantTest is ModuleInvariants {
         mapleGlobals.scheduleCall(
             address(mapleToken),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(inflationModule))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(recapitalizationModule))
         );
 
-        mapleToken.addModule(address(inflationModule));
+        mapleToken.addModule(address(recapitalizationModule));
 
         vm.stopPrank();
     }
@@ -97,7 +97,7 @@ contract InvariantTest is ModuleInvariants {
         weights[3] = 5;
         weights[4] = 5;
 
-        moduleHandler       = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, inflationModule, claimer);
+        moduleHandler       = new ModuleHandler(mapleGlobals, mapleToken, emergencyModule, recapitalizationModule, claimer);
         distributionHandler = new DistributionHandler(address(moduleHandler), selectors, weights);
 
         targetContract(address(distributionHandler));
@@ -108,15 +108,15 @@ contract InvariantTest is ModuleInvariants {
     /**************************************************************************************************************************************/
 
     function statefulFuzz_assertInvariants() external {
-        assert_inflationModule_invariant_A(inflationModule);
-        assert_inflationModule_invariant_B(inflationModule);
-        assert_inflationModule_invariant_C(inflationModule);
-        assert_inflationModule_invariant_D(inflationModule);
-        assert_inflationModule_invariant_E(inflationModule);
-        assert_inflationModule_invariant_F(inflationModule);
-        assert_inflationModule_invariant_G(inflationModule);
-        assert_inflationModule_invariant_H(inflationModule, moduleHandler.blockTimestamp());
-        assert_inflationModule_invariant_I(inflationModule);
+        assert_recapitalizationModule_invariant_A(recapitalizationModule);
+        assert_recapitalizationModule_invariant_B(recapitalizationModule);
+        assert_recapitalizationModule_invariant_C(recapitalizationModule);
+        assert_recapitalizationModule_invariant_D(recapitalizationModule);
+        assert_recapitalizationModule_invariant_E(recapitalizationModule);
+        assert_recapitalizationModule_invariant_F(recapitalizationModule);
+        assert_recapitalizationModule_invariant_G(recapitalizationModule);
+        assert_recapitalizationModule_invariant_H(recapitalizationModule, moduleHandler.blockTimestamp());
+        assert_recapitalizationModule_invariant_I(recapitalizationModule);
     }
 
 }

@@ -3,11 +3,11 @@ pragma solidity 0.8.18;
 
 import { IGlobalsLike, IMapleTokenLike } from "./interfaces/Interfaces.sol";
 
-import { IInflationModule } from "./interfaces/IInflationModule.sol";
+import { IRecapitalizationModule } from "./interfaces/IRecapitalizationModule.sol";
 
 /*
- * The inflation module has a defined schedule of inflation that defines how new tokens will be issued over time.
- * Here is an example of an inflation schedule with three windows, the first two windows have a defined start and end.
+ * The recapitalization module has a defined schedule of recapitalization that defines how new tokens will be issued over time.
+ * Here is an example of an recapitalization schedule with three windows, the first two windows have a defined start and end.
  * The last window has a defined start but lasts indefinitely after it starts since it is the last window in the schedule.
  *
  * |--------|------|---------------->
@@ -38,7 +38,7 @@ import { IInflationModule } from "./interfaces/IInflationModule.sol";
  *     W1        W2          W4
  */
 
-contract InflationModule is IInflationModule {
+contract RecapitalizationModule is IRecapitalizationModule {
 
     struct Window {
         uint16  nextWindowId;  // Identifier of the window that takes effect after this one (zero if there is none).
@@ -64,7 +64,7 @@ contract InflationModule is IInflationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("INFLATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("RECAPITALIZATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
 
         _;
     }

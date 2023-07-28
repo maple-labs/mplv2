@@ -4,8 +4,8 @@ source: contracts
 packages:
   - path: contracts/EmergencyModule.sol
     contractName: EmergencyModule
-  - path: contracts/InflationModule.sol
-    contractName: InflationModule
+  - path: contracts/RecapitalizationModule.sol
+    contractName: RecapitalizationModule
   - path: contracts/MapleToken.sol
     contractName: MapleToken
   - path: contracts/MapleTokenInitializer.sol

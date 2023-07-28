@@ -6,7 +6,7 @@ optimizer = false
 block_timestamp = 1_685_721_539
 gas_limit = "18446744073709551615"
 verbosity = 3
-gas_reports = ["EmergencyModule", "InflationModule", "MapleTokenProxy"]
+gas_reports = ["EmergencyModule", "RecapitalizationModule", "MapleTokenProxy"]
 
 [profile.default.fuzz]
 runs = 1_000
