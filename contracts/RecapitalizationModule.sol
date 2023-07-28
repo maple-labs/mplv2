@@ -21,7 +21,7 @@ import { IRecapitalizationModule } from "./interfaces/IRecapitalizationModule.so
  *   W1        W2          W3         W4
  *
  * New windows can be scheduled, but only from the current time, retroactive scheduling is not possible.
- * When new windows are scheduled after the last window in the schedule starts, they will be appened to the schedule.
+ * When new windows are scheduled after the last window in the schedule starts, they will be appended to the schedule.
  *
  * |--------|----------|----------------->
  *     W1        W2         ^  W3
