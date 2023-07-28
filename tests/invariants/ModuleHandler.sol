@@ -2,8 +2,8 @@
 pragma solidity 0.8.18;
 
 import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 

@@ -4,14 +4,14 @@ pragma solidity 0.8.18;
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
 import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { EmergencyModule }        from "../../contracts/EmergencyModule.sol";
-import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 import { MapleToken }             from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
 import { IGlobalsLike } from "../utils/Interfaces.sol";
 import { TestBase }     from "../utils/TestBase.sol";

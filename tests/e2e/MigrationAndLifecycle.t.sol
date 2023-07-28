@@ -5,15 +5,15 @@ import { IMigrator } from "../../modules/migrator/contracts/interfaces/IMigrator
 
 import { NonTransparentProxy } from "../../modules/ntp/contracts/NonTransparentProxy.sol";
 
-import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
 import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
+import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
 import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { EmergencyModule }        from "../../contracts/EmergencyModule.sol";
-import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 import { MapleToken }             from "../../contracts/MapleToken.sol";
 import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
 import { DistributionHandler } from "../invariants/DistributionHandler.sol";
 import { ModuleHandler }       from "../invariants/ModuleHandler.sol";
@@ -95,7 +95,7 @@ contract xMPLMigration is ModuleInvariants {
         xmpl.scheduleMigration(address(migrator), address(token));
 
         vm.warp(start + 864000 + 1 seconds);
-        
+
         vm.prank(owner);
         xmpl.performMigration();
     }
