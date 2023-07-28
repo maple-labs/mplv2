@@ -3,10 +3,10 @@ pragma solidity 0.8.18;
 
 import { console2 as console, Script } from "../modules/forge-std/src/Script.sol";
 
-import { RecapitalizationModule } from "../contracts/RecapitalizationModule.sol";
 import { MapleToken }             from "../contracts/MapleToken.sol";
 import { MapleTokenInitializer }  from "../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }        from "../contracts/MapleTokenProxy.sol";
+import { RecapitalizationModule } from "../contracts/RecapitalizationModule.sol";
 
 contract DeployToken is Script {
 
