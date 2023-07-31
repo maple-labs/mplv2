@@ -137,11 +137,10 @@ contract RecapitalizationModule is IRecapitalizationModule {
 
     function claimable(uint32 to_) external view returns (uint256 claimableAmount_) {
         uint32 lastClaimedTimestamp_ = lastClaimedTimestamp;
-        uint16 lastClaimableWindowId_;
 
         if (to_ <= lastClaimedTimestamp_) return 0;
 
-        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp_, to_);
+        ( , claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp_, to_);
     }
 
     function currentIssuanceRate() external view returns (uint208 issuanceRate_) {
