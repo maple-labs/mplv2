@@ -128,7 +128,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
             emit WindowScheduled(insertionWindowId_ + index_, newWindowId_ + index_, windowStarts_[index_], issuanceRates_[index_]);
         }
 
-        lastScheduledWindowId += newWindowCount_;
+        lastScheduledWindowId = newWindowId_ + newWindowCount_ - 1;
     }
 
     /**************************************************************************************************************************************/
@@ -141,7 +141,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
 
         if (to_ <= lastClaimedTimestamp_) return 0;
 
-        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, to_);
+        ( lastClaimableWindowId_, claimableAmount_ ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp_, to_);
     }
 
     function currentIssuanceRate() external view returns (uint208 issuanceRate_) {
