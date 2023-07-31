@@ -63,7 +63,7 @@ contract MapleToken is IMapleToken, ERC20Proxied {
     /*** View Functions                                                                                                                 ***/
     /**************************************************************************************************************************************/
 
-    function implementation() public view returns (address implementation_) {
+    function implementation() external view returns (address implementation_) {
         implementation_ = _getAddress(IMPLEMENTATION_SLOT);
     }
 
