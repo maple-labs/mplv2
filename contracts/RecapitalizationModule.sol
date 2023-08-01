@@ -224,9 +224,9 @@ contract RecapitalizationModule is IRecapitalizationModule {
     }
 
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
-        require(windowStarts_.length == issuanceRates_.length,         "RM:VW:LENGTH_MISMATCH");
-        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "RM:VW:EMPTY_ARRAYS");
-        require(windowStarts_[0] >= block.timestamp,                   "RM:VW:OUT_OF_DATE");
+        require(windowStarts_.length == issuanceRates_.length, "RM:VW:LENGTH_MISMATCH");
+        require(windowStarts_.length > 0,                      "RM:VW:EMPTY_ARRAYS");
+        require(windowStarts_[0] >= block.timestamp,           "RM:VW:OUT_OF_DATE");
 
         for (uint256 index_ = 0; index_ < windowStarts_.length - 1; ++index_) {
             require(windowStarts_[index_] < windowStarts_[index_ + 1], "RM:VW:OUT_OF_ORDER");
