@@ -60,7 +60,7 @@ contract RecapitalizationModuleTestBase is TestBase {
 
     function expectUnscheduleCall() internal {
         globals.__expectCall();
-        globals.unscheduleCall(governor, "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
+        globals.unscheduleCall(governor, "RM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, windowStarts, issuanceRates));
     }
 
 }
@@ -91,18 +91,18 @@ contract ClaimTests is RecapitalizationModuleTestBase {
     function test_claim_noClaimer() external {
         globals.__setIsInstance(false);
 
-        vm.expectRevert("IM:NOT_CLAIMER");
+        vm.expectRevert("RM:NOT_CLAIMER");
         module.claim();
     }
 
     function test_claim_zeroClaim_atomic() external {
-        vm.expectRevert("IM:C:ZERO_CLAIM");
+        vm.expectRevert("RM:C:ZERO_CLAIM");
         module.claim();
     }
 
     function test_claim_zeroClaim_afterWarp() external {
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_CLAIM");
+        vm.expectRevert("RM:C:ZERO_CLAIM");
         module.claim();
     }
 
@@ -114,7 +114,7 @@ contract ClaimTests is RecapitalizationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_CLAIM");
+        vm.expectRevert("RM:C:ZERO_CLAIM");
         module.claim();
     }
 
@@ -126,7 +126,7 @@ contract ClaimTests is RecapitalizationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
 
         vm.warp(start + 10 days);
-        vm.expectRevert("IM:C:ZERO_CLAIM");
+        vm.expectRevert("RM:C:ZERO_CLAIM");
         module.claim();
     }
 
@@ -393,33 +393,33 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();
-        vm.expectRevert("IM:NOT_GOVERNOR");
+        vm.expectRevert("RM:NOT_GOVERNOR");
         module.schedule(windowStarts, issuanceRates);
     }
 
     function test_schedule_notScheduled() external {
         globals.__setIsValidScheduledCall(false);
 
-        vm.expectRevert("IM:NOT_SCHEDULED");
+        vm.expectRevert("RM:NOT_SCHEDULED");
         module.schedule(windowStarts, issuanceRates);
     }
 
     function test_schedule_noArrays() external {
-        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        vm.expectRevert("RM:VW:EMPTY_ARRAY");
         module.schedule(windowStarts, issuanceRates);
     }
 
     function test_schedule_noWindowStarts() external {
         issuanceRates.push(1e18);
 
-        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        vm.expectRevert("RM:VW:EMPTY_ARRAY");
         module.schedule(windowStarts, issuanceRates);
     }
 
     function test_schedule_noIssuanceRates() external {
         windowStarts.push(start);
 
-        vm.expectRevert("IM:VW:EMPTY_ARRAY");
+        vm.expectRevert("RM:VW:EMPTY_ARRAY");
         module.schedule(windowStarts, issuanceRates);
     }
 
@@ -429,7 +429,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
 
         issuanceRates.push(1e18);
 
-        vm.expectRevert("IM:VW:LENGTH_MISMATCH");
+        vm.expectRevert("RM:VW:LENGTH_MISMATCH");
         module.schedule(windowStarts, issuanceRates);
     }
 
@@ -437,7 +437,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         windowStarts.push(start - 1 seconds);
         issuanceRates.push(1e18);
 
-        vm.expectRevert("IM:VW:OUT_OF_DATE");
+        vm.expectRevert("RM:VW:OUT_OF_DATE");
         module.schedule(windowStarts, issuanceRates);
     }
 
@@ -448,7 +448,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         issuanceRates.push(0.95e18);
         issuanceRates.push(1e18);
 
-        vm.expectRevert("IM:VW:OUT_OF_ORDER");
+        vm.expectRevert("RM:VW:OUT_OF_ORDER");
         module.schedule(windowStarts, issuanceRates);
     }
 
@@ -655,7 +655,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         issuanceRates.push(200);
 
         // Schedule a window with a duplicate starting time.
-        vm.expectRevert("IM:S:DUPLICATE_WINDOW");
+        vm.expectRevert("RM:S:DUPLICATE_WINDOW");
         module.schedule(windowStarts, issuanceRates);
 
         windowStarts.pop();

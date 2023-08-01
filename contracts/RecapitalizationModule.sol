@@ -64,13 +64,13 @@ contract RecapitalizationModule is IRecapitalizationModule {
     /**************************************************************************************************************************************/
 
     modifier onlyClaimer {
-        require(IGlobalsLike(_globals()).isInstanceOf("RECAPITALIZATION_CLAIMER", msg.sender), "IM:NOT_CLAIMER");
+        require(IGlobalsLike(_globals()).isInstanceOf("RECAPITALIZATION_CLAIMER", msg.sender), "RM:NOT_CLAIMER");
 
         _;
     }
 
     modifier onlyGovernor {
-        require(msg.sender == IGlobalsLike(_globals()).governor(), "IM:NOT_GOVERNOR");
+        require(msg.sender == IGlobalsLike(_globals()).governor(), "RM:NOT_GOVERNOR");
 
         _;
     }
@@ -79,7 +79,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
         IGlobalsLike globals_ = IGlobalsLike(_globals());
         bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
 
-        require(isScheduledCall_, "IM:NOT_SCHEDULED");
+        require(isScheduledCall_, "RM:NOT_SCHEDULED");
 
         globals_.unscheduleCall(msg.sender, functionId_, msg.data);
 
@@ -97,7 +97,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
             uint256 claimableAmount_
         ) = _claimable(lastClaimedWindowId, lastClaimedTimestamp, uint32(block.timestamp));
 
-        require(claimableAmount_ > 0, "IM:C:ZERO_CLAIM");
+        require(claimableAmount_ > 0, "RM:C:ZERO_CLAIM");
 
         lastClaimedTimestamp = uint32(block.timestamp);
         lastClaimedWindowId  = lastClaimableWindowId_;
@@ -107,14 +107,14 @@ contract RecapitalizationModule is IRecapitalizationModule {
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
     }
 
-    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("IM:SCHEDULE") {
+    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("RM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
         // Find at which point in the linked list to insert the new windows.
         uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
         uint16 newWindowId_       = lastScheduledWindowId + 1;
 
-        require(windowStarts_[0] > windows[insertionWindowId_].windowStart, "IM:S:DUPLICATE_WINDOW");
+        require(windowStarts_[0] > windows[insertionWindowId_].windowStart, "RM:S:DUPLICATE_WINDOW");
 
         windows[insertionWindowId_].nextWindowId = newWindowId_;
 
@@ -225,12 +225,12 @@ contract RecapitalizationModule is IRecapitalizationModule {
     }
 
     function _validateWindows(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) internal view {
-        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "IM:VW:EMPTY_ARRAY");
-        require(windowStarts_.length == issuanceRates_.length,         "IM:VW:LENGTH_MISMATCH");
-        require(windowStarts_[0] >= block.timestamp,                   "IM:VW:OUT_OF_DATE");
+        require(windowStarts_.length > 0 && issuanceRates_.length > 0, "RM:VW:EMPTY_ARRAY");
+        require(windowStarts_.length == issuanceRates_.length,         "RM:VW:LENGTH_MISMATCH");
+        require(windowStarts_[0] >= block.timestamp,                   "RM:VW:OUT_OF_DATE");
 
         for (uint256 index_ = 0; index_ < windowStarts_.length - 1; ++index_) {
-            require(windowStarts_[index_] < windowStarts_[index_ + 1], "IM:VW:OUT_OF_ORDER");
+            require(windowStarts_[index_] < windowStarts_[index_ + 1], "RM:VW:OUT_OF_ORDER");
         }
     }
 
