@@ -624,6 +624,54 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         assertWindow(4, 0, start + 120 days, 0.99e18);
     }
 
+    function test_schedule_duplicate() public {
+        windowStarts.push(start);
+        windowStarts.push(start + 1 seconds);
+
+        issuanceRates.push(100);
+        issuanceRates.push(150);
+
+        // Schedule the initial windows.
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.lastScheduledWindowId(), 2);
+
+        assertWindow(0, 1, 0,                 0);
+        assertWindow(1, 2, start,             100);
+        assertWindow(2, 0, start + 1 seconds, 150);
+
+        vm.warp(start + 1 seconds);
+        module.claim();
+
+        assertEq(module.lastClaimedTimestamp(), start + 1 seconds);
+        assertEq(module.lastClaimedWindowId(),  2);
+
+        windowStarts.pop();
+        windowStarts.pop();
+        windowStarts.push(start + 1 seconds);
+
+        issuanceRates.pop();
+        issuanceRates.pop();
+        issuanceRates.push(200);
+
+        // Schedule a window with a duplicate starting time.
+        vm.expectRevert("IM:S:DUPLICATE_WINDOW");
+        module.schedule(windowStarts, issuanceRates);
+
+        windowStarts.pop();
+        windowStarts.push(start + 2 seconds);
+
+        // Schedule a window with a valid starting time.
+        module.schedule(windowStarts, issuanceRates);
+
+        assertEq(module.lastScheduledWindowId(), 3);
+
+        assertWindow(0, 1, 0,                 0);
+        assertWindow(1, 2, start,             100);
+        assertWindow(2, 3, start + 1 seconds, 150);
+        assertWindow(3, 0, start + 2 seconds, 200);
+    }
+
 }
 
 contract ViewFunctionTests is RecapitalizationModuleTestBase {

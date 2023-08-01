@@ -114,6 +114,8 @@ contract RecapitalizationModule is IRecapitalizationModule {
         uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
         uint16 newWindowId_       = lastScheduledWindowId + 1;
 
+        require(windowStarts_[0] > windows[insertionWindowId_].windowStart, "IM:S:DUPLICATE_WINDOW");
+
         windows[insertionWindowId_].nextWindowId = newWindowId_;
 
         // Create all the new windows and link them up to each other.
