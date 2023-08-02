@@ -8,20 +8,24 @@ interface IRecapitalizationModule {
     /**************************************************************************************************************************************/
 
     /**
-     * @dev    Emitted when tokens are claimed.
-     * @param  amountClaimed       The amount of tokens that were claimed.
-     * @param  lastClaimedWindowId The identifier of the window during which the tokens were claimed.
+     * @dev   Emitted when tokens are claimed.
+     * @param amountClaimed       The amount of tokens that were claimed.
+     * @param lastClaimedWindowId The identifier of the window during which the tokens were claimed.
      */
     event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
 
     /**
-     * @dev    Emitted when new windows are scheduled.
+     * @dev   Emitted when new windows are scheduled.
      * @param previousWindowId The identifier of the window that comes before the scheduled window (zero if there is none).
-     * @param windowId         The identifier of the window that was scheduled.
-     * @param windowStart      The timestamps that mark when each windows starts.
-     * @param issuanceRate     The issuance rates that will be applied to each window.
+     * @param newWindowId      The identifier of the window that was scheduled.
+     * @param windowStart      The timestamps that marks when the windows starts.
+     * @param issuanceRate     The issuance rates that will be applied to the window.
      */
-    event WindowScheduled(uint16 previousWindowId, uint16 windowId, uint32 windowStart, uint208 issuanceRate);
+    event WindowScheduled(uint16 previousWindowId, uint16 indexed newWindowId, uint32 indexed windowStart, uint208 issuanceRate);
+
+    /**************************************************************************************************************************************/
+    /*** Functions                                                                                                                      ***/
+    /**************************************************************************************************************************************/
 
     /**
      *  @dev    Claims tokens from the time of the last claim up until the current time.

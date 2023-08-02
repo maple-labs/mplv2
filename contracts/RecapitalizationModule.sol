@@ -111,26 +111,30 @@ contract RecapitalizationModule is IRecapitalizationModule {
         _validateWindows(windowStarts_, issuanceRates_);
 
         // Find at which point in the linked list to insert the new windows.
-        uint16 insertionWindowId_ = _findInsertionPoint(windowStarts_[0]);
-        uint16 newWindowId_       = lastScheduledWindowId + 1;
+        uint16 previousWindowId_ = _findInsertionPoint(windowStarts_[0]);
+        uint16 newWindowId_      = lastScheduledWindowId + 1;
 
-        require(windowStarts_[0] > windows[insertionWindowId_].windowStart, "RM:S:DUPLICATE_WINDOW");
+        require(windowStarts_[0] > windows[previousWindowId_].windowStart, "RM:S:DUPLICATE_WINDOW");
 
-        windows[insertionWindowId_].nextWindowId = newWindowId_;
+        windows[previousWindowId_].nextWindowId = newWindowId_;
 
         // Create all the new windows and link them up to each other.
         uint16 newWindowCount_ = uint16(windowStarts_.length);
 
         for (uint16 index_; index_ < newWindowCount_; ++index_) {
-            windows[newWindowId_ + index_] = Window({
-                nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + index_ + 1 : 0,
+            windows[newWindowId_] = Window({
+                nextWindowId: index_ < newWindowCount_ - 1 ? newWindowId_ + 1 : 0,
                 windowStart:  windowStarts_[index_],
                 issuanceRate: issuanceRates_[index_]
             });
-            emit WindowScheduled(insertionWindowId_ + index_, newWindowId_ + index_, windowStarts_[index_], issuanceRates_[index_]);
+
+            emit WindowScheduled(previousWindowId_, newWindowId_, windowStarts_[index_], issuanceRates_[index_]);
+
+            previousWindowId_ = newWindowId_;
+            ++newWindowId_;
         }
 
-        lastScheduledWindowId = newWindowId_ + newWindowCount_ - 1;
+        lastScheduledWindowId = newWindowId_ - 1;
     }
 
     /**************************************************************************************************************************************/
