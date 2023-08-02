@@ -47,7 +47,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         uint208[] memory rates = new uint208[](1);
         rates[0] = 1e18;
 
-        globals.scheduleCall(address(module), "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
+        globals.scheduleCall(address(module), "RM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
 
         module.schedule(times, rates);
         vm.stopPrank();
@@ -56,7 +56,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
     }
 
     function test_recapitalizationModule_claim_notClaimer() external {
-        vm.expectRevert("IM:NOT_CLAIMER");
+        vm.expectRevert("RM:NOT_CLAIMER");
         module.claim();
     }
 
@@ -98,7 +98,7 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
         rates[0] = 0.5e18;
 
         vm.startPrank(governor);
-        globals.scheduleCall(address(module), "IM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
+        globals.scheduleCall(address(module), "RM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
         module.schedule(times, rates);
         vm.stopPrank();
 

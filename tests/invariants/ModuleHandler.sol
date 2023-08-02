@@ -132,7 +132,7 @@ contract ModuleHandler is TestBase {
         vm.prank(governor);
         mapleGlobals.scheduleCall(
             address(recapitalizationModule),
-            "IM:SCHEDULE",
+            "RM:SCHEDULE",
             abi.encodeWithSelector(recapitalizationModule.schedule.selector, windowStarts, issuanceRates)
         );
 
