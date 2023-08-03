@@ -128,7 +128,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
                 issuanceRate: issuanceRates_[index_]
             });
 
-            emit WindowScheduled(previousWindowId_, newWindowId_, windowStarts_[index_], issuanceRates_[index_]);
+            emit WindowScheduled(newWindowId_, windowStarts_[index_], issuanceRates_[index_], previousWindowId_);
 
             previousWindowId_ = newWindowId_;
             ++newWindowId_;

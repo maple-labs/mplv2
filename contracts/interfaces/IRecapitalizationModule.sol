@@ -16,12 +16,12 @@ interface IRecapitalizationModule {
 
     /**
      *  @dev   Emitted when a new window is scheduled.
-     *  @param previousWindowId The identifier of the window that comes before the newly scheduled window (zero if there is none).
      *  @param newWindowId      The identifier of the new window that was scheduled.
      *  @param windowStart      The timestamp that marks when the new windows starts.
      *  @param issuanceRate     The issuance rate that will be applied to the new window.
+     *  @param previousWindowId The identifier of the window that comes before the newly scheduled window (zero if there is none).
      */
-    event WindowScheduled(uint16 previousWindowId, uint16 indexed newWindowId, uint32 indexed windowStart, uint208 issuanceRate);
+    event WindowScheduled(uint16 indexed newWindowId, uint32 indexed windowStart, uint208 issuanceRate, uint16 previousWindowId);
 
     /**************************************************************************************************************************************/
     /*** Functions                                                                                                                      ***/
