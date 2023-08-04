@@ -389,7 +389,7 @@ contract FindInsertionPointTests is RecapitalizationModuleTestBase {
 
 contract ScheduleTests is RecapitalizationModuleTestBase {
 
-    event WindowScheduled(uint16 windowId, uint16 previousWindowId, uint32 windowStart, uint208 issuanceRate);
+    event WindowScheduled(uint16 indexed newWindowId, uint32 indexed windowStart, uint208 issuanceRate, uint16 previousWindowId);
 
     function test_schedule_notGovernor() external {
         vm.stopPrank();
@@ -459,7 +459,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days, 0.9e18);
+        emit WindowScheduled(1, start + 10 days, 0.9e18, 0);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -479,8 +479,10 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
-        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+        emit WindowScheduled(1, start + 10 days,  0.9e18, 0);
+
+        vm.expectEmit();
+        emit WindowScheduled(2, start + 100 days, 0.95e18, 1);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -498,7 +500,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, start + 10 days,  0.9e18, 0);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -508,7 +510,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+        emit WindowScheduled(2, start + 100 days, 0.95e18, 1);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -526,7 +528,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
+        emit WindowScheduled(1, start + 10 days,  0.9e18, 0);
 
         vm.warp(start + 5 days);
         module.schedule(windowStarts, issuanceRates);
@@ -538,7 +540,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         vm.warp(start + 95 days);
 
         vm.expectEmit();
-        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+        emit WindowScheduled(2, start + 100 days, 0.95e18, 1);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -559,8 +561,10 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
-        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+        emit WindowScheduled(1, start + 10 days,  0.9e18, 0);
+
+        vm.expectEmit();
+        emit WindowScheduled(2, start + 100 days, 0.95e18, 1);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -573,8 +577,10 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(2, 3, start + 150 days, 0.96e18);
-        emit WindowScheduled(3, 4, start + 200 days, 0.99e18);
+        emit WindowScheduled(3, start + 150 days, 0.96e18, 2);
+
+        vm.expectEmit();
+        emit WindowScheduled(4, start + 200 days, 0.99e18, 3);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -597,8 +603,10 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(0, 1, start + 10 days,  0.9e18);
-        emit WindowScheduled(1, 2, start + 100 days, 0.95e18);
+        emit WindowScheduled(1, start + 10 days,  0.9e18, 0);
+
+        vm.expectEmit();
+        emit WindowScheduled(2, start + 100 days, 0.95e18, 1);
 
         module.schedule(windowStarts, issuanceRates);
 
@@ -611,8 +619,10 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         expectUnscheduleCall();
 
         vm.expectEmit();
-        emit WindowScheduled(1, 3, start + 50 days,  0.96e18);
-        emit WindowScheduled(3, 4, start + 120 days, 0.99e18);
+        emit WindowScheduled(3, start + 50 days,  0.96e18, 1);
+
+        vm.expectEmit();
+        emit WindowScheduled(4, start + 120 days, 0.99e18, 3);
 
         module.schedule(windowStarts, issuanceRates);
 

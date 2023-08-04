@@ -66,6 +66,8 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
 
         token.removeModule(address(module));
 
+        vm.stopPrank();
+
         vm.warp(start + 1 seconds);
 
         vm.prank(claimer);

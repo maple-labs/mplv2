@@ -180,6 +180,8 @@ contract BurnTests is MapleTokenTestsBase {
     function test_burn_success() external {
         vm.expectEmit();
         emit Transfer(treasury, address(0), 1);
+
+        vm.expectEmit();
         emit Burn(treasury, 1);
 
         vm.prank(burner);
@@ -212,6 +214,8 @@ contract MintTests is MapleTokenTestsBase {
     function test_burn_success() external {
         vm.expectEmit();
         emit Transfer(address(0), address(0x2), 1);
+
+        vm.expectEmit();
         emit Mint(address(0x2), 1);
 
         vm.prank(minter);

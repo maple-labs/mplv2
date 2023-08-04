@@ -8,20 +8,24 @@ interface IRecapitalizationModule {
     /**************************************************************************************************************************************/
 
     /**
-     * @dev    Emitted when tokens are claimed.
-     * @param  amountClaimed       The amount of tokens that were claimed.
-     * @param  lastClaimedWindowId The identifier of the window during which the tokens were claimed.
+     *  @dev   Emitted when tokens are claimed.
+     *  @param amountClaimed       The amount of tokens that were claimed.
+     *  @param lastClaimedWindowId The identifier of the window during which the tokens were claimed.
      */
     event Claimed(uint256 amountClaimed, uint16 lastClaimedWindowId);
 
     /**
-     * @dev    Emitted when new windows are scheduled.
-     * @param previousWindowId The identifier of the window that comes before the scheduled window (zero if there is none).
-     * @param windowId         The identifier of the window that was scheduled.
-     * @param windowStart      The timestamps that mark when each windows starts.
-     * @param issuanceRate     The issuance rates that will be applied to each window.
+     *  @dev   Emitted when a new window is scheduled.
+     *  @param newWindowId      The identifier of the new window that was scheduled.
+     *  @param windowStart      The timestamp that marks when the new windows starts.
+     *  @param issuanceRate     The issuance rate that will be applied to the new window.
+     *  @param previousWindowId The identifier of the window that comes before the newly scheduled window (zero if there is none).
      */
-    event WindowScheduled(uint16 previousWindowId, uint16 windowId, uint32 windowStart, uint208 issuanceRate);
+    event WindowScheduled(uint16 indexed newWindowId, uint32 indexed windowStart, uint208 issuanceRate, uint16 previousWindowId);
+
+    /**************************************************************************************************************************************/
+    /*** Functions                                                                                                                      ***/
+    /**************************************************************************************************************************************/
 
     /**
      *  @dev    Claims tokens from the time of the last claim up until the current time.
@@ -36,20 +40,20 @@ interface IRecapitalizationModule {
     function claimable(uint32 to) external view returns (uint256 claimableAmount);
 
     /**
-     * @dev    Returns the amount of tokens issue per second for the current window.
-     * @return issuanceRate The amount of tokens issued per second for the current window.
+     *  @dev    Returns the amount of tokens issue per second for the current window.
+     *  @return issuanceRate The amount of tokens issued per second for the current window.
      */
     function currentIssuanceRate() external view returns (uint208 issuanceRate);
 
     /**
-     * @dev    Returns the identifier of the current window.
-     * @return windowId The identifier of the current window.
+     *  @dev    Returns the identifier of the current window.
+     *  @return windowId The identifier of the current window.
      */
     function currentWindowId() external view returns (uint16 windowId);
 
     /**
-     * @dev    Returns the timestamp of the start of the current window.
-     * @return windowStart The timestamp of the start of the current window.
+     *  @dev    Returns the timestamp of the start of the current window.
+     *  @return windowStart The timestamp of the start of the current window.
      */
     function currentWindowStart() external view returns (uint32 windowStart);
 
