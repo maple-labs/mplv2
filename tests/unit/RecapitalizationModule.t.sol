@@ -405,21 +405,7 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
     }
 
     function test_schedule_noArrays() external {
-        vm.expectRevert("RM:VW:EMPTY_ARRAY");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
-    function test_schedule_noWindowStarts() external {
-        issuanceRates.push(1e18);
-
-        vm.expectRevert("RM:VW:EMPTY_ARRAY");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
-    function test_schedule_noIssuanceRates() external {
-        windowStarts.push(start);
-
-        vm.expectRevert("RM:VW:EMPTY_ARRAY");
+        vm.expectRevert("RM:VW:EMPTY_ARRAYS");
         module.schedule(windowStarts, issuanceRates);
     }
 
