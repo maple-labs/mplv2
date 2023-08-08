@@ -404,11 +404,6 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
     }
 
-    function test_schedule_noArrays() external {
-        vm.expectRevert("RM:VW:EMPTY_ARRAYS");
-        module.schedule(windowStarts, issuanceRates);
-    }
-
     function test_schedule_lengthMismatch() external {
         windowStarts.push(start);
         windowStarts.push(start + 10 days);
@@ -416,6 +411,11 @@ contract ScheduleTests is RecapitalizationModuleTestBase {
         issuanceRates.push(1e18);
 
         vm.expectRevert("RM:VW:LENGTH_MISMATCH");
+        module.schedule(windowStarts, issuanceRates);
+    }
+
+    function test_schedule_noArrays() external {
+        vm.expectRevert("RM:VW:EMPTY_ARRAYS");
         module.schedule(windowStarts, issuanceRates);
     }
 
