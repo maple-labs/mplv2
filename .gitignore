@@ -11,6 +11,8 @@ out/
 broadcast/
 output/
 coverage/
+report/
+lcov*
 
 # Certora
 .certora*
