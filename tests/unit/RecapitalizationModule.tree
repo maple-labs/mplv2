@@ -30,4 +30,3 @@ schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_)
                     └── For each new window being schduled the Window struct is filled in the linekd list
                     └── it should emit a {WindowScheduled} event for each new window being schduled
                     └── it should set lastScheduledWindowId to the last window scheduled
-z
