@@ -697,7 +697,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         module.schedule(windowStarts, issuanceRates);
     }
 
-    function test_currentIssuanceRate() external {
+    function test_viewFunctions() external {
         vm.warp(start + 1);
 
         assertEq(module.currentIssuanceRate(), 0.95e18);
