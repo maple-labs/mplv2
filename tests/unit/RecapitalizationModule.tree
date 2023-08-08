@@ -1,0 +1,33 @@
+claim()
+├── if msg.sender is not the  "RECAPITALIZATION_CLAIMER"
+│  └── it should revert with "RM:NOT_CLAIMER"
+└── when the msg.sender is the "RECAPITALIZATION_CLAIMER"
+    ├── if claimable amount is 0
+    │  └── it should revert with "RM:ZERO_CLAIM"
+    └── if claimable amount is not 0
+        ├── it should set lastClaimedTimestamp to the current block.timestamp
+        ├── it should set lastClaimedWindowId to the window we just claimed at
+        ├── it should emit a {Claimed} event
+        └── it should mint the claimable amount of tokens to the Maple Treasury
+
+schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_)
+├── if the length of windowStarts_ is not equal to the length of issuanceRates_
+│  └── it should revert with "RM:VW:LENGTH_MISMATCH"
+└── if the length of windowStarts_ is equal to the length of issuanceRates_
+    ├── if length of windowStarts_ is 0
+    │  └── it should revert with "RM:VW:EMPTY_ARRAYS"
+    └── if length of windowStarts_ is greater than 0
+        ├── if the first windowStart is not greater than the current block.timestamp
+        │  └── it should revert with "RM:VW:OUT_OF_DATE"
+        └── if the first windowStart is greater than the current block.timestamp
+            ├── if the next window start is not always greater than the previous window start
+            │  └── it should revert with "RM:VW:OUT_OF_ORDER"
+            └── if the next window start is always greater than the previous window start
+                ├── if windowStarts_[0] is not greater then the insertion points window start
+                │  └── it should revert with "RM:S:DUPLICATE_WINDOW"
+                └── if windowStarts_[0] is greater then the insertion points window start
+                    └── it should set the nextWindowId for the insertion point in the linked list
+                    └── For each new window being schduled the Window struct is filled in the linekd list
+                    └── it should emit a {WindowScheduled} event for each new window being schduled
+                    └── it should set lastScheduledWindowId to the last window scheduled
+z
