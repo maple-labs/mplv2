@@ -781,6 +781,12 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentIssuanceRate(), 0.98e18);
         assertEq(module.currentWindowId(),     7);
         assertEq(module.currentWindowStart(),  start + 300 days);
+
+        vm.warp(start + 300 days + 1);
+
+        assertEq(module.currentIssuanceRate(), 0.98e18);
+        assertEq(module.currentWindowId(),     7);
+        assertEq(module.currentWindowStart(),  start + 300 days);
     }
 
 }
