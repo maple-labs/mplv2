@@ -75,6 +75,20 @@ contract SetImplementationTests is MapleTokenTestsBase {
 
 }
 
+contract FallbackTests is MapleTokenTestsBase {
+
+    function test_fallback_noCodeOnImplementation() external {
+        address newImplementation = makeAddr("notContract");
+
+        vm.prank(governor);
+        MapleTokenProxy(tokenAddress).setImplementation(newImplementation);
+
+        vm.expectRevert("MTP:F:NO_CODE_ON_IMPLEMENTATION");
+        MapleToken(tokenAddress).implementation();
+    }
+
+}
+
 contract AddAndRemoveModuleTests is MapleTokenTestsBase {
 
     event ModuleAdded(address indexed module);
