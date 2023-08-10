@@ -1,6 +1,9 @@
 build:
 	@scripts/build.sh -p default
 
+coverage:
+	@scripts/coverage.sh
+
 deploy:
 	@scripts/deploy.sh
 
