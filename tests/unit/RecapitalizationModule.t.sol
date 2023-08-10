@@ -698,7 +698,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
     }
 
     function test_viewFunctions() external {
-        vm.warp(start - 1);
+        vm.warp(start - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0);
         assertEq(module.currentWindowId(),     0);
@@ -710,7 +710,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     1);
         assertEq(module.currentWindowStart(),  start);
 
-        vm.warp(start + 50 days - 1);
+        vm.warp(start + 50 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0.95e18);
         assertEq(module.currentWindowId(),     1);
@@ -722,7 +722,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     2);
         assertEq(module.currentWindowStart(),  start + 50 days);
 
-        vm.warp(start + 85 days - 1);
+        vm.warp(start + 85 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0.96e18);
         assertEq(module.currentWindowId(),     2);
@@ -734,7 +734,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     3);
         assertEq(module.currentWindowStart(),  start + 85 days);
 
-        vm.warp(start + 120 days - 1);
+        vm.warp(start + 120 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0.97e18);
         assertEq(module.currentWindowId(),     3);
@@ -746,7 +746,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     4);
         assertEq(module.currentWindowStart(),  start + 120 days);
 
-        vm.warp(start + 150 days - 1);
+        vm.warp(start + 150 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0);
         assertEq(module.currentWindowId(),     4);
@@ -758,7 +758,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     5);
         assertEq(module.currentWindowStart(),  start + 150 days);
 
-        vm.warp(start + 190 days - 1);
+        vm.warp(start + 190 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 1e18);
         assertEq(module.currentWindowId(),     5);
@@ -770,7 +770,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     6);
         assertEq(module.currentWindowStart(),  start + 190 days);
 
-        vm.warp(start + 300 days - 1);
+        vm.warp(start + 300 days - 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0);
         assertEq(module.currentWindowId(),     6);
@@ -782,7 +782,7 @@ contract ViewFunctionTests is RecapitalizationModuleTestBase {
         assertEq(module.currentWindowId(),     7);
         assertEq(module.currentWindowStart(),  start + 300 days);
 
-        vm.warp(start + 300 days + 1);
+        vm.warp(start + 300 days + 1 seconds);
 
         assertEq(module.currentIssuanceRate(), 0.98e18);
         assertEq(module.currentWindowId(),     7);
