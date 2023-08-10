@@ -47,7 +47,9 @@ jobs:
 
       - name: Run forge tests and create gas report.
         run: |
+          set -e
           forge test | tee output.txt
+          test ${PIPESTATUS[0]} -eq 0
           sed -n -e '/^|/p' output.txt > gas.txt
         env:
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
