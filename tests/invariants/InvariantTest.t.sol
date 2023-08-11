@@ -101,6 +101,11 @@ contract InvariantTest is ModuleInvariants {
         distributionHandler = new DistributionHandler(address(moduleHandler), selectors, weights);
 
         targetContract(address(distributionHandler));
+        excludeContract(address(moduleHandler));
+        excludeContract(address(emergencyModule));
+        excludeContract(address(recapitalizationModule));
+        excludeContract(address(mapleToken));
+        excludeContract(address(mapleGlobals));
     }
 
     /**************************************************************************************************************************************/
