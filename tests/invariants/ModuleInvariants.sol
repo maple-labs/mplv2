@@ -19,7 +19,7 @@ contract ModuleInvariants is TestBase {
     // - Invariant I: windowOf(lastClaimedTimestamp) == lastClaimedWindowId
 
     /**************************************************************************************************************************************/
-    /*** Recapitalization Module Invariants                                                                                                    ***/
+    /*** Recapitalization Module Invariants                                                                                             ***/
     /**************************************************************************************************************************************/
 
     /**
