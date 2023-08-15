@@ -15,6 +15,8 @@ import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.so
 import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
 import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
+import { RecapitalizationModuleHealthChecker } from "../health-checkers/RecapitalizationModuleHealthChecker.sol";
+
 import { DistributionHandler } from "../invariants/DistributionHandler.sol";
 import { ModuleHandler }       from "../invariants/ModuleHandler.sol";
 import { ModuleInvariants }    from "../invariants/ModuleInvariants.sol";
@@ -49,6 +51,8 @@ contract xMPLMigration is ModuleInvariants {
     IMapleToken oldToken = IMapleToken(OLD_TOKEN);
     IXmplLike   xmpl     = IXmplLike(XMPL);
 
+    RecapitalizationModuleHealthChecker healthChecker;
+
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 17622100);
 
@@ -58,6 +62,8 @@ contract xMPLMigration is ModuleInvariants {
 
         emergencyModule        = new EmergencyModule(address(globals), address(token));
         recapitalizationModule = new RecapitalizationModule(address(token));
+
+        healthChecker = new RecapitalizationModuleHealthChecker();
 
         configureContracts();
         setupHandlers();
@@ -73,6 +79,7 @@ contract xMPLMigration is ModuleInvariants {
             distributionHandler.entryPoint(uint256(keccak256(abi.encode(seed, i, "weight"))), uint256(keccak256(abi.encode(seed, i))));
         }
 
+        // Check module invariants.
         assert_recapitalizationModule_invariant_A(recapitalizationModule);
         assert_recapitalizationModule_invariant_B(recapitalizationModule);
         assert_recapitalizationModule_invariant_C(recapitalizationModule);
@@ -82,6 +89,19 @@ contract xMPLMigration is ModuleInvariants {
         assert_recapitalizationModule_invariant_G(recapitalizationModule);
         assert_recapitalizationModule_invariant_H(recapitalizationModule, moduleHandler.blockTimestamp());
         assert_recapitalizationModule_invariant_I(recapitalizationModule);
+
+        // Check health checker invariants.
+        RecapitalizationModuleHealthChecker.Invariants memory invariants = healthChecker.checkInvariants(recapitalizationModule);
+
+        assertTrue(invariants.invariantA, "Invariant A");
+        assertTrue(invariants.invariantB, "Invariant B");
+        assertTrue(invariants.invariantC, "Invariant C");
+        assertTrue(invariants.invariantD, "Invariant D");
+        assertTrue(invariants.invariantE, "Invariant E");
+        assertTrue(invariants.invariantF, "Invariant F");
+        assertTrue(invariants.invariantG, "Invariant G");
+        assertTrue(invariants.invariantH, "Invariant H");
+        assertTrue(invariants.invariantI, "Invariant I");
     }
 
     /**************************************************************************************************************************************/

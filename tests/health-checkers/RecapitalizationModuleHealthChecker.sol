@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.18;
 
-import { IRecapitalizationModule } from "../interfaces/IRecapitalizationModule.sol";
+import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 contract RecapitalizationModuleHealthChecker {
 
