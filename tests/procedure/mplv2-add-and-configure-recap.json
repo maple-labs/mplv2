@@ -1,0 +1,59 @@
+{
+    "version": "1.0",
+    "chainId": "1",
+    "createdAt": 1692369010809,
+    "meta": {
+        "name": "Transactions Batch",
+        "description": "",
+        "txBuilderVersion": "1.16.1",
+        "createdFromSafeAddress": "0xd6d4Bcde6c816F17889f1Dd3000aF0261B03a196",
+        "createdFromOwnerAddress": "",
+        "checksum": "0x11f26e174175591edcd5d9cb4cae39e691d904398eed2ddad2b6d198256db1d8"
+    },
+    "transactions": [
+        {
+            "to": "0x0000000000000000000000000000000000000000",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "module",
+                        "type": "address"
+                    }
+                ],
+                "name": "addModule",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "module": "0x0000000000000000000000000000000000000000"
+            }
+        },
+        {
+            "to": "0x0000000000000000000000000000000000000000",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "internalType": "uint32[]",
+                        "name": "windowStarts_",
+                        "type": "uint32[]"
+                    },
+                    {
+                        "internalType": "uint208[]",
+                        "name": "issuanceRates_",
+                        "type": "uint208[]"
+                    }
+                ],
+                "name": "schedule",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "windowStarts_": "[1696132800]",
+                "issuanceRates_": "[17440385591070524]"
+            }
+        }
+    ]
+}

@@ -5,11 +5,11 @@ import { MapleAddressRegistry } from "../../modules/address-registry/contracts/M
 
 contract ProcedureAddressRegistry is MapleAddressRegistry {
 
-    address migrator               = address(0);
-    address mplv2Implementation    = address(0);
-    address mplv2Initializer       = address(0);
-    address mplv2Proxy             = address(0); 
-    address recaptalizationClaimer = address(0);
-    address recapitalizationModule = address(0);
+    address migrator                = address(0);
+    address mplv2Implementation     = address(0);
+    address mplv2Initializer        = address(0);
+    address mplv2Proxy              = address(0); 
+    address recapitalizationClaimer = address(0);
+    address recapitalizationModule  = address(0);
 
 }
