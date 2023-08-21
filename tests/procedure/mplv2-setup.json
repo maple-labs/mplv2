@@ -1,0 +1,133 @@
+{
+    "version": "1.0",
+    "chainId": "1",
+    "createdAt": 1692299812010,
+    "meta": {
+        "name": "Transactions Batch",
+        "description": "",
+        "txBuilderVersion": "1.16.1",
+        "createdFromSafeAddress": "0xd6d4Bcde6c816F17889f1Dd3000aF0261B03a196",
+        "createdFromOwnerAddress": "",
+        "checksum": "0xc310a1e1d1891d142c8d9f725e066ce979e8a2d31adbc63ad60706b007d15e63"
+    },
+    "transactions": [
+        {
+            "to": "0x804a6F5F667170F545Bf14e5DDB48C70B788390C",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "internalType": "bytes32",
+                        "name": "instanceKey_",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "instance_",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isValid_",
+                        "type": "bool"
+                    }
+                ],
+                "name": "setValidInstanceOf",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "instanceKey_": "0x52454341504954414c495a4154494f4e5f434c41494d45520000000000000000",
+                "instance_": "0x96481CB0fCd7673254eBccC42DcE9B92da10ea04",
+                "isValid_": "true"
+            }
+        },
+        {
+            "to": "0x804a6F5F667170F545Bf14e5DDB48C70B788390C",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "contract_",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "functionId_",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "callData_",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "scheduleCall",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "contract_": "0x0000000000000000000000000000000000000000",
+                "functionId_": "0x4d543a4144445f4d4f44554c4500000000000000000000000000000000000000",
+                "callData_": "0x1ed86f19000000000000000000000000a0cb889707d426a7a386870a03bc70d1b0697598"
+            }
+        },
+        {
+            "to": "0x804a6F5F667170F545Bf14e5DDB48C70B788390C",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "contract_",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "functionId_",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "bytes",
+                        "name": "callData_",
+                        "type": "bytes"
+                    }
+                ],
+                "name": "scheduleCall",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "contract_": "0x0000000000000000000000000000000000000000",
+                "functionId_": "0x524d3a5343484544554c45000000000000000000000000000000000000000000",
+                "callData_": "0xc113b581000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000006518eec000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000de0b6b3a7640000"
+            }
+        },
+        {
+            "to": "0x4937A209D4cDbD3ecD48857277cfd4dA4D82914c",
+            "value": "0",
+            "data": null,
+            "contractMethod": {
+                "inputs": [
+                    {
+                        "name": "migrator_",
+                        "type": "address",
+                        "internalType": "address"
+                    },
+                    {
+                        "name": "newAsset_",
+                        "type": "address",
+                        "internalType": "address"
+                    }
+                ],
+                "name": "scheduleMigration",
+                "payable": false
+            },
+            "contractInputsValues": {
+                "migrator_": "0x0000000000000000000000000000000000000000",
+                "newAsset_": "0x0000000000000000000000000000000000000000"
+            }
+        }
+    ]
+}
