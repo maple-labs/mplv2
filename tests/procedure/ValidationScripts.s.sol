@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import { IMigrator } from "../../modules/migrator/contracts/interfaces/IMigrator.sol";
 
 import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
-import { IMapleTokenProxy }        from "../../contracts/interfaces/IMapleTokenProxy.sol";
 import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
 
 import { console, Test }            from "../utils/TestBase.sol";
@@ -28,7 +27,7 @@ contract ValidationBase is Test, AddressRegistry {
 }
 
 contract ValidateDeployContracts is ValidationBase {
-    
+
     function run() external view {
         // Validate code hashse
         validateCodeHash(mplv2Implementation,    0x0);
@@ -39,7 +38,7 @@ contract ValidateDeployContracts is ValidationBase {
 
         // Validate initial token state
         IMapleToken token = IMapleToken(mplv2Proxy);
-        
+
         require(token.implementation()         == mplv2Implementation,   "Invalid MapleToken implementation");
         require(token.globals()                == globals,               "Invalid MapleToken globals");
         require(token.governor()               == governor,              "Invalid Governor");
@@ -80,9 +79,9 @@ contract ValidateSetup is ValidationBase {
         require(globals_.isInstanceOf("RECAPITALIZATION_CLAIMER", recapitalizationClaimer), "Invalid Claimer");
 
         require(globals_.isValidScheduledCall(
-            governor, 
-            mplv2Proxy, 
-            "MT:ADD_MODULE", 
+            governor,
+            mplv2Proxy,
+            "MT:ADD_MODULE",
             abi.encodeWithSelector(IMapleToken.addModule.selector, recapitalizationModule)), "Invalid Call"
         );
 
@@ -93,9 +92,9 @@ contract ValidateSetup is ValidationBase {
         issuanceRates[0] = 17440385591070524;
 
         require(globals_.isValidScheduledCall(
-            governor, 
-            mplv2Proxy, 
-            "RM:SCHEDULE", 
+            governor,
+            mplv2Proxy,
+            "RM:SCHEDULE",
             abi.encodeWithSelector(IRecapitalizationModule.schedule.selector, timestamps, issuanceRates)), "Invalid Call"
         );
 
@@ -110,15 +109,15 @@ contract ValidateSetup is ValidationBase {
 
 contract ValidateAddModule is ValidationBase {
 
-    function run() external {
+    function run() external view {
         // Verify module was added
         require(IMapleToken(mplv2Proxy).isModule(recapitalizationModule), "Module not added");
 
         // Verify call was unscheduled
         require(!IGlobalsLike(globals).isValidScheduledCall(
-            governor, 
-            mplv2Proxy, 
-            "MT:ADD_MODULE", 
+            governor,
+            mplv2Proxy,
+            "MT:ADD_MODULE",
             abi.encodeWithSelector(IMapleToken.addModule.selector, recapitalizationClaimer)), "Call not unscheduled"
         );
 
@@ -133,15 +132,15 @@ contract ValidateAddModule is ValidationBase {
         require(nextWindowId == 0,                 "Invalid nextWindowId");
         require(windowStart  == 1696132800,        "Invalid windowStart");
         require(issuanceRate == 17440385591070524, "Invalid issuanceRate");
-        
+
         require(module.claimable(uint32(1727755200)) == 1_100_000e18, "Invalid claimable at year mark");
     }
-    
+
 }
 
 contract ValidateMigrateXmpl is ValidationBase {
-    
-    function run() external {
+
+    function run() external view {
         IXmplLike xmpl_ = IXmplLike(xmpl);
 
         // Verify xMPL was migrated
@@ -152,11 +151,11 @@ contract ValidateMigrateXmpl is ValidationBase {
 
         // Verify call was unscheduled
         require(!IGlobalsLike(globals).isValidScheduledCall(
-            governor, 
-            xmpl, 
-            "XMPL:MIGRATE", 
+            governor,
+            xmpl,
+            "XMPL:MIGRATE",
             abi.encodeWithSelector(IXmplLike.performMigration.selector)), "Call not unscheduled"
         );
     }
-        
+
 }
