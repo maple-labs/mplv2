@@ -27,11 +27,13 @@ contract MapleTokenProxy is IMapleTokenProxy {
     /**************************************************************************************************************************************/
 
     function setImplementation(address newImplementation_) override external {
-        IGlobalsLike globals_         = IGlobalsLike(_globals());
-        bool         isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+        IGlobalsLike globals_ = IGlobalsLike(_globals());
 
-        require(msg.sender == _governor(), "MTP:SI:NOT_GOVERNOR");
-        require(isScheduledCall_,          "MTP:SI:NOT_SCHEDULED");
+        require(msg.sender == globals_.governor(), "MTP:SI:NOT_GOVERNOR");
+
+        bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), "MTP:SET_IMPLEMENTATION", msg.data);
+
+        require(isScheduledCall_, "MTP:SI:NOT_SCHEDULED");
 
         globals_.unscheduleCall(msg.sender, "MTP:SET_IMPLEMENTATION", msg.data);
 
@@ -46,10 +48,6 @@ contract MapleTokenProxy is IMapleTokenProxy {
 
     function _globals() internal view returns (address globals_) {
         globals_ = _getAddress(GLOBALS_SLOT);
-    }
-
-    function _governor() internal view returns (address admin_) {
-        admin_ = IGlobalsLike(_globals()).governor();
     }
 
     function _implementation() internal view returns (address implementation_) {
