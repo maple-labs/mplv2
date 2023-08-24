@@ -69,14 +69,11 @@ contract RecapitalizationModule is IRecapitalizationModule {
         _;
     }
 
-    modifier onlyGovernor {
-        require(msg.sender == IGlobalsLike(_globals()).governor(), "RM:NOT_GOVERNOR");
-
-        _;
-    }
-
-    modifier onlyScheduled(bytes32 functionId_) {
+    modifier onlyGovernorAndScheduled(bytes32 functionId_) {
         IGlobalsLike globals_ = IGlobalsLike(_globals());
+
+        require(msg.sender == globals_.governor(), "RM:NOT_GOVERNOR");
+
         bool isScheduledCall_ = globals_.isValidScheduledCall(msg.sender, address(this), functionId_, msg.data);
 
         require(isScheduledCall_, "RM:NOT_SCHEDULED");
@@ -107,7 +104,7 @@ contract RecapitalizationModule is IRecapitalizationModule {
         IMapleTokenLike(token).mint(IGlobalsLike(_globals()).mapleTreasury(), amountClaimed_ = claimableAmount_);
     }
 
-    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernor onlyScheduled("RM:SCHEDULE") {
+    function schedule(uint32[] memory windowStarts_, uint208[] memory issuanceRates_) external onlyGovernorAndScheduled("RM:SCHEDULE") {
         _validateWindows(windowStarts_, issuanceRates_);
 
         // Find at which point in the linked list to insert the new windows.
