@@ -120,3 +120,86 @@ contract RecapitalizationModuleIntegrationTest is TestBase {
     }
 
 }
+
+contract RecapitalizationModuleIssuanceSimulation is TestBase {
+
+    address claimer  = makeAddr("claimer");
+    address governor = makeAddr("governor");
+    address treasury = makeAddr("treasury");
+    address migrator = makeAddr("migrator");
+
+    uint256 start;
+
+    IGlobalsLike           globals;
+    IMapleToken            token;
+    RecapitalizationModule module;
+
+    function setUp() public virtual {
+        globals = IGlobalsLike(address(new NonTransparentProxy(governor, deployGlobals())));
+
+        vm.prank(governor);
+        globals.setMapleTreasury(treasury);
+
+        token  = IMapleToken(address(new MapleTokenProxy(address(globals), address(new MapleToken()), address(new MapleTokenInitializer()), migrator)));
+        module = new RecapitalizationModule(address(token));
+
+        vm.startPrank(governor);
+        globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer, true);
+
+        globals.scheduleCall(address(token), "MT:ADD_MODULE", abi.encodeWithSelector(IMapleToken.addModule.selector, module));
+
+        token.addModule(address(module));
+        vm.stopPrank();
+
+        start = block.timestamp;
+    }
+
+    function test_recapitalizationModule_issuanceSimulation() external {
+        // Define the issuance schedule
+        uint32[] memory times = new uint32[](4);
+        times[0] = uint32(1696132800);  // October 1st 00:00 2023 EST
+        times[1] = uint32(1704081600);  // January 1st 00:00 2024 EST
+        times[2] = uint32(1735704000);  // January 1st 00:00 2025 EST
+        times[3] = uint32(1767240000);  // January 1st 00:00 2026 EST
+
+        uint208[] memory rates = new uint208[](4);
+        rates[0] = 15725644122383252;
+        rates[1] = 17922959674155030;
+        rates[2] = 18887652207001524;
+        rates[3] = 0;
+
+        vm.startPrank(governor);
+        globals.scheduleCall(address(module), "RM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
+
+        module.schedule(times, rates);
+        vm.stopPrank();
+
+        // Beginning of the issuance
+        vm.warp(times[0]);
+        assertApproxEqAbs(token.totalSupply(),        11_000_000e18, 1e9);  // Allowing half of a unit as rounding error
+        assertApproxEqAbs(module.claimable(times[1]), 125_000e18,    1e9);
+
+        // End of 1st year (2023)
+        vm.warp(times[1]);
+        vm.prank(claimer);
+        module.claim();
+
+        assertApproxEqAbs(token.totalSupply(),        11_125_000e18, 1e9);
+        assertApproxEqAbs(module.claimable(times[2]), 566_767e18,    1e9);
+
+        // End of 2nd year (2024)
+        vm.warp(times[2]);
+        vm.prank(claimer);
+        module.claim();
+
+        assertApproxEqAbs(token.totalSupply(),        11_691_767e18, 1e9);
+        assertApproxEqAbs(module.claimable(times[3]), 595_641e18,    1e9);
+
+        // End of 3rd year (2025)
+        vm.warp(times[3]);
+        vm.prank(claimer);
+        module.claim();
+
+        assertApproxEqAbs(token.totalSupply(), 12_287_408e18, 1e9);
+    }
+}
