@@ -99,7 +99,7 @@ contract ValidateSetup is ValidationBase {
 
         require(globals_.isValidScheduledCall(
             governor,
-            mplv2Proxy,
+            recapitalizationModule,
             "RM:SCHEDULE",
             abi.encodeWithSelector(IRecapitalizationModule.schedule.selector, timestamps, issuanceRates)), "Invalid Call"
         );
