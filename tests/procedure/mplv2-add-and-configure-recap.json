@@ -51,8 +51,8 @@
                 "payable": false
             },
             "contractInputsValues": {
-                "windowStarts_": "[1696132800]",
-                "issuanceRates_": "[17440385591070524]"
+                "windowStarts_": "[1696132800,1704081600,1735704000,1767240000]",
+                "issuanceRates_": "[15725644122383252,17922959674155030,18887652207001524,0]"
             }
         }
     ]

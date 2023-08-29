@@ -202,4 +202,5 @@ contract RecapitalizationModuleIssuanceSimulation is TestBase {
 
         assertApproxEqAbs(token.totalSupply(), 12_287_408e18, 1e9);
     }
+    
 }

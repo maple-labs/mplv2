@@ -85,11 +85,17 @@ contract ValidateSetup is ValidationBase {
             abi.encodeWithSelector(IMapleToken.addModule.selector, recapitalizationModule)), "Invalid Call"
         );
 
-        uint32[] memory timestamps = new uint32[](1);
-        timestamps[0] = uint32(1696132800);
+        uint32[] memory timestamps = new uint32[](4);
+        timestamps[0] = uint32(1696132800);  // October 1st 00:00 2023 EST
+        timestamps[1] = uint32(1704081600);  // January 1st 00:00 2024 EST
+        timestamps[2] = uint32(1735704000);  // January 1st 00:00 2025 EST
+        timestamps[3] = uint32(1767240000);  // January 1st 00:00 2026 EST
 
-        uint208[] memory issuanceRates = new uint208[](1);
-        issuanceRates[0] = 17440385591070524;
+        uint208[] memory issuanceRates = new uint208[](4);
+        issuanceRates[0] = 15725644122383252;
+        issuanceRates[1] = 17922959674155030;
+        issuanceRates[2] = 18887652207001524;
+        issuanceRates[3] = 0;
 
         require(globals_.isValidScheduledCall(
             governor,
