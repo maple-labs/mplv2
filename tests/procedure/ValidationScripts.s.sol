@@ -48,7 +48,7 @@ contract ValidateDeployContracts is ValidationBase {
         require(token.balanceOf(mapleTreasury) == 1_000_000e18,          "Invalid migrator balance");
 
         require(keccak256(abi.encode(token.symbol())) == keccak256(abi.encode("MPL")),                 "Invalid Symbol");
-        require(keccak256(abi.encode(token.name()))   == keccak256(abi.encode("Maple Finance Token")), "Invalid Name");
+        require(keccak256(abi.encode(token.name()))   == keccak256(abi.encode("Maple Token")), "Invalid Name");
 
         // Validate Migrator
         require(IMigrator(migrator).oldToken() == mpl,        "Invalid old token");
