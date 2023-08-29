@@ -16,6 +16,9 @@ release:
 test:
 	@scripts/test.sh -p default
 
+validate:
+	@FOUNDRY_PROFILE=production forge script Validate$(step)
+
 verify:
 	@certora/scripts/verify.sh
 
