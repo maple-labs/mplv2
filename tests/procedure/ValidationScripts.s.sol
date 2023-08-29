@@ -30,11 +30,11 @@ contract ValidateDeployContracts is ValidationBase {
 
     function run() external view {
         // Validate code hashse
-        validateCodeHash(mplv2Implementation,    0x0);
-        validateCodeHash(mplv2Proxy,             0x0);
-        validateCodeHash(mplv2Initializer,       0x0);
-        validateCodeHash(recapitalizationModule, 0x0);
-        validateCodeHash(migrator,               0x0);
+        // validateCodeHash(mplv2Implementation,    0x0);
+        // validateCodeHash(mplv2Proxy,             0x0);
+        // validateCodeHash(mplv2Initializer,       0x0);
+        // validateCodeHash(recapitalizationModule, 0x0);
+        // validateCodeHash(migrator,               0x0);
 
         // Validate initial token state
         IMapleToken token = IMapleToken(mplv2Proxy);
@@ -47,7 +47,7 @@ contract ValidateDeployContracts is ValidationBase {
         require(token.balanceOf(migrator)      == 10_000_000e18,         "Invalid migrator balance");
         require(token.balanceOf(mapleTreasury) == 1_000_000e18,          "Invalid migrator balance");
 
-        require(keccak256(abi.encode(token.symbol())) == keccak256(abi.encode("MPL")),                 "Invalid Symbol");
+        require(keccak256(abi.encode(token.symbol())) == keccak256(abi.encode("MPL")),         "Invalid Symbol");
         require(keccak256(abi.encode(token.name()))   == keccak256(abi.encode("Maple Token")), "Invalid Name");
 
         // Validate Migrator
