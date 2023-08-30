@@ -136,7 +136,9 @@ contract ModuleHandler is TestBase {
             abi.encodeWithSelector(recapitalizationModule.schedule.selector, windowStarts, issuanceRates)
         );
 
-        vm.warp(block.timestamp + 7 days + 1);
+        vm.warp(blockTimestamp + 7 days + 1);
+
+        blockTimestamp += 7 days + 1;
 
         vm.prank(governor);
         recapitalizationModule.schedule(windowStarts, issuanceRates);

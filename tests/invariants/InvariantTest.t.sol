@@ -77,6 +77,8 @@ contract InvariantTest is ModuleInvariants {
 
         mapleToken.addModule(address(recapitalizationModule));
 
+        mapleGlobals.setDefaultTimelockParameters(7 days, 2 days);
+
         vm.stopPrank();
     }
 

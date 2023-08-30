@@ -184,6 +184,8 @@ contract xMPLMigration is LifecycleBase {
 
         token_.addModule(address(recapitalizationModule_));
 
+        globals_.setDefaultTimelockParameters(7 days, 2 days);
+
         vm.stopPrank();
     }
 
