@@ -28,7 +28,7 @@ import { ProcedureAddressRegistry as AddressRegistry } from "./ProcedureAddressR
 contract LifecycleValidation is LifecycleBase, AddressRegistry {
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+        vm.createSelectFork(vm.envString("ETH_RPC_URL_FORK"));
 
         globals_                = IGlobalsLike(globals);
         token_                  = IMapleToken(mplv2Proxy); 
