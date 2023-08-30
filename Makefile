@@ -24,3 +24,6 @@ verify:
 
 verify-sanity:
 	@certora/scripts/verify-sanity.sh
+
+warp:
+	curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[$(secs)]}' $(ETH_RPC_URL)

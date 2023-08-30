@@ -30,22 +30,31 @@ contract ValidateDeployContracts is ValidationBase {
 
     function run() external view {
         // Validate code hashse
-        // validateCodeHash(mplv2Implementation,    0x0);
-        // validateCodeHash(mplv2Proxy,             0x0);
-        // validateCodeHash(mplv2Initializer,       0x0);
-        // validateCodeHash(recapitalizationModule, 0x0);
-        // validateCodeHash(migrator,               0x0);
+        validateCodeHash(mplv2Implementation, 
+            bytes32(uint256(70323616883266049700409236456467157875624730672673312764929086050199298827864)));
+
+        validateCodeHash(mplv2Proxy,             
+            bytes32(uint256(66198051851549688342450283611198650807451159641405813269788732621269765815945)));
+
+        validateCodeHash(mplv2Initializer,       
+            bytes32(uint256(22559356515611287693316871974039087159331561775926233950166628834203442906292)));
+
+        validateCodeHash(recapitalizationModule, 
+            bytes32(uint256(99567231533705583706362945369727399987343826507483481453637905443124274090855)));
+
+        validateCodeHash(migrator,               
+            bytes32(uint256(2430869667681032290713068758030007498790671485326103861551849396255172325192)));
 
         // Validate initial token state
         IMapleToken token = IMapleToken(mplv2Proxy);
 
-        require(token.implementation()         == mplv2Implementation,   "Invalid MapleToken implementation");
-        require(token.globals()                == globals,               "Invalid MapleToken globals");
-        require(token.governor()               == governor,              "Invalid Governor");
-        require(token.decimals()               == 18,                    "Invalid Decimals");
-        require(token.totalSupply()            == 11_000_000e18,         "Invalid total supply");
-        require(token.balanceOf(migrator)      == 10_000_000e18,         "Invalid migrator balance");
-        require(token.balanceOf(mapleTreasury) == 1_000_000e18,          "Invalid migrator balance");
+        require(token.implementation()         == mplv2Implementation, "Invalid MapleToken implementation");
+        require(token.globals()                == globals,             "Invalid MapleToken globals");
+        require(token.governor()               == governor,            "Invalid Governor");
+        require(token.decimals()               == 18,                  "Invalid Decimals");
+        require(token.totalSupply()            == 11_000_000e18,       "Invalid total supply");
+        require(token.balanceOf(migrator)      == 10_000_000e18,       "Invalid migrator balance");
+        require(token.balanceOf(mapleTreasury) == 1_000_000e18,        "Invalid migrator balance");
 
         require(keccak256(abi.encode(token.symbol())) == keccak256(abi.encode("MPL")),         "Invalid Symbol");
         require(keccak256(abi.encode(token.name()))   == keccak256(abi.encode("Maple Token")), "Invalid Name");
@@ -78,11 +87,15 @@ contract ValidateSetup is ValidationBase {
 
         require(globals_.isInstanceOf("RECAPITALIZATION_CLAIMER", recapitalizationClaimer), "Invalid Claimer");
 
-        require(globals_.isValidScheduledCall(
+        (uint256 timestamp, bytes32 dataHash) = globals_.scheduledCalls(
             governor,
             mplv2Proxy,
-            "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, recapitalizationModule)), "Invalid Call"
+            "MT:ADD_MODULE");
+
+        require(timestamp <= block.timestamp && timestamp != 0, "not scheduled 1");
+        require(dataHash == keccak256(abi.encode(
+            abi.encodeWithSelector(IMapleToken.addModule.selector, recapitalizationModule))), 
+            "Invalid data hash 1"
         );
 
         uint32[] memory timestamps = new uint32[](4);
@@ -97,11 +110,15 @@ contract ValidateSetup is ValidationBase {
         issuanceRates[2] = 18887652207001524;
         issuanceRates[3] = 0;
 
-        require(globals_.isValidScheduledCall(
+        (timestamp, dataHash) = globals_.scheduledCalls(
             governor,
             recapitalizationModule,
-            "RM:SCHEDULE",
-            abi.encodeWithSelector(IRecapitalizationModule.schedule.selector, timestamps, issuanceRates)), "Invalid Call"
+            "RM:SCHEDULE");
+
+        require(timestamp <= block.timestamp && timestamp != 0, "not scheduled 2");
+        require(dataHash == keccak256(abi.encode(
+            abi.encodeWithSelector(IRecapitalizationModule.schedule.selector, timestamps, issuanceRates))), 
+            "Invalid data hash 2"
         );
 
         //  Check xMPL
@@ -131,15 +148,31 @@ contract ValidateAddModule is ValidationBase {
         IRecapitalizationModule module = IRecapitalizationModule(recapitalizationModule);
 
         require(module.currentWindowId()       == 0, "Invalid currentWindowId");
-        require(module.lastScheduledWindowId() == 1, "Invalid lastScheduledWindowId");
+        require(module.lastScheduledWindowId() == 4, "Invalid lastScheduledWindowId");
 
         (uint16 nextWindowId, uint32 windowStart, uint208 issuanceRate) = module.windows(1);
 
-        require(nextWindowId == 0,                 "Invalid nextWindowId");
-        require(windowStart  == 1696132800,        "Invalid windowStart");
-        require(issuanceRate == 17440385591070524, "Invalid issuanceRate");
+        require(nextWindowId == 2,                 "Invalid nextWindowId 1");
+        require(windowStart  == 1696132800,        "Invalid windowStart 1");
+        require(issuanceRate == 15725644122383252, "Invalid issuanceRate 1");
 
-        require(module.claimable(uint32(1727755200)) == 1_100_000e18, "Invalid claimable at year mark");
+        (nextWindowId, windowStart, issuanceRate) = module.windows(2);
+
+        require(nextWindowId == 3,                 "Invalid nextWindowId 2");
+        require(windowStart  == 1704081600,        "Invalid windowStart 2");
+        require(issuanceRate == 17922959674155030, "Invalid issuanceRate 2");
+
+        (nextWindowId, windowStart, issuanceRate) = module.windows(3);
+
+        require(nextWindowId == 4,                 "Invalid nextWindowId 3");
+        require(windowStart  == 1735704000,        "Invalid windowStart 3");
+        require(issuanceRate == 18887652207001524, "Invalid issuanceRate 3");
+
+        (nextWindowId, windowStart, issuanceRate) = module.windows(4);
+
+        require(nextWindowId == 0,          "Invalid nextWindowId 4");
+        require(windowStart  == 1767240000, "Invalid windowStart 4");
+        require(issuanceRate == 0,          "Invalid issuanceRate 4");
     }
 
 }
