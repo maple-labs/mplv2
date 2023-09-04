@@ -30,11 +30,11 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL_FORK"));
 
-        globals_                = IGlobalsLike(globals);
-        token_                  = IMapleToken(mplv2Proxy); 
-        migrator_               = IMigrator(migrator);
-        recapitalizationModule_ = RecapitalizationModule(recapitalizationModule);
-        emergencyModule_        = new EmergencyModule(address(globals_), address(token_));
+        _globals                = IGlobalsLike(globals);
+        _token                  = IMapleToken(mplv2Proxy); 
+        _migrator               = IMigrator(migrator);
+        _recapitalizationModule = RecapitalizationModule(recapitalizationModule);
+        _emergencyModule        = new EmergencyModule(address(_globals), address(_token));
 
         claimer_         = securityAdmin;
         governor_        = governor;
@@ -45,15 +45,15 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
 
         // Since the procedure doesn't do that, add emergency module
         vm.prank(governor);
-        globals_.scheduleCall(
-            address(token_),
+        _globals.scheduleCall(
+            address(_token),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(emergencyModule_))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(_emergencyModule))
         );
 
         vm.warp(block.timestamp + 7 days + 1);
         vm.prank(governor);
-        token_.addModule(address(emergencyModule_));
+        _token.addModule(address(_emergencyModule));
 
         setupHandlers();
     }

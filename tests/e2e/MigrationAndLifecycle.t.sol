@@ -39,15 +39,15 @@ contract LifecycleBase is ModuleInvariants {
 
     uint256 start;
 
-    // Note using `_` suffix to not clash with address registry variables.
-    IGlobalsLike            globals_;
-    IMapleToken             token_;
-    IMigrator               migrator_;
-    IEmergencyModule        emergencyModule_;
-    IRecapitalizationModule recapitalizationModule_;
+    // Note using `_` prefix to not clash with address registry variables.
+    IGlobalsLike            _globals;
+    IMapleToken             _token;
+    IMigrator               _migrator;
+    IEmergencyModule        _emergencyModule;
+    IRecapitalizationModule _recapitalizationModule;
 
-    DistributionHandler distributionHandler_;
-    ModuleHandler       moduleHandler_;
+    DistributionHandler _distributionHandler;
+    ModuleHandler       _moduleHandler;
 
     IMapleToken oldToken = IMapleToken(OLD_TOKEN);
     IXmplLike   xmpl_    = IXmplLike(XMPL);
@@ -71,29 +71,29 @@ contract LifecycleBase is ModuleInvariants {
         weights[3] = 5;
         weights[4] = 5;
 
-        moduleHandler_       = new ModuleHandler(globals_, token_, emergencyModule_, recapitalizationModule_, claimer_);
-        distributionHandler_ = new DistributionHandler(address(moduleHandler_), selectors, weights);
+        _moduleHandler       = new ModuleHandler(_globals, _token, _emergencyModule, _recapitalizationModule, claimer_);
+        _distributionHandler = new DistributionHandler(address(_moduleHandler), selectors, weights);
     }
 
     function runLifecycle(uint256 seed) internal {
         // Perform some actions before asserting the invariants
         for (uint i = 0; i < ACTIONS_COUNT; i++) {
-            distributionHandler_.entryPoint(uint256(keccak256(abi.encode(seed, i, "weight"))), uint256(keccak256(abi.encode(seed, i))));
+            _distributionHandler.entryPoint(uint256(keccak256(abi.encode(seed, i, "weight"))), uint256(keccak256(abi.encode(seed, i))));
         }
 
         // Check module invariants.
-        assert_recapitalizationModule_invariant_A(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_B(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_C(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_D(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_E(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_F(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_G(recapitalizationModule_);
-        assert_recapitalizationModule_invariant_H(recapitalizationModule_, moduleHandler_.blockTimestamp());
-        assert_recapitalizationModule_invariant_I(recapitalizationModule_);
+        assert_recapitalizationModule_invariant_A(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_B(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_C(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_D(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_E(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_F(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_G(_recapitalizationModule);
+        assert_recapitalizationModule_invariant_H(_recapitalizationModule, _moduleHandler.blockTimestamp());
+        assert_recapitalizationModule_invariant_I(_recapitalizationModule);
 
         // Check health checker invariants.
-        RecapitalizationModuleHealthChecker.Invariants memory invariants = healthChecker.checkInvariants(recapitalizationModule_);
+        RecapitalizationModuleHealthChecker.Invariants memory invariants = healthChecker.checkInvariants(_recapitalizationModule);
 
         assertTrue(invariants.invariantA, "Invariant A");
         assertTrue(invariants.invariantB, "Invariant B");
@@ -118,12 +118,12 @@ contract xMPLMigration is LifecycleBase {
         migratorAddress  = makeAddr("migrator");
         treasury_        = makeAddr("treasury");
 
-        globals_  = IGlobalsLike(address(new NonTransparentProxy(governor_, deployGlobals())));
-        token_    = IMapleToken(address(new MapleTokenProxy(address(globals_), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
-        migrator_ = IMigrator(deployMigrator(address(oldToken), address(token_)));
+        _globals  = IGlobalsLike(address(new NonTransparentProxy(governor_, deployGlobals())));
+        _token    = IMapleToken(address(new MapleTokenProxy(address(_globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
+        _migrator = IMigrator(deployMigrator(address(oldToken), address(_token)));
 
-        emergencyModule_        = new EmergencyModule(address(globals_), address(token_));
-        recapitalizationModule_ = new RecapitalizationModule(address(token_));
+        _emergencyModule        = new EmergencyModule(address(_globals), address(_token));
+        _recapitalizationModule = new RecapitalizationModule(address(_token));
 
         healthChecker = new RecapitalizationModuleHealthChecker();
 
@@ -146,7 +146,7 @@ contract xMPLMigration is LifecycleBase {
         address owner = xmpl_.owner();
         // Schedule migration on xMPL contract
         vm.prank(owner);
-        xmpl_.scheduleMigration(address(migrator_), address(token_));
+        xmpl_.scheduleMigration(address(_migrator), address(_token));
 
         vm.warp(start + 864000 + 1 seconds);
 
@@ -165,26 +165,26 @@ contract xMPLMigration is LifecycleBase {
     function configureContracts() internal {
         vm.startPrank(governor_);
 
-        globals_.setMapleTreasury(treasury_);
-        globals_.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer_, true);
+        _globals.setMapleTreasury(treasury_);
+        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer_, true);
 
-        globals_.scheduleCall(
-            address(token_),
+        _globals.scheduleCall(
+            address(_token),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(emergencyModule_))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(_emergencyModule))
         );
 
-        token_.addModule(address(emergencyModule_));
+        _token.addModule(address(_emergencyModule));
 
-        globals_.scheduleCall(
-            address(token_),
+        _globals.scheduleCall(
+            address(_token),
             "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(recapitalizationModule_))
+            abi.encodeWithSelector(IMapleToken.addModule.selector, address(_recapitalizationModule))
         );
 
-        token_.addModule(address(recapitalizationModule_));
+        _token.addModule(address(_recapitalizationModule));
 
-        globals_.setDefaultTimelockParameters(7 days, 2 days);
+        _globals.setDefaultTimelockParameters(7 days, 2 days);
 
         vm.stopPrank();
     }
