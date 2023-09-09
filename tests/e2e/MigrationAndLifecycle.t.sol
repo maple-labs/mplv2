@@ -34,7 +34,7 @@ contract LifecycleBase is ModuleInvariants {
 
     address _claimer;
     address _governor;
-    address migratorAddress;
+    address _migratorAddress;
     address _treasury;
 
     uint256 start;
@@ -115,11 +115,11 @@ contract xMPLMigration is LifecycleBase {
 
         _claimer         = makeAddr("claimer");
         _governor        = makeAddr("governor");
-        migratorAddress  = makeAddr("migrator");
+        _migratorAddress = makeAddr("migrator");
         _treasury        = makeAddr("treasury");
 
         _globals  = IGlobalsLike(address(new NonTransparentProxy(_governor, deployGlobals())));
-        _token    = IMapleToken(address(new MapleTokenProxy(address(_globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
+        _token    = IMapleToken(address(new MapleTokenProxy(address(_globals), address(new MapleToken()), address(new MapleTokenInitializer()), _migratorAddress)));
         _migrator = IMigrator(deployMigrator(address(oldToken), address(_token)));
 
         _emergencyModule        = new EmergencyModule(address(_globals), address(_token));
@@ -156,7 +156,7 @@ contract xMPLMigration is LifecycleBase {
 
     function deployMigrator(address oldToken_, address newToken_) internal returns (address migratorAddress_) {
         address deployedAddress = deployCode("Migrator.sol", abi.encode(oldToken_, newToken_));
-        migratorAddress_ = migratorAddress;
+        migratorAddress_ = _migratorAddress;
 
         // Using etch to always get a deterministic address for the migrator
         vm.etch(migratorAddress_, deployedAddress.code);

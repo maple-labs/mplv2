@@ -30,13 +30,12 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
 
         _claimer         = securityAdmin;
         _governor        = governor;
-        migratorAddress  = migrator;
         _treasury        = mapleTreasury;
 
         healthChecker = new RecapitalizationModuleHealthChecker();
 
         // Since the procedure doesn't do that, add emergency module
-        vm.prank(governor);
+        vm.startPrank(governor);
 
         // TODO: Remove once set on mainnet
         _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
@@ -48,8 +47,9 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
         );
 
         vm.warp(block.timestamp + 7 days + 1);
-        vm.prank(governor);
         _token.addModule(address(_emergencyModule));
+
+        vm.stopPrank();
 
         setupHandlers();
     }
