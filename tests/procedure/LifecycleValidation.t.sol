@@ -3,26 +3,18 @@ pragma solidity 0.8.18;
 
 import { IMigrator } from "../../modules/migrator/contracts/interfaces/IMigrator.sol";
 
-import { IEmergencyModule }        from "../../contracts/interfaces/IEmergencyModule.sol";
-import { IMapleToken }             from "../../contracts/interfaces/IMapleToken.sol";
-import { IRecapitalizationModule } from "../../contracts/interfaces/IRecapitalizationModule.sol";
+import { IMapleToken }  from "../../contracts/interfaces/IMapleToken.sol";
 
 import { EmergencyModule }        from "../../contracts/EmergencyModule.sol";
-import { MapleToken }             from "../../contracts/MapleToken.sol";
-import { MapleTokenInitializer }  from "../../contracts/MapleTokenInitializer.sol";
-import { MapleTokenProxy }        from "../../contracts/MapleTokenProxy.sol";
 import { RecapitalizationModule } from "../../contracts/RecapitalizationModule.sol";
 
 import { RecapitalizationModuleHealthChecker } from "../health-checkers/RecapitalizationModuleHealthChecker.sol";
 
-import { DistributionHandler } from "../invariants/DistributionHandler.sol";
-import { ModuleHandler }       from "../invariants/ModuleHandler.sol";
-import { ModuleInvariants }    from "../invariants/ModuleInvariants.sol";
-
-import { IGlobalsLike, IXmplLike } from "../utils/Interfaces.sol";
-import { console }                 from "../utils/TestBase.sol";
+import { IGlobalsLike } from "../utils/Interfaces.sol";
+import { console }      from "../utils/TestBase.sol";
 
 import { LifecycleBase } from "../e2e/MigrationAndLifecycle.t.sol";
+
 import { ProcedureAddressRegistry as AddressRegistry } from "./ProcedureAddressRegistry.sol";
 
 contract LifecycleValidation is LifecycleBase, AddressRegistry {
@@ -36,15 +28,19 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
         _recapitalizationModule = RecapitalizationModule(recapitalizationModule);
         _emergencyModule        = new EmergencyModule(address(_globals), address(_token));
 
-        claimer_         = securityAdmin;
-        governor_        = governor;
+        _claimer         = securityAdmin;
+        _governor        = governor;
         migratorAddress  = migrator;
-        treasury_        = mapleTreasury;
+        _treasury        = mapleTreasury;
 
         healthChecker = new RecapitalizationModuleHealthChecker();
 
         // Since the procedure doesn't do that, add emergency module
         vm.prank(governor);
+
+        // TODO: Remove once set on mainnet
+        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
+
         _globals.scheduleCall(
             address(_token),
             "MT:ADD_MODULE",

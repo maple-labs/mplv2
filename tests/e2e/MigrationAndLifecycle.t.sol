@@ -32,10 +32,10 @@ contract LifecycleBase is ModuleInvariants {
     address constant XMPL      = 0x4937A209D4cDbD3ecD48857277cfd4dA4D82914c;
     address constant OLD_TOKEN = 0x33349B282065b0284d756F0577FB39c158F935e6;
 
-    address claimer_;
-    address governor_;
+    address _claimer;
+    address _governor;
     address migratorAddress;
-    address treasury_;
+    address _treasury;
 
     uint256 start;
 
@@ -50,7 +50,7 @@ contract LifecycleBase is ModuleInvariants {
     ModuleHandler       _moduleHandler;
 
     IMapleToken oldToken = IMapleToken(OLD_TOKEN);
-    IXmplLike   xmpl_    = IXmplLike(XMPL);
+    IXmplLike   _xmpl    = IXmplLike(XMPL);
 
     RecapitalizationModuleHealthChecker healthChecker;
 
@@ -71,7 +71,7 @@ contract LifecycleBase is ModuleInvariants {
         weights[3] = 5;
         weights[4] = 5;
 
-        _moduleHandler       = new ModuleHandler(_globals, _token, _emergencyModule, _recapitalizationModule, claimer_);
+        _moduleHandler       = new ModuleHandler(_globals, _token, _emergencyModule, _recapitalizationModule, _claimer);
         _distributionHandler = new DistributionHandler(address(_moduleHandler), selectors, weights);
     }
 
@@ -113,12 +113,12 @@ contract xMPLMigration is LifecycleBase {
     function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 17622100);
 
-        claimer_         = makeAddr("claimer");
-        governor_        = makeAddr("governor");
+        _claimer         = makeAddr("claimer");
+        _governor        = makeAddr("governor");
         migratorAddress  = makeAddr("migrator");
-        treasury_        = makeAddr("treasury");
+        _treasury        = makeAddr("treasury");
 
-        _globals  = IGlobalsLike(address(new NonTransparentProxy(governor_, deployGlobals())));
+        _globals  = IGlobalsLike(address(new NonTransparentProxy(_governor, deployGlobals())));
         _token    = IMapleToken(address(new MapleTokenProxy(address(_globals), address(new MapleToken()), address(new MapleTokenInitializer()), migratorAddress)));
         _migrator = IMigrator(deployMigrator(address(oldToken), address(_token)));
 
@@ -143,15 +143,15 @@ contract xMPLMigration is LifecycleBase {
     /**************************************************************************************************************************************/
 
     function migrateXmpl() internal {
-        address owner = xmpl_.owner();
+        address owner = _xmpl.owner();
         // Schedule migration on xMPL contract
         vm.prank(owner);
-        xmpl_.scheduleMigration(address(_migrator), address(_token));
+        _xmpl.scheduleMigration(address(_migrator), address(_token));
 
         vm.warp(start + 864000 + 1 seconds);
 
         vm.prank(owner);
-        xmpl_.performMigration();
+        _xmpl.performMigration();
     }
 
     function deployMigrator(address oldToken_, address newToken_) internal returns (address migratorAddress_) {
@@ -163,10 +163,10 @@ contract xMPLMigration is LifecycleBase {
     }
 
     function configureContracts() internal {
-        vm.startPrank(governor_);
+        vm.startPrank(_governor);
 
-        _globals.setMapleTreasury(treasury_);
-        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", claimer_, true);
+        _globals.setMapleTreasury(_treasury);
+        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
 
         _globals.scheduleCall(
             address(_token),
