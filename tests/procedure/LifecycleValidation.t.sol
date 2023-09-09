@@ -37,14 +37,14 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
         // Since the procedure doesn't do that, add emergency module
         vm.startPrank(governor);
 
-        // TODO: Remove once set on mainnet
-        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
-
         _globals.scheduleCall(
             address(_token),
             "MT:ADD_MODULE",
             abi.encodeWithSelector(IMapleToken.addModule.selector, address(_emergencyModule))
         );
+
+        vm.warp(block.timestamp + 7 days + 1);
+        _token.addModule(address(_emergencyModule));
 
         // TODO: Remove once set on mainnet
         _globals.scheduleCall(
@@ -53,11 +53,11 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
             abi.encodeWithSelector(IMapleToken.addModule.selector, address(_recapitalizationModule))
         );
 
-
-        vm.warp(block.timestamp + 7 days + 1);
-        _token.addModule(address(_emergencyModule));
-        
         // TODO: Remove once set on mainnet
+        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
+
+        // TODO: Remove once set on mainnet
+        vm.warp(block.timestamp + 7 days + 1);
         _token.addModule(address(_recapitalizationModule));
 
         vm.stopPrank();
