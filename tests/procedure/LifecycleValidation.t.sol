@@ -28,10 +28,10 @@ import { ProcedureAddressRegistry as AddressRegistry } from "./ProcedureAddressR
 contract LifecycleValidation is LifecycleBase, AddressRegistry {
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL_FORK"));
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
         _globals                = IGlobalsLike(globals);
-        _token                  = IMapleToken(mplv2Proxy); 
+        _token                  = IMapleToken(mplv2Proxy);
         _migrator               = IMigrator(migrator);
         _recapitalizationModule = RecapitalizationModule(recapitalizationModule);
         _emergencyModule        = new EmergencyModule(address(_globals), address(_token));
@@ -58,7 +58,7 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
         setupHandlers();
     }
 
-    function test_lifecycleValidation(uint256 seed) external{ 
+    function test_lifecycleValidation(uint256 seed) external{
         runLifecycle(seed);
     }
 
