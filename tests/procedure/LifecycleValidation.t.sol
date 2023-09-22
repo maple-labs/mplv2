@@ -46,20 +46,6 @@ contract LifecycleValidation is LifecycleBase, AddressRegistry {
         vm.warp(block.timestamp + 7 days + 1);
         _token.addModule(address(_emergencyModule));
 
-        // TODO: Remove once set on mainnet
-        _globals.scheduleCall(
-            address(_token),
-            "MT:ADD_MODULE",
-            abi.encodeWithSelector(IMapleToken.addModule.selector, address(_recapitalizationModule))
-        );
-
-        // TODO: Remove once set on mainnet
-        _globals.setValidInstanceOf("RECAPITALIZATION_CLAIMER", _claimer, true);
-
-        // TODO: Remove once set on mainnet
-        vm.warp(block.timestamp + 7 days + 1);
-        _token.addModule(address(_recapitalizationModule));
-
         vm.stopPrank();
 
         setupHandlers();
