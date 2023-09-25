@@ -31,12 +31,15 @@ git clone git@github.com:maple-labs/mplv2.git
 cd mplv2
 forge install
 ```
+## Documentation
+For comprheensive documentation, please visit our [gitbook](https://maplefinance.gitbook.io/maple/technical-resources/mplv2)
 
 ## Audit Reports
 
-## Bug Bounty
-
-For all information related to the ongoing bug bounty for these contracts run by [Immunefi](https://immunefi.com/), please visit this [site](https://immunefi.com/bounty/maple/).
+| Auditor | Report link |
+|---|---|
+| ThreeSigma                            | [ThreeSigma-MapleV2-Token-Audit.pdf](https://github.com/maple-labs/mplv2/blob/main/audits/ThreeSigma-MapleV2-Token-Audit.pdf) |
+| Cantina                            | [CantinaManaged-maplev2-report.pdf](https://github.com/maple-labs/mplv2/blob/main/audits/CantinaManaged-maplev2-report.pdf) |
 
 ## About Maple
 
