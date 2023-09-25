@@ -32,7 +32,7 @@ cd mplv2
 forge install
 ```
 ## Documentation
-For comprheensive documentation, please visit our [gitbook](https://maplefinance.gitbook.io/maple/technical-resources/mplv2)
+For comprehensive documentation, please visit our [gitbook](https://maplefinance.gitbook.io/maple/technical-resources/mplv2)
 
 ## Audit Reports
 
