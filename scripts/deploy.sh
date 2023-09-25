@@ -16,11 +16,11 @@ forge script \
   --rpc-url $ETH_RPC_URL -vvvv \
   --sender $ETH_SENDER \
   "scripts/DeployToken.s.sol:DeployToken" \
-  --broadcast --unlocked --slow #--mnemonics foo --mnemonic-indexes 3 --ledger
+  --broadcast --slow --mnemonic-indexes 4 --ledger --gas-estimate-multiplier 200
 
-# Deploy the migrator next, building on top of the token deployment 
+# Deploy the migrator next, building on top of the token deployment
 forge script \
   --rpc-url $ETH_RPC_URL -vvvv \
   --sender $ETH_SENDER \
   "scripts/DeployMigrator.s.sol:DeployMigrator" \
-  --broadcast --unlocked #--mnemonics foo --mnemonic-indexes 3 --ledger
+  --broadcast --slow --mnemonic-indexes 4 --ledger --gas-estimate-multiplier 200

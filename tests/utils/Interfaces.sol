@@ -24,6 +24,8 @@ interface IGlobalsLike {
         bytes32 functionId_
     ) external view returns (uint256 timestamp, bytes32 dataHash);
 
+    function setDefaultTimelockParameters(uint128 defaultTimelockDelay_, uint128 defaultTimelockDuration_) external;
+
     function setMapleTreasury(address mapleTreasury_) external;
 
     function setValidInstanceOf(bytes32 instanceKey_, address instance_, bool isValid_) external;

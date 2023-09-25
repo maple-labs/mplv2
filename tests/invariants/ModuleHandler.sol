@@ -114,7 +114,7 @@ contract ModuleHandler is TestBase {
         uint32[]  memory windowStarts  = new uint32[](numberOfWindows);
         uint208[] memory issuanceRates = new uint208[](numberOfWindows);
 
-        uint32 minWindowStart = uint32(blockTimestamp);
+        uint32 minWindowStart = uint32(blockTimestamp + 7 days + 2);
 
         for (uint i; i < numberOfWindows; ++i) {
             uint256 windowSeed = uint256(keccak256(abi.encode(seed, i)));
@@ -135,6 +135,10 @@ contract ModuleHandler is TestBase {
             "RM:SCHEDULE",
             abi.encodeWithSelector(recapitalizationModule.schedule.selector, windowStarts, issuanceRates)
         );
+
+        vm.warp(blockTimestamp + 7 days + 1);
+
+        blockTimestamp += 7 days + 1;
 
         vm.prank(governor);
         recapitalizationModule.schedule(windowStarts, issuanceRates);

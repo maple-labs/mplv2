@@ -41,7 +41,7 @@ contract MapleTokenInitializerTests is TestBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.implementation(), implementation);
 
-        assertEq(token.name(),     "Maple Finance Token");
+        assertEq(token.name(),     "Maple Token");
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
 
