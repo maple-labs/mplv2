@@ -45,7 +45,7 @@ contract xMPLMigration is TestBase {
     }
 
     function deployMigrator(address oldToken_, address newToken_) internal returns (address migratorAddress_) {
-        address deployedAddress = deployCode("Migrator.sol", abi.encode(oldToken_, newToken_));
+        address deployedAddress = deployCode("./out/Migrator.sol/Migrator.json", abi.encode(oldToken_, newToken_));
         migratorAddress_ = migratorAddress;
 
         // Using etch to always get a deterministic address for the migrator

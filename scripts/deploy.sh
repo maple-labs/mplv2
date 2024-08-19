@@ -22,5 +22,5 @@ forge script \
 forge script \
   --rpc-url $ETH_RPC_URL -vvvv \
   --sender $ETH_SENDER \
-  "scripts/DeployMigrator.s.sol:DeployMigrator" \
+  "scripts/DeployMigratorAndStsyrup.s.sol:DeployMigratorAndStsyrup" \
   --broadcast --slow --mnemonic-indexes 4 --ledger --gas-estimate-multiplier 200

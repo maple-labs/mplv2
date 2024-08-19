@@ -8,6 +8,7 @@ import { MapleTokenInitializer }  from "../contracts/MapleTokenInitializer.sol";
 import { MapleTokenProxy }        from "../contracts/MapleTokenProxy.sol";
 import { RecapitalizationModule } from "../contracts/RecapitalizationModule.sol";
 
+// TODO: Double check compute address based on index
 contract DeployToken is Script {
 
     function run() external {

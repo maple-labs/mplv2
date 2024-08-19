@@ -16,3 +16,6 @@
 [submodule "modules/address-registry"]
 	path = modules/address-registry
 	url = git@github.com:maple-labs/address-registry.git
+[submodule "modules/xmpl"]
+	path = modules/xmpl
+	url = git@github.com:maple-labs/xMPL.git

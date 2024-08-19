@@ -28,6 +28,7 @@ jobs:
       - name: Run forge tests and create gas report.
         run: |
           set -e
+          forge build
           forge test | tee output.txt
           test ${PIPESTATUS[0]} -eq 0
           sed -n -e '/^|/p' output.txt > gas.txt
@@ -90,6 +91,7 @@ jobs:
           lcov --remove ./lcov.info -o ./lcov.info.pruned 'tests/*'
         env:
           FOUNDRY_PROFILE: ${{ github.event_name == 'push' && 'ci' || '' }}
+          ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1
