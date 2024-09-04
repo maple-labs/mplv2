@@ -35,6 +35,8 @@ contract MapleTokenInitializerTests is TestBase {
         vm.expectEmit();
         emit Initialized(migrator, treasury);
 
+        uint256 scalar = 100;
+
         MapleToken token = MapleToken(address(new MapleTokenProxy(address(globals), implementation, initializer, migrator)));
 
         assertEq(token.governor(),       governor);
@@ -45,10 +47,10 @@ contract MapleTokenInitializerTests is TestBase {
         assertEq(token.symbol(),   "MPL");
         assertEq(token.decimals(), 18);
 
-        assertEq(token.balanceOf(migrator), 10_000_000e18);
-        assertEq(token.balanceOf(treasury), 1_000_000e18);
+        assertEq(token.balanceOf(migrator), 10_000_000e18 * scalar);
+        assertEq(token.balanceOf(treasury), 154_930_098e18);
 
-        assertEq(token.totalSupply(), 11_000_000e18);
+        assertEq(token.totalSupply(), 1_154_930_098e18);
     }
 
 }

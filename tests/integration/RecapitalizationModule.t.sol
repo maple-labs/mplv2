@@ -156,17 +156,15 @@ contract RecapitalizationModuleIssuanceSimulation is TestBase {
 
     function test_recapitalizationModule_issuanceSimulation() external {
         // Define the issuance schedule
-        uint32[] memory times = new uint32[](4);
-        times[0] = uint32(1696132800);  // October 1st 00:00 2023 EST
-        times[1] = uint32(1704081600);  // January 1st 00:00 2024 EST
-        times[2] = uint32(1735704000);  // January 1st 00:00 2025 EST
-        times[3] = uint32(1767240000);  // January 1st 00:00 2026 EST
+        uint32[] memory times = new uint32[](3);
+        times[0] = uint32(1696132800);  // October 1st 00:00 2024 EST
+        times[1] = uint32(1735704000);  // January 1st 00:00 2025 EST
+        times[2] = uint32(1767240000);  // January 1st 00:00 2026 EST
 
-        uint208[] memory rates = new uint208[](4);
-        rates[0] = 15725644122383252;
-        rates[1] = 17922959674155030;
-        rates[2] = 18887652207001524;
-        rates[3] = 0;
+        uint208[] memory rates = new uint208[](3);
+        rates[0] = 360024512776969700;
+        rates[1] = 1888765220700152300;
+        rates[2] = 0;
 
         vm.startPrank(governor);
         globals.scheduleCall(address(module), "RM:SCHEDULE", abi.encodeWithSelector(module.schedule.selector, times, rates));
@@ -176,31 +174,24 @@ contract RecapitalizationModuleIssuanceSimulation is TestBase {
 
         // Beginning of the issuance
         vm.warp(times[0]);
-        assertApproxEqAbs(token.totalSupply(),        11_000_000e18, 1e9);  // Allowing half of a unit as rounding error
-        assertApproxEqAbs(module.claimable(times[1]), 125_000e18,    1e9);
+        assertApproxEqAbs(token.totalSupply(),        1_154_930_098e18, 1e11);
+        assertApproxEqAbs(module.claimable(times[1]), 14_246_602e18,    1e11);
 
-        // End of 1st year (2023)
+        // End of 1st year (2024)
         vm.warp(times[1]);
         vm.prank(claimer);
         module.claim();
 
-        assertApproxEqAbs(token.totalSupply(),        11_125_000e18, 1e9);
-        assertApproxEqAbs(module.claimable(times[2]), 566_767e18,    1e9);
+        assertApproxEqAbs(token.totalSupply(),        1_169_176_700e18, 1e11);
+        assertApproxEqAbs(module.claimable(times[2]), 59_564_100e18,    1e11);
 
-        // End of 2nd year (2024)
+        // End of year (2025)
         vm.warp(times[2]);
         vm.prank(claimer);
         module.claim();
 
-        assertApproxEqAbs(token.totalSupply(),        11_691_767e18, 1e9);
-        assertApproxEqAbs(module.claimable(times[3]), 595_641e18,    1e9);
-
-        // End of 3rd year (2025)
-        vm.warp(times[3]);
-        vm.prank(claimer);
-        module.claim();
-
-        assertApproxEqAbs(token.totalSupply(), 12_287_408e18, 1e9);
+        assertApproxEqAbs(token.totalSupply(), 1_228_740_800e18, 1e11);
+        assertEq(module.claimable(times[2]),   0);
     }
-    
+
 }
