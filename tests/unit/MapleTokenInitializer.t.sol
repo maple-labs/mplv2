@@ -43,8 +43,8 @@ contract MapleTokenInitializerTests is TestBase {
         assertEq(token.globals(),        address(globals));
         assertEq(token.implementation(), implementation);
 
-        assertEq(token.name(),     "Maple Token");
-        assertEq(token.symbol(),   "MPL");
+        assertEq(token.name(),     "Syrup Token");
+        assertEq(token.symbol(),   "SYRUP");
         assertEq(token.decimals(), 18);
 
         assertEq(token.balanceOf(migrator), 10_000_000e18 * scalar);

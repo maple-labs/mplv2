@@ -11,8 +11,8 @@ contract MapleTokenInitializer is IMapleTokenInitializer, ERC20Proxied {
     uint256 internal constant INITIAL_MINT_TREASURY = 154_930_098e18;
 
     function initialize(address migrator_, address treasury_) external {
-        name     = "Maple Token";
-        symbol   = "MPL";
+        name     = "Syrup Token";
+        symbol   = "SYRUP";
         decimals = 18;
 
         emit Initialized(migrator_, treasury_);

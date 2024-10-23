@@ -157,12 +157,12 @@ contract RecapitalizationModuleIssuanceSimulation is TestBase {
     function test_recapitalizationModule_issuanceSimulation() external {
         // Define the issuance schedule
         uint32[] memory times = new uint32[](3);
-        times[0] = uint32(1696132800);  // October 1st 00:00 2024 EST
+        times[0] = uint32(1727755200);  // October 1st 00:00 2024 EST
         times[1] = uint32(1735704000);  // January 1st 00:00 2025 EST
         times[2] = uint32(1767240000);  // January 1st 00:00 2026 EST
 
         uint208[] memory rates = new uint208[](3);
-        rates[0] = 360024512776969700;
+        rates[0] = 1792295944041868000;
         rates[1] = 1888765220700152300;
         rates[2] = 0;
 

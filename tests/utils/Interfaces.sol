@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 interface IGlobalsLike {
 
     function governor() external view returns (address governor_);
-    
+
     function isInstanceOf(bytes32 instanceKey_, address instance_) external view returns (bool isInstance_);
 
     function isValidScheduledCall(
@@ -45,6 +45,12 @@ interface IXmplLike {
     function asset() external view returns (address asset);
 
     function cancelMigration() external;
+
+    function name() external view returns (string memory name);
+
+    function symbol() external view returns (string memory symbol);
+
+    function precision() external view returns (uint256 precision);
 
     function performMigration() external;
 

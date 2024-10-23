@@ -12,15 +12,15 @@ FOUNDRY_PROFILE=production
 # NOTE: Make sure that the computed addresses for mplv2 and migrator are corret for the given ETH_SENDER
 
 # Deploy the token first, listing to mainnet rpc endpoint
-forge script \
-  --rpc-url $ETH_RPC_URL -vvvv \
-  --sender $ETH_SENDER \
-  "scripts/DeployToken.s.sol:DeployToken" \
-  --broadcast --slow --mnemonic-indexes 4 --ledger --gas-estimate-multiplier 200
+# forge script \
+#   --rpc-url $ETH_RPC_URL -vvvv \
+#   --sender $ETH_SENDER \
+#   "scripts/DeployToken.s.sol:DeployToken" \
+#   --broadcast --slow --mnemonic-indexes 13 --ledger --gas-estimate-multiplier 200
 
 # Deploy the migrator next, building on top of the token deployment
 forge script \
   --rpc-url $ETH_RPC_URL -vvvv \
   --sender $ETH_SENDER \
   "scripts/DeployMigratorAndStsyrup.s.sol:DeployMigratorAndStsyrup" \
-  --broadcast --slow --mnemonic-indexes 4 --ledger --gas-estimate-multiplier 200
+  --broadcast --slow --mnemonic-indexes 13 --ledger --gas-estimate-multiplier 200
