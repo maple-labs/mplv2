@@ -31,7 +31,7 @@ forge script \
 forge script \
   --rpc-url "http://localhost:8545" -vvv \
   --sender $ETH_SENDER \
-  "scripts/DeployMigrator.s.sol:DeployMigrator" \
+  "scripts/DeployMigratorAndStsyrup.s.sol:DeployMigratorAndStsyrup" \
   --broadcast --unlocked # --mnemonics foo --mnemonic-indexes 3 --ledger
 
 # Kill the anvil process

@@ -17,11 +17,11 @@ contract TestBase is Test {
     bytes internal constant zeroVarError        = abi.encodeWithSignature("Panic(uint256)", 0x51);
 
     function deployGlobals() internal returns (address globals_) {
-        globals_ = deployCode("MapleGlobals.sol");
+        globals_ = deployCode("./out/MapleGlobals.sol/MapleGlobals.json");
     }
 
     function deployMockERC20() internal returns (address mockERC20_) {
-        mockERC20_ = deployCode("MockERC20.sol", abi.encode("MOCK", "MOCK", 18));
+        mockERC20_ = deployCode("./out/MockERC20.sol/MockERC20.json", abi.encode("MOCK", "MOCK", 18));
     }
 
 }

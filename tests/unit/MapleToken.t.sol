@@ -181,17 +181,21 @@ contract BurnTests is MapleTokenTestsBase {
     }
 
     function test_burn_noBalance() external {
+        uint256 treasuryBalance = token.balanceOf(treasury);
+
         vm.prank(burner);
         vm.expectRevert(arithmeticError);
-        token.burn(treasury, type(uint256).max);
+        token.burn(treasury, treasuryBalance + 1);
 
         vm.prank(burner);
         token.burn(treasury, 100);
 
-        assertEq(token.balanceOf(treasury), 1_000_000e18 - 100);
+        assertEq(token.balanceOf(treasury), treasuryBalance - 100);
     }
 
     function test_burn_success() external {
+        uint256 treasuryBalance = token.balanceOf(treasury);
+
         vm.expectEmit();
         emit Transfer(treasury, address(0), 1);
 
@@ -201,7 +205,7 @@ contract BurnTests is MapleTokenTestsBase {
         vm.prank(burner);
         token.burn(treasury, 1);
 
-        assertEq(token.balanceOf(treasury), 1_000_000e18 - 1);
+        assertEq(token.balanceOf(treasury), treasuryBalance - 1);
     }
 
 }
